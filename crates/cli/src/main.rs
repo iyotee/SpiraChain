@@ -58,7 +58,7 @@ enum Commands {
         constant: String,
         
         #[arg(short, long, default_value = "1000")]
-        precision: u32,
+        precision: usize,
     },
 }
 
