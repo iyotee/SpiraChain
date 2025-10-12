@@ -104,7 +104,7 @@ impl WorldState {
                 .ok_or_else(|| SpiraChainError::Internal("Balance overflow".to_string()))?;
             Ok(())
         } else {
-            Err(SpiraChainError::InsufficientStake(acc.stake, amount))
+            Err(SpiraChainError::InsufficientStake(acc.stake.value(), amount.value()))
         }
     }
 

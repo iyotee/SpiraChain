@@ -70,9 +70,9 @@ impl NodeStorage {
         match self.block_by_height.get(&height_key)
             .map_err(|e| SpiraChainError::StorageError(format!("Failed to get block hash by height: {}", e)))? {
             Some(hash_bytes) => {
-                let mut hash = Hash::zero();
-                hash.copy_from_slice(&hash_bytes);
-                self.get_block(&hash)
+                let mut hash_array = [0u8; 32];
+                hash_array.copy_from_slice(&hash_bytes);
+                self.get_block(&Hash::from(hash_array))
             }
             None => Ok(None),
         }
@@ -84,9 +84,9 @@ impl NodeStorage {
 
         match last_entry {
             Some((_, hash_bytes)) => {
-                let mut hash = Hash::zero();
-                hash.copy_from_slice(&hash_bytes);
-                self.get_block(&hash)
+                let mut hash_array = [0u8; 32];
+                hash_array.copy_from_slice(&hash_bytes);
+                self.get_block(&Hash::from(hash_array))
             }
             None => Ok(None),
         }

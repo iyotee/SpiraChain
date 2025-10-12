@@ -166,6 +166,11 @@ impl Transaction {
         
         magnitude.min(1.0) as f64
     }
+    
+    pub fn hash(&self) -> Hash {
+        let data = self.serialize();
+        Hash::from(blake3::hash(&data))
+    }
 }
 
 #[cfg(test)]

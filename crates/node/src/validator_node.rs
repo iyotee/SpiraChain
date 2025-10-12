@@ -42,12 +42,12 @@ impl ValidatorNode {
         info!("🚀 Starting SpiraChain Validator Node");
         info!("   Address: {}", self.keypair.to_address());
         info!("   Stake: {}", self.validator.stake);
-        info!("   Data dir: {}", self.config.data_dir);
+        info!("   Data dir: {}", &self.config.data_dir);
 
         *self.is_running.write() = true;
 
         let genesis_block = self.initialize_genesis().await?;
-        info!("   Genesis block hash: {}", hex::encode(&genesis_block.hash()));
+        info!("   Genesis block hash: {}", hex::encode(genesis_block.hash().as_bytes()));
 
         self.run_validation_loop().await?;
 
@@ -135,7 +135,7 @@ impl ValidatorNode {
             self.apply_block_to_state(&block)?;
 
             info!("✅ Block {} produced at height {}", 
-                hex::encode(&block.hash())[..16].to_string(),
+                hex::encode(block.hash().as_bytes())[..16].to_string(),
                 block.header.block_height
             );
         } else {
