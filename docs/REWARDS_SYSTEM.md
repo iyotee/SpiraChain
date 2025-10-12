@@ -38,14 +38,22 @@ spira node start --mode validator --wallet validator-wallet.json
 ### Requirements for Validators
 
 **Minimum Stake**: 10,000 QBT  
-**Hardware**:
-- CPU: 16+ cores
-- RAM: 64 GB
-- GPU: NVIDIA A100 or equivalent (for AI semantic analysis)
-- Storage: 2 TB NVMe SSD
-- Network: 1 Gbps, <50ms latency
+**Hardware** (Raspberry Pi Compatible!):
+- CPU: 4+ cores (Pi 4/5, x86-64, ARM64)
+- RAM: 8 GB (4 GB works but 8 GB recommended)
+- GPU: NOT required (AI is CPU-based, optional GPU acceleration)
+- Storage: 256 GB SSD (128 GB minimum)
+- Network: 10+ Mbps stable connection
+- Power: 5-15W (ultra-low power consumption)
 
 **Lock Period**: ~35 days (100,000 blocks)
+
+**Why Raspberry Pi Works:**
+- Current implementation is CPU-only (no GPU needed)
+- Blake3 hashing is fast on ARM
+- Post-quantum crypto (XMSS, Kyber) runs fine on CPU
+- Spiral calculation is lightweight
+- AI semantic layer (when connected) uses SpiraPi Python (CPU-optimized)
 
 ## Reward Calculation
 

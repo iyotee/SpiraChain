@@ -283,9 +283,11 @@ Validators produce blocks and earn rewards. Here's how to become one:
 
 #### 1. **Requirements**
 - **Stake:** Minimum 10,000 QBT
-- **Hardware:** 4+ CPU cores, 8 GB RAM, 100 GB SSD
-- **Network:** Static IP, open port 30333
+- **Hardware:** 4+ CPU cores, 8 GB RAM, 256 GB SSD (Raspberry Pi 4/5 perfect!)
+- **GPU:** NOT required (optional for AI acceleration in future)
+- **Network:** Stable connection, open port 30333, 10+ Mbps
 - **Uptime:** 99%+ recommended
+- **Power:** 5-15W (can run on solar/battery!)
 
 #### 2. **Register as Validator**
 ```bash

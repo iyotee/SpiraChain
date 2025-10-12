@@ -282,10 +282,12 @@ cargo fmt                      # Format
 3. **Light Node**: Header-only validation
 4. **Archive Node**: Full history
 
-### System Requirements
-- **Validator**: 16 cores, 64GB RAM, 2TB SSD, GPU
-- **Full Node**: 8 cores, 32GB RAM, 1TB SSD
-- **Light Node**: 4 cores, 8GB RAM, 50GB SSD
+### System Requirements (Raspberry Pi Compatible!)
+- **Validator**: 4+ cores, 8GB RAM, 256GB SSD, NO GPU required
+- **Full Node**: 2-4 cores, 4-8GB RAM, 128GB SSD, NO GPU required  
+- **Light Node**: 1-2 cores, 2-4GB RAM, 10GB storage, NO GPU required
+
+**Note:** All node types run efficiently on Raspberry Pi 4/5. GPU is optional for future AI acceleration but NOT required for current implementation.
 
 ## Monitoring & Observability
 

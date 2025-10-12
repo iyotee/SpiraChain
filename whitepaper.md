@@ -2442,25 +2442,28 @@ ws://node.spirachain.network/stream/governance
 ### Appendix F: Hardware Requirements
 
 **Validator Node (Recommended):**
-- CPU: 16+ cores (AMD EPYC or Intel Xeon)
-- RAM: 64 GB DDR4
-- GPU: NVIDIA A100 40GB or equivalent
-- Storage: 2 TB NVMe SSD
-- Network: 1 Gbps symmetric, <50ms latency
-- Redundancy: UPS, redundant internet
+- CPU: 4+ cores (Raspberry Pi 4, x86-64, ARM64)
+- RAM: 8 GB
+- GPU: Optional (accelerates AI but NOT required)
+- Storage: 256 GB SSD (128 GB minimum)
+- Network: 10+ Mbps, stable connection
+- Power: 5-15W (Raspberry Pi compatible!)
 
 **Full Node (Minimum):**
-- CPU: 8 cores
-- RAM: 32 GB
-- GPU: NVIDIA RTX 3090 or equivalent
-- Storage: 1 TB SSD
-- Network: 100 Mbps
+- CPU: 2-4 cores
+- RAM: 4-8 GB
+- GPU: None required
+- Storage: 128 GB SSD
+- Network: 10 Mbps
 
 **Light Node:**
-- CPU: 4 cores
-- RAM: 8 GB
-- Storage: 50 GB
-- Network: 10 Mbps
+- CPU: 1-2 cores
+- RAM: 2-4 GB
+- GPU: None required
+- Storage: 10 GB
+- Network: 5 Mbps
+
+**Note:** Raspberry Pi 4 (8GB) is PERFECT for validator nodes. GPU only accelerates AI semantic analysis (optional future feature). Current implementation is CPU-only and runs efficiently on low-power devices.
 
 ---
 
