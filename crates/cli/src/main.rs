@@ -211,7 +211,7 @@ async fn main() -> anyhow::Result<()> {
         Commands::Tx { tx_cmd } => {
             match tx_cmd {
                 TxCommands::Send { from, to, amount, purpose } => {
-                    tx::handle_send(from, to, amount, purpose).await?;
+                    tx::handle_send(from, to, amount, None, purpose).await?;
                 }
             }
         }

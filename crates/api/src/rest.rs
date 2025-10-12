@@ -2,6 +2,7 @@ use warp::{Filter, Rejection, Reply};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use parking_lot::RwLock;
+use tracing::info;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ApiResponse<T> {
