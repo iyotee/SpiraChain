@@ -1,4 +1,4 @@
-# SpiraChain (Qbitum) - Post-Quantum Bitcoin 2.0
+# 🌀 SpiraChain - Post-Quantum Semantic Blockchain
 
 <div align="center">
 
@@ -6,502 +6,744 @@
 
 **The World's First Post-Quantum Semantic Blockchain**
 
-Powered by **SpiraPi** π-Dimensional Indexation System
-
 [![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-CC--BY--SA--4.0-green.svg)](LICENSE)
 [![Post-Quantum](https://img.shields.io/badge/Security-Post--Quantum-red.svg)](whitepaper.md)
 
+**SpiraChain** combines quantum-resistant cryptography, AI-powered semantic understanding, and revolutionary π-dimensional indexing to create the next generation of blockchain technology.
+
+[Whitepaper](whitepaper.md) • [Manifesto](manifest.md) • [Architecture](docs/ARCHITECTURE.md) • [Contributing](CONTRIBUTING.md)
+
 </div>
 
-## 🌟 Revolutionary Features
+---
 
-### 1. **Post-Quantum Cryptography**
-- **XMSS** (eXtended Merkle Signature Scheme) for quantum-resistant signatures
-- **Kyber-1024** lattice-based encryption
-- **π-Dimensional Indexing** - mathematically unique, collision-resistant identifiers
+## 🚀 Quick Start (5 minutes)
 
-### 2. **Proof of Spiral (PoSp) Consensus**
-- Validators generate geometrically coherent spirals incorporating transactions
-- Complexity metrics: geometric coherence + semantic richness
-- Dynamic difficulty adjustment based on network conditions
+### 1. **Build SpiraChain**
+```bash
+# Clone the repository
+git clone https://github.com/iyotee/SpiraChain.git
+cd SpiraChain
 
-### 3. **Native AI & Semantic Layer**
-- **384-dimensional semantic embeddings** for all transactions
-- Automatic pattern detection and relationship discovery
-- Narrative threading across transaction history
-- Schema evolution based on AI analysis
+# Build in release mode
+cargo build --workspace --release
 
-### 4. **SpiraPi Integration**
-- **50,000+ IDs/sec** generation rate
-- 8 mathematical algorithms (Chudnovsky, Machin, Ramanujan, BBP, etc.)
-- 7 spiral types (Fibonacci, Archimedean, Logarithmic, etc.)
-- Real-time semantic indexing with transformer models
+# Binary ready at: target/release/spira.exe (or spira on Linux/Mac)
+```
 
-### 5. **Qubitum (QBT) Tokenomics**
-- Initial supply: **21,000,000 QBT**
-- Dynamic supply based on semantic complexity
-- Block rewards with halving every 210,000 blocks
-- Validator staking with reputation scoring
+### 2. **Create Your Wallet**
+```bash
+./target/release/spira wallet new --output my_wallet.json
+```
 
-## 🚀 Quick Start
+⚠️ **IMPORTANT:** Never share your `secret_key`! This is your private key.
+
+### 3. **Send a Transaction**
+```bash
+./target/release/spira tx send \
+  --from my_wallet.json \
+  --to 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb \
+  --amount 10.5 \
+  --purpose "Coffee payment"
+```
+
+### 4. **Start a Node** (Coming Soon)
+```bash
+./target/release/spira node start --validator --wallet my_wallet.json
+```
+
+---
+
+## 📖 Table of Contents
+
+- [What is SpiraChain?](#what-is-spirachain)
+- [Key Features](#key-features)
+- [Installation](#installation)
+  - [Prerequisites](#prerequisites)
+  - [Building from Source](#building-from-source)
+- [Usage Guide](#usage-guide)
+  - [Wallet Management](#wallet-management)
+  - [Transactions](#transactions)
+  - [Running a Node](#running-a-node)
+  - [Becoming a Validator](#becoming-a-validator)
+- [Raspberry Pi Node Setup](#raspberry-pi-node-setup)
+- [Network Information](#network-information)
+- [Tokenomics (Qubitum - QBT)](#tokenomics-qubitum---qbt)
+- [Technology Stack](#technology-stack)
+- [Project Structure](#project-structure)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
+- [Credits](#credits)
+- [License](#license)
+
+---
+
+## 🌟 What is SpiraChain?
+
+**SpiraChain** (codename: Qbitum) is a revolutionary blockchain that solves three critical problems:
+
+### 1. **Quantum Resistance** 🔐
+Traditional blockchains (Bitcoin, Ethereum) use cryptography that will be broken by quantum computers. SpiraChain uses:
+- **XMSS** (eXtended Merkle Signature Scheme) - Quantum-resistant signatures
+- **Kyber-1024** - Lattice-based encryption
+- **Future-proof** - Your assets are safe even in the quantum era
+
+### 2. **Semantic Understanding** 🧠
+Blockchains are dumb—they can't understand what transactions mean. SpiraChain has built-in AI:
+- **Natural language processing** - Understand transaction intent
+- **Pattern detection** - Identify fraud and anomalies
+- **Narrative threading** - Track related transactions
+- **Entity recognition** - Know who's who
+
+### 3. **π-Dimensional Indexing** 🌀
+SpiraChain uses **SpiraPi**—a revolutionary addressing system based on mathematical spirals and transcendental constants (π, e, φ):
+- **Unique IDs** - Collision probability < 2^-256
+- **Geometric proofs** - Blocks form beautiful spirals
+- **862K+ IDs/sec** - Ultra-fast generation
+- **Semantic proximity** - Related transactions cluster in π-space
+
+---
+
+## ✨ Key Features
+
+### 🔒 Post-Quantum Security
+- XMSS signatures (2^20 per key)
+- Kyber-1024 lattice-based encryption
+- Blake3 cryptographic hashing
+- Quantum-safe from day one
+
+### 🌀 Proof of Spiral (PoSp) Consensus
+Validators don't just mine—they create **geometrically beautiful spirals**:
+- Archimedean, Logarithmic, Fibonacci, Fermat, Ramanujan spirals
+- Complexity scoring (geometric + semantic)
+- Energy-efficient (no wasteful PoW)
+- Rewards based on beauty and coherence
+
+### 🧠 AI Semantic Layer
+- Sentence transformers for embeddings
+- HNSW vector search for similarity
+- Pattern detection with HDBSCAN
+- Intent classification
+- Entity extraction
+
+### 💎 Qubitum (QBT) Token
+- **Initial supply:** 21,000,000 QBT
+- **Dynamic supply** based on semantic complexity
+- **Halving every 210,000 blocks** (like Bitcoin)
+- **Rewards:** 50-450 QBT per block (geometry + semantic bonuses)
+
+### 🚀 Performance
+- **Block time:** 60 seconds
+- **TPS:** 10,000+ (planned)
+- **Finality:** 6 confirmations (~6 minutes)
+- **Scalability:** Sharding-ready architecture
+
+---
+
+## 💻 Installation
 
 ### Prerequisites
 
-- **Rust** 1.75+ ([Install](https://rustup.rs/))
-- **Python** 3.8+ with pip
-- **Git**
-- 8GB+ RAM recommended
-- GPU optional (for AI features)
+**Required:**
+- **Rust 1.75+** - [Install](https://rustup.rs/)
+- **Python 3.8+** - [Install](https://www.python.org/)
+- **Git** - [Install](https://git-scm.com/)
 
-### Installation
-
-#### Windows
-```bash
-git clone https://github.com/iyotee/Qbitum.git
-cd Qbitum
-install.bat
-```
-
-#### Linux/macOS
-```bash
-git clone https://github.com/iyotee/Qbitum.git
-cd Qbitum
-chmod +x install.sh
-./install.sh
-```
-
-### Starting the Node
-
-#### Windows
-```bash
-start.bat
-```
-
-#### Linux/macOS
-```bash
-./start.sh
-```
-
-This will start:
-- **SpiraPi API Server** (http://localhost:8000)
-- **SpiraPi Web Admin** (http://localhost:8081)
-- **SpiraChain Validator Node**
-
-## 📊 Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        SpiraChain Architecture                      │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  ┌────────────────────────────────────────────────────────────┐    │
-│  │                     Rust Layer (SpiraChain)                │    │
-│  │                                                            │    │
-│  │  ├─ Consensus (Proof of Spiral)                           │    │
-│  │  ├─ Crypto (XMSS, Kyber-1024)                             │    │
-│  │  ├─ Network (LibP2P)                                      │    │
-│  │  ├─ Node (Validator, Full, Light)                         │    │
-│  │  ├─ API (REST + WebSocket)                                │    │
-│  │  ├─ VM (SpiraVM - WebAssembly)                            │    │
-│  │  └─ CLI (Command Line Interface)                          │    │
-│  │                          ↕                                 │    │
-│  │            ┌──────────────────────────┐                    │    │
-│  │            │  SpiraPi Bridge (PyO3)   │                    │    │
-│  │            └──────────────────────────┘                    │    │
-│  └────────────────────────────────────────────────────────────┘    │
-│                          ↕                                         │
-│  ┌────────────────────────────────────────────────────────────┐    │
-│  │                    Python Layer (SpiraPi)                  │    │
-│  │                                                            │    │
-│  │  ├─ Math Engine (π Calculation, Spiral Math)              │    │
-│  │  ├─ Storage (Custom Database Engine)                      │    │
-│  │  ├─ Query Engine (Spiral Queries)                         │    │
-│  │  ├─ AI (Semantic Indexing, Embeddings)                    │    │
-│  │  └─ Web Interface (FastAPI, Admin Panel)                  │    │
-│  └────────────────────────────────────────────────────────────┘    │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-## 🏗️ Project Structure
-
-```
-Qbitum/
-├── crates/
-│   ├── core/              # Core data structures and types
-│   ├── spirapi-bridge/    # Rust-Python integration layer
-│   ├── crypto/            # Post-quantum cryptography
-│   ├── consensus/         # Proof of Spiral implementation
-│   ├── semantic/          # AI and semantic processing
-│   ├── network/           # P2P networking (LibP2P)
-│   ├── node/              # Node implementations
-│   ├── api/               # REST and WebSocket APIs
-│   ├── vm/                # SpiraVM (WebAssembly)
-│   └── cli/               # Command-line interface
-├── crates/spirapi/        # SpiraPi Python system
-│   ├── src/
-│   │   ├── math_engine/   # π calculation and spiral math
-│   │   ├── storage/       # Custom database engine
-│   │   ├── query/         # Spiral query engine
-│   │   ├── ai/            # Semantic indexing
-│   │   ├── api/           # FastAPI server
-│   │   └── web/           # Web admin interface
-│   ├── scripts/           # Utility scripts
-│   ├── docs/              # SpiraPi documentation
-│   └── wiki/              # SpiraPi wiki
-├── install.bat/sh         # Installation scripts
-├── start.bat/sh           # Startup scripts
-├── build.bat/sh           # Build scripts
-├── whitepaper.md          # Technical whitepaper
-├── manifest.md            # Project manifesto
-└── README.md              # This file
-```
-
-## 🎯 CLI Commands
-
-### Node Management
-```bash
-# Initialize a new node
-spirachain-cli init --data-dir ~/.spirachain
-
-# Start a validator node
-spirachain-cli node start --validator
-
-# Check node status
-spirachain-cli node status
-```
-
-### Wallet Operations
-```bash
-# Create new wallet
-spirachain-cli wallet new
-
-# Check balance
-spirachain-cli wallet balance <address>
-
-# Send transaction
-spirachain-cli tx send --from <from> --to <to> --amount 100
-```
-
-### Validator Operations
-```bash
-# Register as validator
-spirachain-cli validator register --stake 1000
-
-# Check validator status
-spirachain-cli validator status
-```
-
-### Query Operations
-```bash
-# Query block
-spirachain-cli query block --height 12345
-
-# Query transaction
-spirachain-cli query tx --hash <tx_hash>
-
-# Semantic search
-spirachain-cli query semantic --query "payment for services"
-```
-
-### Utility Commands
-```bash
-# Calculate π
-spirachain-cli calculate pi --precision 1000
-
-# Generate genesis block
-spirachain-cli genesis create
-```
-
-## 💰 Mining & Rewards
-
-### How Are People Rewarded?
-
-SpiraChain uses **Proof of Spiral (PoSp)**, a unique consensus mechanism:
-
-#### 1. **Validator Requirements**
-- Minimum stake: **100 QBT**
-- Register as validator with `spirachain-cli validator register --stake <amount>`
-- Maintain reputation score > 0.5
-
-#### 2. **Block Rewards**
-- **Base reward**: 50 QBT per block (halves every 210,000 blocks)
-- **Complexity multiplier**: 1.0x - 5.0x based on spiral geometry
-- **Semantic multiplier**: 1.0x - 3.0x based on transaction semantics
-- **Total potential**: Up to **750 QBT per block**
-
-#### 3. **Transaction Fees**
-- Minimum: **0.001 QBT** per transaction
-- Priority fee: Optional, for faster inclusion
-- 80% to validator, 20% burned
-
-#### 4. **Staking Rewards**
-- Annual percentage: **5-15%** based on total stake
-- Distributed proportionally to all stakers
-- Compounds automatically
-
-#### 5. **Is Mining Necessary?**
-- **No traditional mining!** SpiraChain uses staking, not energy-intensive mining
-- **Validation** replaces mining - validators create blocks by generating spirals
-- **Low energy**: GPU optional, CPU sufficient
-- **Accessible**: Anyone with 100 QBT can become a validator
-
-### Example Rewards
-
-```
-Scenario: Validator with 1,000 QBT stake
-
-Block Production:
-  Base reward:          50 QBT
-  Complexity bonus:    +75 QBT (1.5x)
-  Semantic bonus:      +25 QBT (1.5x)
-  Transaction fees:    +10 QBT
-  ─────────────────────────
-  Total per block:     160 QBT
-
-Staking:
-  Annual rate:         10% APR
-  Annual earnings:     100 QBT
-  ─────────────────────────
-  Total annual:        ~100 QBT (if no blocks)
-  
-If producing 1 block/day:
-  Daily:               160 QBT
-  Annual:              58,400 QBT
-  ─────────────────────────
-  Total APR:           ~5,840%
-```
-
-## 🔬 Technical Deep Dive
-
-### π-Dimensional Indexing
-
-Every entity in SpiraChain has a unique π-coordinate:
-
-```rust
-pub struct PiCoordinate {
-    pi_x: [u8; 48],  // Derived from π digits
-    pi_y: [u8; 48],  // Derived from spiral position
-    pi_z: [u8; 48],  // Derived from timestamp + nonce
-    entity_hash: Vec<u8>,
-    timestamp: u64,
-    nonce: u64,
-}
-```
-
-**Properties:**
-- **Uniqueness**: Collision probability < 2^-384
-- **Deterministic**: Same inputs = same coordinate
-- **Verifiable**: Anyone can verify the π-sequence
-- **Quantum-resistant**: Based on mathematical constants
-
-### Spiral Types
-
-SpiraChain supports 7 spiral types for different use cases:
-
-1. **Archimedean**: r = a + bθ (uniform spacing)
-2. **Logarithmic**: r = ae^(bθ) (exponential growth)
-3. **Fibonacci**: Based on golden ratio φ
-4. **Fermat**: r²θ = a² (parabolic)
-5. **Ramanujan**: Advanced mathematical spirals
-6. **Hyperbolic**: r = a/θ (decreasing)
-7. **Lituus**: r² = a²/θ (decreasing squared)
-
-### Semantic Vectors
-
-Transactions include 384-dimensional semantic vectors:
-
-```rust
-pub struct Transaction {
-    // Standard fields
-    from: Address,
-    to: Address,
-    amount: Amount,
-    
-    // Semantic fields
-    purpose: Option<String>,
-    semantic_vector: Vector384,
-    entities: Vec<String>,
-    intent: Option<String>,
-}
-```
-
-## 📚 Documentation
-
-- **[Whitepaper](whitepaper.md)** - Complete technical specification
-- **[Manifesto](manifest.md)** - Vision and principles
-- **[Architecture](ARCHITECTURE.md)** - System architecture
-- **[Rewards System](REWARDS_SYSTEM.md)** - Detailed tokenomics
-- **[Status](STATUS.md)** - Development progress
-- **[Contributing](CONTRIBUTING.md)** - Contribution guidelines
-- **[SpiraPi Wiki](crates/spirapi/wiki/)** - SpiraPi documentation
-
-## 🛠️ Development
+**Optional (for full SpiraPi integration):**
+- NumPy, mpmath, sentence-transformers
 
 ### Building from Source
 
 ```bash
-# Debug build
-cargo build
+# 1. Clone repository
+git clone https://github.com/iyotee/SpiraChain.git
+cd SpiraChain
 
-# Release build (optimized)
-cargo build --release
+# 2. Build all crates
+cargo build --workspace --release
 
-# Run tests
-cargo test --all
+# 3. Verify installation
+./target/release/spira --version
+# Output: spira 0.1.0
 
-# Check code
-cargo clippy --all-targets --all-features
-```
-
-### Running SpiraPi Standalone
-
-```bash
+# 4. (Optional) Install SpiraPi dependencies
 cd crates/spirapi
-
-# Start API server
-python -m src.api.main
-
-# Start web interface
-python -m src.web.admin_interface
-
-# Run demos
-python scripts/demo_ai_finale.py
-python scripts/demo_advanced_features.py
+pip install -r requirements.txt
+python test_engine.py  # Should show 862K+ IDs/sec
 ```
 
-## 🌐 Web Interfaces
-
-### SpiraPi API (http://localhost:8000)
-- Interactive API documentation
-- Real-time π calculation
-- Sequence generation
-- Semantic indexing
-
-### SpiraPi Admin (http://localhost:8081)
-- Database management
-- Schema explorer
-- Query interface
-- System statistics
-
-## 🔐 Security
-
-SpiraChain implements multiple layers of security:
-
-1. **Post-Quantum Cryptography**
-   - XMSS for signatures (quantum-resistant)
-   - Kyber-1024 for encryption (lattice-based)
-
-2. **π-Based Identifiers**
-   - Mathematically unique
-   - Collision-resistant
-   - Verifiable
-
-3. **Network Security**
-   - LibP2P with encryption
-   - Peer reputation system
-   - DDoS protection
-
-4. **Consensus Security**
-   - Slashing for misbehavior
-   - Reputation scoring
-   - Byzantine fault tolerance
-
-## 🚢 Deployment
-
-### Docker (Recommended)
-
-```bash
-# Build image
-docker build -t spirachain .
-
-# Run node
-docker run -p 8000:8000 -p 8081:8081 spirachain
-```
-
-### Kubernetes
-
-```bash
-cd crates/spirapi/k8s
-kubectl apply -f namespace.yaml
-kubectl apply -f persistent-volumes.yaml
-kubectl apply -f configmap.yaml
-kubectl apply -f secret.yaml
-kubectl apply -f deployment.yaml
-kubectl apply -f services.yaml
-kubectl apply -f ingress.yaml
-```
-
-## 📈 Performance
-
-### SpiraPi Benchmarks
-
-- **ID Generation**: 50,000+ IDs/sec
-- **π Calculation**: 10,000 digits in <1 sec
-- **Semantic Indexing**: 15ms per transaction
-- **Spiral Queries**: 100ms average
-
-### SpiraChain Benchmarks
-
-- **Block Time**: 60 seconds (target)
-- **TPS**: 1,000+ transactions per second
-- **Finality**: 3 blocks (~3 minutes)
-- **Storage**: ~10GB per year (full node)
-
-## 🤝 Contributing
-
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-### Areas for Contribution
-
-- Core blockchain features
-- AI/ML models
-- SpiraPi enhancements
-- Documentation
-- Testing
-- UI/UX improvements
-
-## 📄 License
-
-This project is licensed under the **Creative Commons Attribution-ShareAlike 4.0 International License** (CC BY-SA 4.0).
-
-See [LICENSE](LICENSE) for details.
-
-## 👥 Authors & Credits
-
-### Original Concept & Vision
-- **Satoshiba** - Original concepto post-quantum blockchain revolution
-- **Petaflot** ([@engrenage](https://x.com/engrenage) | [@petaflot](https://github.com/petaflot)) - π-dimensional indexation concept & semantic-fractal database vision
-
-### SpiraChain Development
-- **Qbitum Team** - Blockchain implementation & integration
-
-### SpiraPi Development
-- **Jérémy Noverraz** - Core implementation (1988-2025)
-
-### Community
-- Open-source contributors worldwide
-
-See [CREDITS.md](crates/spirapi/CREDITS.md) for detailed acknowledgments.
-
-## 🔗 Links
-
-- **Repository**: [github.com/iyotee/Qbitum](https://github.com/iyotee/Qbitum)
-- **SpiraPi**: [github.com/iyotee/SpiraPi](https://github.com/iyotee/SpiraPi)
-- **Issues**: [github.com/iyotee/Qbitum/issues](https://github.com/iyotee/Qbitum/issues)
-
-## 🎉 Getting Help
-
-- **Documentation**: Start with the [whitepaper](whitepaper.md)
-- **Issues**: Report bugs on GitHub
-- **Discussions**: Join our community (coming soon)
+**Build time:** ~60 seconds (first build), ~2 seconds (incremental)  
+**Binary size:** 3.66 MB
 
 ---
 
-**SpiraChain: Where Mathematics Meets Intelligence**
+## 📚 Usage Guide
 
-*A Post-Quantum Revolution in Blockchain Technology*
+### Wallet Management
 
-Powered by **SpiraPi** - The World's First Semantic-Fractal Database
+#### Create a New Wallet
+```bash
+./target/release/spira wallet new --output my_wallet.json
+```
+
+**What you get:**
+- **Address:** Your public blockchain address (like a bank account number)
+- **Public Key:** Used to verify your signatures
+- **Secret Key:** Your private key—NEVER share this!
+
+#### Check Wallet Address
+```bash
+./target/release/spira wallet address --wallet my_wallet.json
+```
+
+#### Check Balance (Coming Soon)
+```bash
+./target/release/spira wallet balance --address 0x04c54...15af2
+```
+
+---
+
+### Transactions
+
+#### Send QBT Tokens
+```bash
+./target/release/spira tx send \
+  --from sender_wallet.json \
+  --to 0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb \
+  --amount 100.0 \
+  --purpose "Payment for services"
+```
+
+**Parameters:**
+- `--from`: Your wallet file
+- `--to`: Recipient address (0x...)
+- `--amount`: Amount in QBT (supports decimals)
+- `--purpose`: (Optional) Human-readable description
+
+**Output:**
+```json
+{
+  "from": "0x04c54d4ff68ac6ec0584a18bfa7e699bc83a3a4dd681fd3b79b4c6e871715af2",
+  "to": "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb",
+  "amount": 100.0,
+  "fee": 0.001,
+  "hash": "0x9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+  "timestamp": 1697155200
+}
+```
+
+#### Query Transaction
+```bash
+./target/release/spira query tx --hash 0x9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+```
+
+#### Query Block
+```bash
+./target/release/spira query block --height 12345
+```
+
+---
+
+### Running a Node
+
+#### Initialize Node
+```bash
+./target/release/spira init --data-dir ~/.spirachain
+```
+
+#### Start Full Node
+```bash
+./target/release/spira node start --full
+```
+
+**Full nodes:**
+- ✅ Validate all blocks
+- ✅ Store complete blockchain
+- ✅ Serve data to light clients
+- ❌ Don't produce blocks (not validators)
+
+#### Start Light Node
+```bash
+./target/release/spira node start --light
+```
+
+**Light nodes:**
+- ✅ Verify block headers only
+- ✅ Use SPV proofs
+- ✅ Low storage (~100 MB)
+- ⚡ Fast sync
+
+---
+
+### Becoming a Validator
+
+Validators produce blocks and earn rewards. Here's how to become one:
+
+#### 1. **Requirements**
+- **Stake:** Minimum 10,000 QBT
+- **Hardware:** 4+ CPU cores, 8 GB RAM, 100 GB SSD
+- **Network:** Static IP, open port 30333
+- **Uptime:** 99%+ recommended
+
+#### 2. **Register as Validator**
+```bash
+./target/release/spira validator register \
+  --wallet validator_wallet.json \
+  --stake 10000 \
+  --commission 5.0
+```
+
+**Parameters:**
+- `--stake`: Amount to stake (min 10,000 QBT)
+- `--commission`: Your fee percentage (0-10%)
+
+#### 3. **Start Validator Node**
+```bash
+./target/release/spira node start \
+  --validator \
+  --wallet validator_wallet.json
+```
+
+#### 4. **Monitor Your Validator**
+```bash
+./target/release/spira validator info --address 0x04c54...15af2
+```
+
+**Rewards:**
+- **Base reward:** 50 QBT/block
+- **Geometry bonus:** 0-250 QBT (spiral complexity)
+- **Semantic bonus:** 0-150 QBT (transaction coherence)
+- **Fees:** All transaction fees in block
+- **Total:** Up to 450+ QBT per block!
+
+---
+
+## 🥧 Raspberry Pi Node Setup
+
+**Turn your Raspberry Pi into a SpiraChain node and earn rewards!**
+
+### Hardware Requirements
+
+**Minimum:**
+- Raspberry Pi 4 (4 GB RAM)
+- 128 GB microSD card (or SSD recommended)
+- Stable internet connection
+- Power supply
+
+**Recommended:**
+- Raspberry Pi 4/5 (8 GB RAM)
+- 256 GB SSD with USB adapter
+- Ethernet connection (not WiFi)
+- UPS for power backup
+
+### Step-by-Step Installation
+
+#### 1. **Prepare Raspberry Pi**
+```bash
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install dependencies
+sudo apt install -y git curl build-essential libssl-dev pkg-config
+
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source $HOME/.cargo/env
+
+# Install Python
+sudo apt install -y python3 python3-pip
+```
+
+#### 2. **Clone and Build SpiraChain**
+```bash
+# Clone repository
+cd ~
+git clone https://github.com/iyotee/SpiraChain.git
+cd SpiraChain
+
+# Build (this will take 10-15 minutes on Pi 4)
+cargo build --release
+
+# Verify
+./target/release/spira --version
+```
+
+#### 3. **Create Validator Wallet**
+```bash
+./target/release/spira wallet new --output ~/validator_wallet.json
+
+# IMPORTANT: Backup this file!
+cp ~/validator_wallet.json ~/validator_wallet_backup.json
+```
+
+#### 4. **Configure Node**
+```bash
+# Create data directory
+mkdir -p ~/.spirachain
+
+# Initialize node
+./target/release/spira init --data-dir ~/.spirachain
+```
+
+#### 5. **Start Node as Service**
+
+Create systemd service file:
+```bash
+sudo nano /etc/systemd/system/spirachain.service
+```
+
+Add this content:
+```ini
+[Unit]
+Description=SpiraChain Validator Node
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/SpiraChain
+ExecStart=/home/pi/SpiraChain/target/release/spira node start --validator --wallet /home/pi/validator_wallet.json
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+```bash
+sudo systemctl enable spirachain
+sudo systemctl start spirachain
+
+# Check status
+sudo systemctl status spirachain
+
+# View logs
+sudo journalctl -u spirachain -f
+```
+
+#### 6. **Monitor Your Node**
+```bash
+# Check node status
+./target/release/spira node status
+
+# Check validator info
+./target/release/spira validator info --address YOUR_ADDRESS
+
+# Check rewards
+./target/release/spira wallet balance --address YOUR_ADDRESS
+```
+
+### Performance Tips for Raspberry Pi
+
+**1. Use SSD instead of SD card**
+```bash
+# Boot from SSD (faster, more reliable)
+# https://www.raspberrypi.org/documentation/hardware/raspberrypi/bootmodes/msd.md
+```
+
+**2. Optimize memory**
+```bash
+# Add swap (for 4 GB model)
+sudo dphys-swapfile swapoff
+sudo nano /etc/dphys-swapfile
+# Set: CONF_SWAPSIZE=4096
+sudo dphys-swapfile setup
+sudo dphys-swapfile swapon
+```
+
+**3. Overclock (optional, Pi 4)**
+```bash
+sudo nano /boot/config.txt
+# Add:
+over_voltage=6
+arm_freq=2000
+```
+
+**4. Monitor temperature**
+```bash
+watch -n 1 vcgencmd measure_temp
+# Keep < 70°C (add heatsink or fan if needed)
+```
+
+### Troubleshooting
+
+**Node won't start:**
+```bash
+# Check logs
+sudo journalctl -u spirachain -n 100
+
+# Check disk space
+df -h
+
+# Check memory
+free -h
+```
+
+**Slow performance:**
+```bash
+# Use SSD
+# Add more swap
+# Check network: ping google.com
+```
+
+**Out of memory:**
+```bash
+# Upgrade to 8 GB Raspberry Pi
+# Or run light node instead:
+./target/release/spira node start --light
+```
+
+### Rewards on Raspberry Pi
+
+**As a validator:**
+- ✅ Earn 50-450 QBT per block
+- ✅ Low power consumption (~5-10W)
+- ✅ 24/7 operation
+- 💰 ROI: ~6-12 months (depends on QBT price)
+
+**Energy cost:**
+- Power: 5-10W
+- Monthly: ~$1-2 USD
+- **Much cheaper than Bitcoin mining!**
+
+---
+
+## 🌐 Network Information
+
+### Mainnet (Not Yet Launched)
+- **Chain ID:** 314159
+- **Block Time:** 60 seconds
+- **RPC:** Coming soon
+- **Explorer:** Coming soon
+
+### Testnet (Coming Soon)
+- **Chain ID:** 271828
+- **Block Time:** 30 seconds
+- **RPC:** `https://testnet-rpc.spirachain.org`
+- **Explorer:** `https://testnet-explorer.spirachain.org`
+- **Faucet:** `https://faucet.spirachain.org`
+
+---
+
+## 💰 Tokenomics (Qubitum - QBT)
+
+### Token Economics
+
+| Property | Value |
+|----------|-------|
+| **Token Name** | Qubitum |
+| **Symbol** | QBT |
+| **Initial Supply** | 21,000,000 QBT |
+| **Max Supply** | Dynamic (based on semantic complexity) |
+| **Decimals** | 18 |
+| **Block Reward** | 50 QBT (base) + bonuses |
+| **Halving** | Every 210,000 blocks (~4 years) |
+
+### Reward Structure
+
+**Base Block Reward:** 50 QBT
+
+**Bonuses:**
+- **Geometric Bonus:** 0-250 QBT
+  - Based on spiral complexity
+  - Higher for Ramanujan > Fibonacci > Logarithmic
+- **Semantic Bonus:** 0-150 QBT
+  - Based on transaction coherence
+  - Rewards meaningful transactions
+- **Transaction Fees:** All fees in block
+
+**Total per block:** Up to 450+ QBT
+
+### Distribution
+
+- **Genesis:** 21,000,000 QBT
+- **Validators:** 60% (block rewards)
+- **Development:** 15% (vested 4 years)
+- **Community:** 15% (ecosystem grants)
+- **Reserve:** 10% (protocol treasury)
+
+[Full tokenomics details](docs/REWARDS_SYSTEM.md)
+
+---
+
+## 🛠️ Technology Stack
+
+### Core
+- **Rust** - Systems programming language
+- **Python** - SpiraPi engine
+- **Sled** - Embedded database
+- **LibP2P** - P2P networking
+
+### Cryptography
+- **XMSS** - Post-quantum signatures
+- **Ed25519** - Classical signatures (dev/testing)
+- **Kyber-1024** - Lattice-based encryption
+- **Blake3** - Cryptographic hashing
+
+### AI & Semantic
+- **Sentence Transformers** - Text embeddings
+- **HNSW** - Vector similarity search
+- **HDBSCAN** - Pattern clustering
+- **spaCy/BERT** - NER and intent classification
+
+### Web & API
+- **Warp** - Web framework
+- **WebSockets** - Real-time updates
+- **JSON-RPC** - Standard blockchain API
+
+---
+
+## 📁 Project Structure
+
+```
+SpiraChain/
+├── crates/
+│   ├── core/           # Core types (Block, Transaction, Spiral)
+│   ├── crypto/         # XMSS, Ed25519, Blake3
+│   ├── spirapi-bridge/ # Rust-Python bridge
+│   ├── consensus/      # Proof of Spiral
+│   ├── semantic/       # AI semantic layer
+│   ├── network/        # LibP2P networking
+│   ├── node/           # Validator, Full, Light nodes
+│   ├── api/            # REST API server
+│   ├── vm/             # SpiraVM (smart contracts)
+│   └── cli/            # Command-line tool
+├── docs/               # Technical documentation
+├── assets/             # Logo and media
+├── whitepaper.md       # Technical specification
+├── manifest.md         # Vision and philosophy
+└── README.md           # This file
+```
+
+---
+
+## 🗓️ Roadmap
+
+### Phase 1: Foundation ✅ (Complete)
+- [x] Core blockchain structures
+- [x] Post-quantum cryptography (XMSS)
+- [x] SpiraPi π-dimensional indexing
+- [x] Proof of Spiral consensus
+- [x] CLI tool
+- [x] Full compilation
+
+### Phase 2: Network 🟡 (In Progress)
+- [ ] Active P2P network
+- [ ] Node discovery and sync
+- [ ] Block propagation
+- [ ] Transaction gossip
+- [ ] Light client support
+
+### Phase 3: Semantic Layer (Q1 2026)
+- [ ] Real AI model integration
+- [ ] Pattern detection live
+- [ ] Narrative tracking
+- [ ] Entity extraction
+- [ ] Schema evolution
+
+### Phase 4: Production (Q2 2026)
+- [ ] Testnet launch
+- [ ] Security audit
+- [ ] Performance optimization
+- [ ] Block explorer
+- [ ] Web wallet
+
+### Phase 5: Mainnet (Q3 2026)
+- [ ] Mainnet launch
+- [ ] Exchange listings
+- [ ] DeFi integrations
+- [ ] Smart contracts (SpiraVM)
+- [ ] Ecosystem growth
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! SpiraChain is open-source and community-driven.
+
+**How to contribute:**
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+**Areas we need help:**
+- 🦀 Rust development (consensus, networking)
+- 🐍 Python optimization (SpiraPi performance)
+- 🔐 Security audits
+- 📝 Documentation
+- 🎨 UI/UX design
+- 🌍 Translations
+
+[Full contributing guidelines](CONTRIBUTING.md)
+
+---
+
+## 👥 Credits
+
+### Original Conceptors
+- **Satoshiba** - Quantum-resistant blockchain vision
+- **Petaflop** - π-dimensional indexing concept
+
+### Core Team
+- Lead Developer
+- SpiraPi Engine
+- Consensus Design
+- Semantic Layer
+
+### Technology
+- Rust Community
+- LibP2P Team
+- XMSS Research
+- Open Source Contributors
+
+[Full credits](CREDITS.md)
+
+---
+
+## 📄 License
+
+This project is licensed under **Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)**.
+
+You are free to:
+- ✅ Share - Copy and redistribute
+- ✅ Adapt - Remix and build upon
+- ✅ Commercial use allowed
+
+Under these terms:
+- 📝 Attribution - Give appropriate credit
+- 🔄 ShareAlike - Distribute under same license
+
+[Full license text](LICENSE)
+
+---
+
+## 📞 Contact & Community
+
+- **GitHub:** [https://github.com/iyotee/SpiraChain](https://github.com/iyotee/SpiraChain)
+- **Website:** Coming soon
+- **Discord:** Coming soon
+- **Twitter:** Coming soon
+- **Email:** contact@spirachain.org
+
+---
+
+## 🌟 Star us on GitHub!
+
+If you find SpiraChain interesting, please ⭐ star this repository to show your support!
+
+---
+
+<div align="center">
+
+**Built with 🌀 by the SpiraChain Community**
+
+*The future is post-quantum, semantic, and geometrically beautiful.*
+
+[Get Started](#-quick-start-5-minutes) • [Documentation](docs/) • [Whitepaper](whitepaper.md)
+
+</div>
