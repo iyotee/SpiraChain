@@ -12,6 +12,7 @@ blake3.workspace = true
 rand.workspace = true
 thiserror.workspace = true
 ed25519-dalek.workspace = true
+tracing.workspace = true
 sha2 = "0.10"
 pqcrypto-kyber = "0.8"
 pqcrypto-traits = "0.3"
