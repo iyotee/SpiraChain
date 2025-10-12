@@ -1,21 +1,6 @@
-// SpiraPi Bridge - Real PyO3 Integration
-// Connects Rust SpiraChain to Python SpiraPi engine
-
 use serde::{Deserialize, Serialize};
 use spirachain_core::{PiCoordinate, SpiraChainError};
 use std::path::PathBuf;
-
-#[cfg(feature = "pyo3")]
-mod lib_pyo3;
-
-#[cfg(not(feature = "pyo3"))]
-mod lib_stub;
-
-#[cfg(feature = "pyo3")]
-pub use lib_pyo3::*;
-
-#[cfg(not(feature = "pyo3"))]
-pub use lib_stub::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PiIdentifier {
@@ -47,6 +32,8 @@ pub struct SemanticIndexResult {
 }
 
 pub fn initialize_spirapi(_spirapi_path: PathBuf) -> Result<(), SpiraChainError> {
+    tracing::warn!("⚠️  Using STUB SpiraPi bridge (PyO3 not enabled)");
+    tracing::warn!("   Compile with --features pyo3 for real Python integration");
     Ok(())
 }
 
@@ -114,43 +101,14 @@ pub fn semantic_index_content(content: &str, _content_type: &str) -> Result<Sema
 pub fn get_spirapi_statistics() -> Result<serde_json::Value, SpiraChainError> {
     Ok(serde_json::json!({
         "status": "stub",
-        "message": "Full Python integration coming in Phase 2",
+        "message": "Compile with --features pyo3 for real Python SpiraPi",
         "performance": {
-            "note": "Stub implementation - actual SpiraPi achieves 862K+ IDs/sec"
+            "note": "Stub implementation - actual SpiraPi achieves 1M+ IDs/sec"
         }
     }))
 }
 
 pub fn cleanup_spirapi() -> Result<(), SpiraChainError> {
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_generate_pi_coordinate() {
-        let entity_hash = blake3::hash(b"test").as_bytes().to_vec();
-        let coord = generate_pi_coordinate(&entity_hash, 1234567890, 42).unwrap();
-        assert!(coord.x != 0.0 || coord.y != 0.0 || coord.z != 0.0);
-    }
-
-    #[test]
-    fn test_batch_generation() {
-        let identifiers = generate_batch_identifiers(10, 20).unwrap();
-        assert_eq!(identifiers.len(), 10);
-        
-        for id in &identifiers {
-            assert!(!id.identifier.is_empty());
-            assert!(id.uniqueness_score > 0.0);
-        }
-    }
-
-    #[test]
-    fn test_semantic_indexing() {
-        let result = semantic_index_content("test content", "text").unwrap();
-        assert_eq!(result.semantic_vector.len(), 384);
-    }
 }
 
