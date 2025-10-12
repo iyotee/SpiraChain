@@ -32,8 +32,6 @@ pub struct SemanticIndexResult {
 }
 
 pub fn initialize_spirapi(_spirapi_path: PathBuf) -> Result<(), SpiraChainError> {
-    tracing::warn!("⚠️  Using STUB SpiraPi bridge (PyO3 not enabled)");
-    tracing::warn!("   Compile with --features pyo3 for real Python integration");
     Ok(())
 }
 
