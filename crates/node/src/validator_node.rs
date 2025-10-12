@@ -173,7 +173,6 @@ impl ValidatorNode {
         info!("✅ Block {} produced successfully!", block.header.block_height);
         info!("   Hash: {}", block.hash());
         info!("   Transactions: {}", block.header.tx_count);
-        info!("   Complexity: {:.3}", block.spiral.metadata.complexity);
 
         Ok(())
     }

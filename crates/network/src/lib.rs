@@ -1,10 +1,12 @@
 pub mod p2p;
 pub mod protocol;
 pub mod sync;
+pub mod encryption;
 
 pub use p2p::*;
 pub use protocol::*;
 pub use sync::*;
+pub use encryption::*;
 
 use spirachain_core::{Block, Transaction, Result};
 

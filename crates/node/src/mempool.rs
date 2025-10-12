@@ -75,6 +75,10 @@ impl Mempool {
         self.transactions.read().len()
     }
 
+    pub fn get_all_transactions(&self) -> Vec<Transaction> {
+        self.transactions.read().values().cloned().collect()
+    }
+
     pub fn clear(&self) {
         self.transactions.write().clear();
         self.pending_queue.write().clear();

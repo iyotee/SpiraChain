@@ -14,6 +14,8 @@ pub enum NetworkMessage {
     PeerInfo { peer_count: usize, chain_height: u64 },
     Ping,
     Pong,
+    KeyExchange { public_key: Vec<u8>, ciphertext: Vec<u8> },
+    EncryptedMessage { peer_id: String, data: Vec<u8> },
 }
 
 impl NetworkMessage {
