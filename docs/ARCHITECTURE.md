@@ -62,12 +62,13 @@ Qbitum/
 
 ### 3. SpiraPi (`crates/spirapi`)
 
-**Responsibility**: π-dimensional indexing engine
+**Responsibility**: π-dimensional indexing engine (Python-based, 1M+ IDs/sec)
 
 **Key Files:**
-- `pi_calculator.rs`: Chudnovsky, Machin, Ramanujan algorithms
-- `indexer.rs`: π-ID generation and verification
-- `constants.rs`: High-precision π, e, φ constants
+- `src/math_engine/pi_sequences.py`: Chudnovsky, Machin, Ramanujan algorithms
+- `src/ai/semantic_indexer.py`: AI semantic indexing with 384D embeddings
+- `src/storage/spirapi_database.py`: Adaptive schema storage system
+- Bridge: `crates/spirapi-bridge/src/lib.rs` (Rust-Python integration)
 
 **Mathematics:**
 - **Chudnovsky Algorithm**: Primary π calculation

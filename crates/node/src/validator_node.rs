@@ -26,7 +26,7 @@ impl ValidatorNode {
         
         let validator = Validator {
             address,
-            pubkey: keypair.public_key(),
+            pubkey: keypair.public_key().as_bytes().to_vec(),
             stake: Amount::new(10_000 * 10u128.pow(18)),
             locked_until: 0,
             rewards_earned: Amount::new(0),
@@ -186,11 +186,9 @@ impl ValidatorNode {
         let balance = state.get_balance(&tx.from);
         drop(state);
 
-        if balance < tx.amount + tx.fee {
-            return Err(spirachain_core::SpiraChainError::InsufficientBalance(
-                balance,
-                tx.amount + tx.fee
-            ));
+        let required = Amount::new(tx.amount.value() + tx.fee.value());
+        if balance < required {
+            return Err(spirachain_core::SpiraChainError::InsufficientBalance);
         }
 
         self.mempool.add_transaction(tx)?;
