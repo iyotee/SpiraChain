@@ -42,7 +42,7 @@ impl ValidatorNode {
         info!("🚀 Starting SpiraChain Validator Node");
         info!("   Address: {}", self.keypair.to_address());
         info!("   Stake: {}", self.validator.stake);
-        info!("   Data dir: {}", &self.config.data_dir);
+        info!("   Data dir: {}", self.config.data_dir.display());
 
         *self.is_running.write() = true;
 
