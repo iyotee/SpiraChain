@@ -112,7 +112,10 @@ impl ValidatorNode {
     async fn produce_block(&mut self) -> Result<()> {
         info!("🏗️  Producing new block...");
 
-        let pending_txs = self.mempool.get_transactions(1000);
+        let pending_txs = self.mempool.get_all_transactions()
+            .into_iter()
+            .take(1000)
+            .collect::<Vec<_>>();
         let state = self.state.read();
         let current_height = state.current_height();
         drop(state);
@@ -127,14 +130,16 @@ impl ValidatorNode {
         info!("   Transactions: {}", pending_txs.len());
 
         let block = if let Some(prev_block) = previous_block {
-            self.consensus.generate_block(
-                &prev_block,
-                pending_txs.clone(),
+            self.consensus.generate_block_candidate(
+                &self.validator,
                 &self.keypair,
+                pending_txs.clone(),
+                &prev_block,
             )?
         } else {
             info!("   Creating genesis block");
-            let genesis = spirachain_core::create_genesis_block()?;
+            let config = spirachain_core::GenesisConfig::default();
+            let genesis = spirachain_core::create_genesis_block(&config);
             genesis
         };
 
