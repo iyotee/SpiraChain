@@ -1,4 +1,4 @@
-use spirachain_core::{Result, SpiraChainError, Address};
+use spirachain_core::{Address};
 use serde::{Deserialize, Serialize};
 use ed25519_dalek::{Signer, Verifier};
 use rand::rngs::OsRng;

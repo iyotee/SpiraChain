@@ -1,4 +1,4 @@
-use spirachain_core::{Result, SpiraChainError};
+// Signature types for different cryptographic schemes
 use crate::{KeyPair, PublicKey, XmssKeyPair, XmssSignature};
 use serde::{Deserialize, Serialize};
 
