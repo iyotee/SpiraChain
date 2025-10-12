@@ -46,7 +46,7 @@ pub async fn handle_node_start(validator_mode: bool, wallet_path: Option<String>
         info!("✅ Validator loaded");
         info!("   Address: {}", validator.address);
 
-        let mut node = ValidatorNode::new(config, keypair, validator)?;
+        let mut node = ValidatorNode::new(config, keypair)?;
         
         info!("🎬 Starting validator node...");
         node.start().await?;

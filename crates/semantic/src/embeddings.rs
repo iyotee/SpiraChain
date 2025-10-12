@@ -16,9 +16,7 @@ impl EmbeddingGenerator {
     pub async fn encode(&self, text: &str) -> Result<Vec<f32>> {
         match spirapi_bridge::semantic_index_content(text, "text") {
             Ok(result) => Ok(result.semantic_vector),
-            Err(_) => {
-                Ok(vec![0.0; self.dimensions])
-            }
+            Err(_) => Ok(vec![0.0; self.dimensions]),
         }
     }
 
