@@ -1,4 +1,4 @@
-use spirachain_core::{Block, Transaction, Result, SpiraChainError, Hash};
+use spirachain_core::{Block, Transaction, Result, SpiraChainError, Hash, Amount};
 use spirachain_crypto::KeyPair;
 use spirachain_consensus::{ProofOfSpiral, Validator};
 use crate::{NodeConfig, Mempool, WorldState, BlockStorage};
@@ -42,7 +42,7 @@ impl ValidatorNode {
         info!("🚀 Starting SpiraChain Validator Node");
         info!("   Address: {}", self.keypair.to_address());
         info!("   Stake: {}", self.validator.stake);
-        info!("   Data dir: {}", self.config.data_dir);
+        info!("   Data dir: {}", &self.config.data_dir);
 
         *self.is_running.write() = true;
 
