@@ -1,0 +1,16 @@
+[package]
+name = "spirachain-crypto"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+spirachain-core = { path = "../core" }
+serde.workspace = true
+blake3.workspace = true
+rand.workspace = true
+thiserror.workspace = true
+ed25519-dalek.workspace = true
+sha2 = "0.10"
+

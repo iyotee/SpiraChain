@@ -1,0 +1,12 @@
+[package]
+name = "spirachain-vm"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+spirachain-core = { path = "../core" }
+serde.workspace = true
+anyhow.workspace = true
+

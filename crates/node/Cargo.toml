@@ -1,0 +1,19 @@
+[package]
+name = "spirachain-node"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+spirachain-core = { path = "../core" }
+spirachain-crypto = { path = "../crypto" }
+spirachain-consensus = { path = "../consensus" }
+spirachain-network = { path = "../network" }
+spirachain-semantic = { path = "../semantic" }
+tokio.workspace = true
+serde.workspace = true
+tracing.workspace = true
+anyhow.workspace = true
+rocksdb.workspace = true
+

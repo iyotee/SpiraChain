@@ -1,0 +1,18 @@
+[package]
+name = "spirachain-consensus"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+spirachain-core = { path = "../core" }
+spirachain-crypto = { path = "../crypto" }
+spirapi-bridge = { path = "../spirapi-bridge" }
+serde.workspace = true
+serde_json.workspace = true
+blake3.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+

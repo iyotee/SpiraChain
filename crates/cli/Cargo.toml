@@ -1,0 +1,25 @@
+[package]
+name = "spirachain-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "spira"
+path = "src/main.rs"
+
+[dependencies]
+spirachain-core = { path = "../core" }
+spirachain-crypto = { path = "../crypto" }
+spirapi-bridge = { path = "../spirapi-bridge" }
+spirachain-consensus = { path = "../consensus" }
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+clap = { version = "4.4", features = ["derive"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true
+anyhow.workspace = true
+hex.workspace = true
+
