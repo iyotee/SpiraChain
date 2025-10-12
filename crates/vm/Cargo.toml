@@ -9,4 +9,5 @@ license.workspace = true
 spirachain-core = { path = "../core" }
 serde.workspace = true
 anyhow.workspace = true
+tracing.workspace = true
 

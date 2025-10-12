@@ -120,32 +120,7 @@ impl PythonSpiraPiEngine {
                 .extract(py)
                 .ok();
 
-            let pi_bytes = hex::decode(blake3::hash(pi_sequence.as_bytes()).as_bytes())
-                .map_err(|e| SpiraChainError::Internal(format!("Failed to decode pi bytes: {}", e)))?;
-            let mut pi_x = [0u8; 48];
-            let mut pi_y = [0u8; 48];
-            let mut pi_z = [0u8; 48];
-
-            let len = pi_bytes.len().min(16);
-            pi_x[..len].copy_from_slice(&pi_bytes[..len]);
-            if let Some(spiral) = spiral_component {
-                let spiral_bytes = blake3::hash(spiral.as_bytes());
-                let spiral_slice = spiral_bytes.as_bytes();
-                let spiral_len = spiral_slice.len().min(16);
-                pi_y[..spiral_len].copy_from_slice(&spiral_slice[..spiral_len]);
-            }
-
-            let nonce_bytes = nonce.to_le_bytes();
-            pi_z[..8].copy_from_slice(&nonce_bytes);
-
-            Ok(PiCoordinate {
-                pi_x,
-                pi_y,
-                pi_z,
-                entity_hash: entity_hash.to_vec(),
-                timestamp,
-                nonce,
-            })
+            Ok(PiCoordinate::from_hash_timestamp(entity_hash, timestamp, nonce))
         })
         .map_err(|e: PyErr| SpiraChainError::Internal(format!("Failed to generate pi coordinate: {}", e)))
     }

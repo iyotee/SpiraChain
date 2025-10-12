@@ -56,6 +56,9 @@ pub enum SpiraChainError {
     #[error("Insufficient evidence")]
     InsufficientEvidence,
 
+    #[error("Internal error: {0}")]
+    Internal(String),
+
     #[error(transparent)]
     Other(#[from] anyhow::Error),
 }

@@ -1,4 +1,4 @@
-use spirachain_core::{Address};
+use spirachain_core::{Address, Result};
 use serde::{Deserialize, Serialize};
 use ed25519_dalek::{Signer, Verifier};
 use rand::rngs::OsRng;
@@ -82,12 +82,9 @@ impl PublicKey {
             Err(_) => return false,
         };
 
-        let signature = match ed25519_dalek::Signature::from_bytes(&sig_bytes) {
-            Ok(sig) => sig,
-            Err(_) => return false,
-        };
+        let sig = ed25519_dalek::Signature::from_bytes(&sig_bytes);
 
-        verifying_key.verify(message, &signature).is_ok()
+        verifying_key.verify(message, &sig).is_ok()
     }
 
     pub fn as_bytes(&self) -> &[u8; 32] {

@@ -72,6 +72,27 @@ impl PiCoordinate {
         let dt = self.t - other.t;
         (dx * dx + dy * dy + dz * dz + dt * dt).sqrt()
     }
+    
+    pub fn from_hash_timestamp(entity_hash: &[u8], timestamp: u64, nonce: u64) -> Self {
+        let hash = blake3::hash(entity_hash);
+        let hash_bytes = hash.as_bytes();
+        
+        let x = f64::from_le_bytes([
+            hash_bytes[0], hash_bytes[1], hash_bytes[2], hash_bytes[3],
+            hash_bytes[4], hash_bytes[5], hash_bytes[6], hash_bytes[7],
+        ]);
+        let y = f64::from_le_bytes([
+            hash_bytes[8], hash_bytes[9], hash_bytes[10], hash_bytes[11],
+            hash_bytes[12], hash_bytes[13], hash_bytes[14], hash_bytes[15],
+        ]);
+        let z = f64::from_le_bytes([
+            hash_bytes[16], hash_bytes[17], hash_bytes[18], hash_bytes[19],
+            hash_bytes[20], hash_bytes[21], hash_bytes[22], hash_bytes[23],
+        ]);
+        let t = (timestamp ^ nonce) as f64;
+        
+        Self { x, y, z, t }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
