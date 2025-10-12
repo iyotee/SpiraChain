@@ -60,6 +60,15 @@ enum Commands {
         #[arg(short, long, default_value = "1000")]
         precision: usize,
     },
+    
+    #[command(about = "Start SpiraChain node")]
+    Node {
+        #[arg(long)]
+        validator: bool,
+        
+        #[arg(long)]
+        wallet: Option<String>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -214,6 +223,10 @@ async fn main() -> anyhow::Result<()> {
         Commands::Calculate { constant: _, precision } => {
             let cmd = calculate::CalculateCommand::Pi { precision };
             calculate::handle_calculate_command(cmd);
+        }
+        
+        Commands::Node { validator, wallet } => {
+            node::handle_node_start(validator, wallet).await?;
         }
     }
 
