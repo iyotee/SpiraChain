@@ -4,4 +4,4 @@ pub mod websocket;
 
 pub use rest::RestServer;
 pub use handlers::*;
-pub use websocket::WebSocketServer;
+pub use websocket::*;
