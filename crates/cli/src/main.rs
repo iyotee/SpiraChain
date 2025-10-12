@@ -148,7 +148,7 @@ enum TxCommands {
         to: String,
         
         #[arg(short, long)]
-        amount: u64,
+        amount: String,
         
         #[arg(short, long)]
         purpose: Option<String>,
