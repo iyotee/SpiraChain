@@ -42,7 +42,7 @@ impl ValidatorNode {
         info!("🚀 Starting SpiraChain Validator Node");
         info!("   Address: {}", self.keypair.to_address());
         info!("   Stake: {}", self.validator.stake);
-        info!("   Data dir: {}", &self.config.data_dir);
+        info!("   Data dir: {}", self.config.data_dir);
 
         *self.is_running.write() = true;
 
@@ -67,7 +67,7 @@ impl ValidatorNode {
             
             for allocation in &genesis_config.genesis_transactions {
                 let mut state = self.state.write();
-                state.set_balance(allocation.recipient, allocation.amount);
+                state.set_balance(allocation.recipient, Amount::new(allocation.amount));
             }
             
             info!("✅ Genesis block created");
