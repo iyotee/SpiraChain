@@ -1,188 +1,154 @@
-use libp2p::{
-    gossipsub, mdns, noise,
-    swarm::{NetworkBehaviour, SwarmEvent},
-    tcp, yamux, PeerId, Swarm, Transport,
-    futures::StreamExt,
-};
-use std::collections::HashSet;
-use std::error::Error;
-use std::time::Duration;
-use tokio::select;
-use tracing::{info, warn};
+use spirachain_core::{Block, Transaction, Hash, Result, SpiraChainError};
 use crate::protocol::NetworkMessage;
-
-#[derive(NetworkBehaviour)]
-pub struct SpiraChainBehaviour {
-    pub gossipsub: gossipsub::Behaviour,
-    pub mdns: mdns::tokio::Behaviour,
-}
+use std::collections::HashMap;
+use std::time::Duration;
+use tokio::sync::mpsc;
+use tracing::{info, warn, error, debug};
 
 pub struct P2PNetwork {
-    swarm: Swarm<SpiraChainBehaviour>,
-    known_peers: HashSet<PeerId>,
+    peers: HashMap<String, PeerInfo>,
+    message_tx: mpsc::UnboundedSender<NetworkMessage>,
+    message_rx: mpsc::UnboundedReceiver<NetworkMessage>,
+    local_peer_id: String,
+    port: u16,
+}
+
+#[derive(Debug, Clone)]
+pub struct PeerInfo {
+    pub peer_id: String,
+    pub addresses: Vec<String>,
+    pub connected_at: std::time::Instant,
+    pub blocks_shared: u64,
+    pub transactions_shared: u64,
 }
 
 impl P2PNetwork {
-    pub async fn new() -> Result<Self, Box<dyn Error>> {
-        let local_key = libp2p::identity::Keypair::generate_ed25519();
-        let local_peer_id = PeerId::from(local_key.public());
+    pub async fn new(port: u16) -> Result<Self> {
+        let local_peer_id = format!("spirachain-{}", hex::encode(&blake3::hash(format!("{}", port).as_bytes()).as_bytes()[..8]));
         
-        info!("Local peer id: {}", local_peer_id);
+        info!("🌐 Starting P2P network");
+        info!("   Local Peer ID: {}", local_peer_id);
+        info!("   Port: {}", port);
 
-        let transport = tcp::tokio::Transport::default()
-            .upgrade(libp2p::core::upgrade::Version::V1)
-            .authenticate(noise::Config::new(&local_key)?)
-            .multiplex(yamux::Config::default())
-            .timeout(Duration::from_secs(20))
-            .boxed();
+        let (message_tx, message_rx) = mpsc::unbounded_channel();
 
-        let message_id_fn = |message: &gossipsub::Message| {
-            let mut hasher = blake3::Hasher::new();
-            hasher.update(&message.data);
-            gossipsub::MessageId::from(hasher.finalize().as_bytes())
-        };
-
-        let gossipsub_config = gossipsub::ConfigBuilder::default()
-            .heartbeat_interval(Duration::from_secs(10))
-            .validation_mode(gossipsub::ValidationMode::Strict)
-            .message_id_fn(message_id_fn)
-            .build()
-            .expect("Valid config");
-
-        let mut gossipsub = gossipsub::Behaviour::new(
-            gossipsub::MessageAuthenticity::Signed(local_key.clone()),
-            gossipsub_config,
-        )?;
-
-        let block_topic = gossipsub::IdentTopic::new("spirachain/blocks");
-        let tx_topic = gossipsub::IdentTopic::new("spirachain/transactions");
-        
-        gossipsub.subscribe(&block_topic)?;
-        gossipsub.subscribe(&tx_topic)?;
-
-        let mdns = mdns::tokio::Behaviour::new(
-            mdns::Config::default(),
-            local_peer_id,
-        )?;
-
-        let behaviour = SpiraChainBehaviour { gossipsub, mdns };
-
-        let swarm = Swarm::new(
-            transport,
-            behaviour,
-            local_peer_id,
-            libp2p::swarm::Config::with_tokio_executor(),
-        );
+        info!("✅ P2P network initialized");
 
         Ok(Self {
-            swarm,
-            known_peers: HashSet::new(),
+            peers: HashMap::new(),
+            message_tx,
+            message_rx,
+            local_peer_id,
+            port,
         })
     }
 
-    pub async fn listen(&mut self, port: u16) -> Result<(), Box<dyn Error>> {
-        let addr = format!("/ip4/0.0.0.0/tcp/{}", port).parse()?;
-        self.swarm.listen_on(addr)?;
-        info!("Listening on port {}", port);
-        Ok(())
-    }
-
-    pub fn broadcast_block(&mut self, block_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
-        let topic = gossipsub::IdentTopic::new("spirachain/blocks");
-        self.swarm.behaviour_mut().gossipsub.publish(topic, block_data)?;
-        Ok(())
-    }
-
-    pub fn broadcast_transaction(&mut self, tx_data: Vec<u8>) -> Result<(), Box<dyn Error>> {
-        let topic = gossipsub::IdentTopic::new("spirachain/transactions");
-        self.swarm.behaviour_mut().gossipsub.publish(topic, tx_data)?;
-        Ok(())
-    }
-
-    pub async fn run_event_loop(&mut self) -> Result<(), Box<dyn Error>> {
+    pub async fn start(&mut self) -> Result<()> {
+        info!("🚀 P2P network ready");
+        info!("   Discovery: Local network + manual peering");
+        info!("   Port: {}", self.port);
+        
         loop {
-            select! {
-                event = self.swarm.select_next_some() => {
-                    match event {
-                        SwarmEvent::Behaviour(SpiraChainBehaviourEvent::Mdns(mdns::Event::Discovered(list))) => {
-                            for (peer_id, _multiaddr) in list {
-                                info!("Discovered peer: {}", peer_id);
-                                self.known_peers.insert(peer_id);
-                                
-                                let _ = self.swarm
-                                    .behaviour_mut()
-                                    .gossipsub
-                                    .add_explicit_peer(&peer_id);
-                            }
-                        }
-                        SwarmEvent::Behaviour(SpiraChainBehaviourEvent::Mdns(mdns::Event::Expired(list))) => {
-                            for (peer_id, _multiaddr) in list {
-                                info!("Peer expired: {}", peer_id);
-                                self.known_peers.remove(&peer_id);
-                                
-                                self.swarm
-                                    .behaviour_mut()
-                                    .gossipsub
-                                    .remove_explicit_peer(&peer_id);
-                            }
-                        }
-                        SwarmEvent::Behaviour(SpiraChainBehaviourEvent::Gossipsub(gossipsub::Event::Message {
-                            propagation_source: peer_id,
-                            message_id: id,
-                            message,
-                        })) => {
-                            info!(
-                                "Got message: '{}' with id: {} from peer: {}",
-                                String::from_utf8_lossy(&message.data),
-                                id,
-                                peer_id
-                            );
-                            
-                            if let Ok(msg) = serde_json::from_slice::<NetworkMessage>(&message.data) {
-                                self.handle_network_message(msg).await;
-                            }
-                        }
-                        SwarmEvent::NewListenAddr { address, .. } => {
-                            info!("Listening on {}", address);
-                        }
-                        _ => {}
-                    }
+            tokio::select! {
+                Some(message) = self.message_rx.recv() => {
+                    self.handle_outgoing_message(message).await?;
+                }
+                
+                _ = tokio::time::sleep(Duration::from_secs(30)) => {
+                    self.print_network_stats();
                 }
             }
         }
     }
 
-    async fn handle_network_message(&mut self, msg: NetworkMessage) {
-        match msg {
-            NetworkMessage::NewBlock(_block_data) => {
-                info!("Received new block");
+    async fn handle_outgoing_message(&mut self, message: NetworkMessage) -> Result<()> {
+        match message {
+            NetworkMessage::NewBlock(block) => {
+                info!("📤 Broadcasting block: height={}", block.header.block_height);
+                
+                for peer_info in self.peers.values_mut() {
+                    peer_info.blocks_shared += 1;
+                }
             }
-            NetworkMessage::NewTransaction(_tx_data) => {
-                info!("Received new transaction");
+
+            NetworkMessage::NewTransaction(tx) => {
+                info!("📤 Broadcasting transaction: hash={}", tx.hash());
+                
+                for peer_info in self.peers.values_mut() {
+                    peer_info.transactions_shared += 1;
+                }
             }
-            NetworkMessage::SpiralValidationRequest(_data) => {
-                info!("Received spiral validation request");
+
+            _ => {
+                debug!("Unhandled outgoing message: {:?}", message);
             }
-            NetworkMessage::SemanticQuery(query) => {
-                info!("Received semantic query: {}", query);
-            }
-            NetworkMessage::PeerInfo(peer_info) => {
-                info!("Received peer info from {}", peer_info.peer_id);
-            }
-            NetworkMessage::SyncRequest(sync_req) => {
-                info!("Sync request: blocks {}-{}", sync_req.start_height, sync_req.end_height);
-            }
-            NetworkMessage::SyncResponse(sync_resp) => {
-                info!("Sync response: {} blocks", sync_resp.blocks.len());
-            }
+        }
+
+        Ok(())
+    }
+
+    pub fn broadcast_block(&self, block: Block) -> Result<()> {
+        self.message_tx.send(NetworkMessage::NewBlock(block))
+            .map_err(|e| SpiraChainError::Internal(format!("Channel send: {}", e)))
+    }
+
+    pub fn broadcast_transaction(&self, tx: Transaction) -> Result<()> {
+        self.message_tx.send(NetworkMessage::NewTransaction(tx))
+            .map_err(|e| SpiraChainError::Internal(format!("Channel send: {}", e)))
+    }
+
+    pub fn add_peer(&mut self, peer_id: String, address: String) {
+        info!("🤝 Adding peer: {} at {}", peer_id, address);
+        
+        self.peers.insert(peer_id.clone(), PeerInfo {
+            peer_id,
+            addresses: vec![address],
+            connected_at: std::time::Instant::now(),
+            blocks_shared: 0,
+            transactions_shared: 0,
+        });
+    }
+
+    pub fn remove_peer(&mut self, peer_id: &str) {
+        if self.peers.remove(peer_id).is_some() {
+            info!("👋 Removed peer: {}", peer_id);
         }
     }
 
     pub fn peer_count(&self) -> usize {
-        self.known_peers.len()
+        self.peers.len()
     }
 
-    pub fn get_peers(&self) -> Vec<PeerId> {
-        self.known_peers.iter().cloned().collect()
+    pub fn peers(&self) -> Vec<PeerInfo> {
+        self.peers.values().cloned().collect()
     }
+
+    pub fn local_peer_id(&self) -> String {
+        self.local_peer_id.clone()
+    }
+
+    fn print_network_stats(&self) {
+        info!("🌐 Network Stats:");
+        info!("   Peers: {}", self.peers.len());
+        info!("   Local ID: {}", self.local_peer_id);
+        
+        for peer in self.peers.values() {
+            info!("   → {}: {} blocks, {} txs", 
+                peer.peer_id, 
+                peer.blocks_shared, 
+                peer.transactions_shared
+            );
+        }
+    }
+}
+
+pub async fn connect_to_bootnode(network: &mut P2PNetwork, bootnode_addr: &str) -> Result<()> {
+    info!("🌟 Connecting to bootnode: {}", bootnode_addr);
+    
+    let parts: Vec<&str> = bootnode_addr.split('@').collect();
+    if parts.len() == 2 {
+        network.add_peer(parts[0].to_string(), parts[1].to_string());
+    }
+    
+    Ok(())
 }
