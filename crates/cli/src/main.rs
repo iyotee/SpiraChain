@@ -211,8 +211,9 @@ async fn main() -> anyhow::Result<()> {
             genesis::handle_genesis(output).await?;
         }
         
-        Commands::Calculate { constant, precision } => {
-            calculate::handle_calculate(constant, precision).await?;
+        Commands::Calculate { constant: _, precision } => {
+            let cmd = calculate::CalculateCommand::Pi { precision };
+            calculate::handle_calculate_command(cmd);
         }
     }
 

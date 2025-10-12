@@ -1,6 +1,6 @@
 use spirachain_core::{Block, Transaction, Spiral, SpiralType, SpiralMetadata, Hash, PiCoordinate, Result, SpiraChainError, Amount};
 use spirachain_crypto::KeyPair;
-use spirapi::PiIndexer;
+use spirapi_bridge;
 use crate::{Validator, ValidatorSet, RewardCalculator};
 use std::collections::HashMap;
 
@@ -46,8 +46,8 @@ impl ProofOfSpiral {
         let nonce = self.find_nonce(&block)?;
         block.header.nonce = nonce;
 
-        let signature = keypair.sign(&block.hash().as_bytes());
-        block.header.signature = signature;
+        let signature_bytes = keypair.sign(block.hash().as_bytes());
+        block.header.signature = signature_bytes;
 
         Ok(block)
     }
@@ -165,19 +165,16 @@ impl ProofOfSpiral {
     }
 
     fn generate_block_coordinates(&self, previous_block: &Block, spiral: &Spiral) -> Result<PiCoordinate> {
-        let indexer = PiIndexer::new(spirapi::DEFAULT_PRECISION);
-        
-        let block_data = [
-            previous_block.hash().as_bytes(),
-            &spiral.hash().as_bytes()
-        ].concat();
+        let mut block_data = Vec::new();
+        block_data.extend_from_slice(previous_block.hash().as_bytes());
+        block_data.extend_from_slice(spiral.hash().as_bytes());
 
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
-            .as_millis() as u64;
+            .as_secs();
 
-        let coords = indexer.generate_id(&block_data, timestamp, 0);
+        let coords = spirapi_bridge::generate_pi_coordinate(&block_data, timestamp, 0)?;
         
         Ok(coords)
     }
@@ -205,7 +202,7 @@ impl ProofOfSpiral {
     fn find_nonce(&self, block: &Block) -> Result<u64> {
         let target = block.header.difficulty_target;
         
-        for nonce in 0..1_000_000 {
+        for nonce in 0u64..1_000_000 {
             let hash_input = [
                 &block.header.spiral_root.as_bytes()[..],
                 &nonce.to_be_bytes(),

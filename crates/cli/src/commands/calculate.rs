@@ -1,33 +1,36 @@
-use anyhow::Result;
-use spirapi::PiCalculator;
+use clap::Subcommand;
+use spirapi_bridge;
 
-pub async fn handle_calculate(constant: String, precision: u32) -> Result<()> {
-    println!("🔢 Calculating {} with precision {}...\n", constant, precision);
-    
-    let calculator = PiCalculator::new(precision);
-    
-    match constant.to_lowercase().as_str() {
-        "pi" | "π" => {
-            let pi = calculator.chudnovsky();
-            println!("π = {}", pi);
-            
-            let machin = calculator.machin();
-            println!("\nVerification (Machin formula): {}", machin);
-        }
-        "e" => {
-            let e = spirapi::compute_e(precision);
-            println!("e = {}", e);
-        }
-        "phi" | "φ" => {
-            let phi = spirapi::compute_phi(precision);
-            println!("φ (golden ratio) = {}", phi);
-        }
-        _ => {
-            println!("Unknown constant: {}", constant);
-            println!("Available: pi, e, phi");
-        }
-    }
-    
-    Ok(())
+#[derive(Subcommand)]
+pub enum CalculateCommand {
+    Pi {
+        #[arg(long, default_value = "1000")]
+        precision: usize,
+    },
 }
 
+pub fn handle_calculate_command(cmd: CalculateCommand) {
+    match cmd {
+        CalculateCommand::Pi { precision } => {
+            println!("Calculating π to {} decimal places...", precision);
+            
+            let start = std::time::Instant::now();
+            
+            match spirapi_bridge::calculate_pi(precision, "CHUDNOVSKY") {
+                Ok(result) => {
+                    let elapsed = start.elapsed();
+                    
+                    println!("\n✓ Calculation complete in {:?}", elapsed);
+                    println!("  Algorithm: {}", result.algorithm);
+                    println!("  Value: {}", result.value);
+                    println!("  Precision: {} digits", result.precision);
+                    println!("  Computation time: {:.6}s", result.computation_time);
+                    println!("  Iterations: {}", result.iterations);
+                }
+                Err(e) => {
+                    eprintln!("Error calculating π: {}", e);
+                }
+            }
+        }
+    }
+}
