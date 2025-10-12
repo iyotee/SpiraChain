@@ -36,7 +36,7 @@ impl Mempool {
         txs.insert(tx_hash, tx);
         queue.push_back(tx_hash);
         
-        tracing::info!("Added transaction {} to mempool", hex::encode(&tx_hash));
+        tracing::info!("Added transaction {} to mempool", hex::encode(tx_hash.as_bytes()));
         
         Ok(())
     }

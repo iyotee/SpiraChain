@@ -43,6 +43,12 @@ impl From<blake3::Hash> for Hash {
     }
 }
 
+impl From<[u8; 32]> for Hash {
+    fn from(bytes: [u8; 32]) -> Self {
+        Self(bytes)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
 pub struct PiCoordinate {
     pub x: f64,
