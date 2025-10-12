@@ -1,4 +1,5 @@
 use spirachain_core::Result;
+use spirapi_bridge;
 
 pub struct EmbeddingGenerator {
     model_name: String,
@@ -14,7 +15,12 @@ impl EmbeddingGenerator {
     }
 
     pub async fn encode(&self, text: &str) -> Result<Vec<f32>> {
-        Ok(vec![0.0; self.dimensions])
+        match spirapi_bridge::semantic_index_content(text, "text") {
+            Ok(result) => Ok(result.semantic_vector),
+            Err(_) => {
+                Ok(vec![0.0; self.dimensions])
+            }
+        }
     }
 
     pub fn cosine_similarity(&self, a: &[f32], b: &[f32]) -> f64 {
@@ -31,6 +37,30 @@ impl EmbeddingGenerator {
         }
 
         (dot_product / (magnitude_a * magnitude_b)) as f64
+    }
+
+    pub async fn encode_batch(&self, texts: &[&str]) -> Result<Vec<Vec<f32>>> {
+        let mut results = Vec::with_capacity(texts.len());
+        
+        for text in texts {
+            let embedding = self.encode(text).await?;
+            results.push(embedding);
+        }
+        
+        Ok(results)
+    }
+
+    pub fn find_similar(&self, query: &[f32], candidates: &[Vec<f32>], top_k: usize) -> Vec<(usize, f64)> {
+        let mut similarities: Vec<(usize, f64)> = candidates
+            .iter()
+            .enumerate()
+            .map(|(idx, candidate)| (idx, self.cosine_similarity(query, candidate)))
+            .collect();
+
+        similarities.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+        similarities.truncate(top_k);
+        
+        similarities
     }
 }
 
@@ -59,5 +89,19 @@ mod tests {
         let similarity = generator.cosine_similarity(&a, &b);
         assert!((similarity - 1.0).abs() < 1e-6);
     }
-}
 
+    #[test]
+    fn test_find_similar() {
+        let generator = EmbeddingGenerator::default();
+        let query = vec![1.0, 0.0, 0.0];
+        let candidates = vec![
+            vec![1.0, 0.0, 0.0],
+            vec![0.0, 1.0, 0.0],
+            vec![0.8, 0.6, 0.0],
+        ];
+        
+        let results = generator.find_similar(&query, &candidates, 2);
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].0, 0);
+    }
+}

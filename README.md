@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="assets/logo.png" alt="SpiraChain Logo" width="400">
+
 **The World's First Post-Quantum Semantic Blockchain**
 
 Powered by **SpiraPi** π-Dimensional Indexation System
