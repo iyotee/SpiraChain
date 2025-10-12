@@ -1,5 +1,4 @@
 use spirachain_core::Result;
-use spirapi_bridge;
 
 pub struct EmbeddingGenerator {
     model_name: String,
