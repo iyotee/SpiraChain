@@ -65,10 +65,8 @@ impl LightNode {
         let mut current = *tx_hash;
         
         for sibling in proof {
-            let mut hasher = blake3::Hasher::new();
-            hasher.update(current.as_bytes());
-            hasher.update(sibling.as_bytes());
-            current = Hash::from(hasher.finalize());
+            let combined = [current.as_bytes(), sibling.as_bytes()].concat();
+            current = Hash::from(blake3::hash(&combined));
         }
         
         current
