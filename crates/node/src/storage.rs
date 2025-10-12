@@ -189,4 +189,8 @@ impl BlockStorage {
     pub fn get_chain_height(&self) -> Result<u64> {
         self.storage.get_chain_height()
     }
+    
+    pub fn get_transaction(&self, hash: &Hash) -> Result<Option<Transaction>> {
+        self.storage.get_transaction(hash)
+    }
 }

@@ -192,18 +192,4 @@ impl ValidatorNode {
     }
 }
 
-pub struct NodeConfig {
-    pub data_dir: String,
-    pub network_port: u16,
-    pub api_port: u16,
-}
-
-impl Default for NodeConfig {
-    fn default() -> Self {
-        Self {
-            data_dir: "./data".to_string(),
-            network_port: 9000,
-            api_port: 8080,
-        }
-    }
-}
+// NodeConfig moved to lib.rs to avoid duplication

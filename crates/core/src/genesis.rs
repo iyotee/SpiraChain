@@ -249,3 +249,10 @@ mod tests {
     }
 }
 
+pub fn create_genesis_block(config: &GenesisConfig) -> Block {
+    let mut block = Block::new(Hash::zero(), 0);
+    block.header.timestamp = config.timestamp;
+    block.header.version = config.version as u32;
+    block
+}
+

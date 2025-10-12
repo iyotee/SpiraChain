@@ -62,6 +62,10 @@ impl Mempool {
         
         tracing::info!("Removed {} transactions from mempool", tx_hashes.len());
     }
+    
+    pub fn remove_transaction(&self, tx_hash: &Hash) {
+        self.remove_transactions(&[*tx_hash]);
+    }
 
     pub fn get_transaction(&self, hash: &Hash) -> Option<Transaction> {
         self.transactions.read().get(hash).cloned()
