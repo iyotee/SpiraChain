@@ -100,8 +100,11 @@ impl XmssKeyPair {
         let reconstructed_leaf = self.wots_verify(&signature.wots_signature, message);
 
         // Verify the auth path from this leaf to the root
-        let computed_root =
-            self.verify_auth_path(&reconstructed_leaf, &signature.auth_path, signature.index as usize);
+        let computed_root = self.verify_auth_path(
+            &reconstructed_leaf,
+            &signature.auth_path,
+            signature.index as usize,
+        );
 
         computed_root == self.public_key.root
     }
@@ -235,20 +238,20 @@ impl XmssKeyPair {
 
         // Reconstruct the WOTS public key from the signature
         let mut public_key_parts = Vec::new();
-        
+
         for (i, &byte) in msg_hash.iter().enumerate() {
             // Extract the signature chunk for this position (32 bytes each)
             let sig_start = i * 32;
             let sig_end = sig_start + 32;
-            
+
             if sig_end > signature.len() {
                 // Invalid signature length
                 return [0u8; 32];
             }
-            
+
             let mut chain_value = [0u8; 32];
             chain_value.copy_from_slice(&signature[sig_start..sig_end]);
-            
+
             // Continue chain hashing from 'byte' to 255 to get the public key
             let remaining_iterations = 255 - byte;
             for _ in 0..remaining_iterations {
@@ -257,7 +260,7 @@ impl XmssKeyPair {
                 let hash_result = next_hasher.finalize();
                 chain_value.copy_from_slice(&hash_result);
             }
-            
+
             // This should now be the public key part for position i
             public_key_parts.extend_from_slice(&chain_value);
         }
@@ -267,7 +270,7 @@ impl XmssKeyPair {
         final_hasher.update(&public_key_parts);
         final_hasher.update(&self.public_key.pub_seed);
         let result = final_hasher.finalize();
-        
+
         let mut leaf = [0u8; 32];
         leaf.copy_from_slice(&result);
         leaf
