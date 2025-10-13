@@ -29,8 +29,12 @@ class SpiraChainBenchmark:
         """Measure transactions per second"""
         print("📊 Benchmark 1: Measuring TPS...")
         print(f"   Duration: {duration_seconds}s")
+        print("   ⏳ Waiting for first block production cycle (70s)...")
         
-        # Pour testnet actuel: mesurer production de blocs
+        # Attendre que le 1er bloc soit produit (60s + marge)
+        time.sleep(70)
+        
+        # PUIS mesurer production de blocs
         start_time = time.time()
         start_blocks = self.count_blocks()
         

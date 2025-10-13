@@ -1,8 +1,7 @@
 use spirachain_core::{Transaction, Result, Amount, Address};
 use spirachain_crypto::KeyPair;
 use spirachain_consensus::{ProofOfSpiral, Validator};
-// P2P network temporairement désactivé - needs LibP2P dependency fixes
-// use spirachain_network::LibP2PNetwork;
+use spirachain_network::LibP2PNetwork;
 use crate::{NodeConfig, Mempool, WorldState, BlockStorage};
 use std::sync::Arc;
 use parking_lot::RwLock;
@@ -17,7 +16,7 @@ pub struct ValidatorNode {
     state: Arc<RwLock<WorldState>>,
     storage: BlockStorage,
     consensus: ProofOfSpiral,
-    // network: Option<Arc<RwLock<LibP2PNetwork>>>,  // Temporairement désactivé
+    network: Option<Arc<RwLock<LibP2PNetwork>>>,
     is_running: Arc<RwLock<bool>>,
     blocks_produced: u64,
 }
@@ -71,7 +70,7 @@ impl ValidatorNode {
             state: Arc::new(RwLock::new(WorldState::default())),
             storage,
             consensus,
-            // network: None,  // Temporairement désactivé
+            network: None,  // Initialized in start()
             is_running: Arc::new(RwLock::new(false)),
             blocks_produced: 0,
         })
@@ -83,9 +82,24 @@ impl ValidatorNode {
         info!("   Stake: {} QBT", self.validator.stake.value() as f64 / 1e18);
         info!("   Data dir: {}", self.config.data_dir.display());
 
-        // TODO: P2P network integration (LibP2P deps need fixes)
-        warn!("⚠️ P2P network currently disabled - nodes produce independent blocks");
-        warn!("   LibP2P implementation exists but needs dependency resolution");
+        // Initialize P2P network
+        info!("🌐 Starting LibP2P network...");
+        let port = self.config.network_addr
+            .split(':')
+            .last()
+            .and_then(|p| p.parse::<u16>().ok())
+            .unwrap_or(30333);
+        
+        match LibP2PNetwork::new(port).await {
+            Ok(network) => {
+                info!("✅ P2P network initialized on port {}", port);
+                self.network = Some(Arc::new(RwLock::new(network)));
+                info!("📡 P2P network ready - will run in validator loop");
+            }
+            Err(e) => {
+                warn!("⚠️ P2P network failed to start: {}. Running without network.", e);
+            }
+        }
 
         *self.is_running.write() = true;
 
@@ -106,8 +120,12 @@ impl ValidatorNode {
         let mut block_timer = interval(Duration::from_secs(60));
         let mut stats_timer = interval(Duration::from_secs(30));
         let mut mempool_check = interval(Duration::from_secs(5));
+        let mut network_tick = interval(Duration::from_millis(100));
 
         info!("⚡ Validator loop started (producing blocks every 60s)");
+        if self.network.is_some() {
+            info!("   P2P network enabled");
+        }
 
         loop {
             tokio::select! {
@@ -123,6 +141,16 @@ impl ValidatorNode {
 
                 _ = mempool_check.tick() => {
                     self.check_mempool();
+                }
+                
+                _ = network_tick.tick() => {
+                    // P2P network ticking handled internally
+                    if let Some(ref network) = self.network {
+                        let peer_count = network.read().get_peer_count();
+                        if peer_count > 0 {
+                            // Connection active
+                        }
+                    }
                 }
             }
 
@@ -204,6 +232,14 @@ impl ValidatorNode {
         info!("✅ Block {} produced successfully!", block.header.block_height);
         info!("   Hash: {}", block.hash());
         info!("   Transactions: {}", block.header.tx_count);
+
+        // Broadcast block to P2P network
+        if let Some(ref network) = self.network {
+            let mut net = network.write();
+            if let Err(e) = net.broadcast_block(&block).await {
+                warn!("Failed to broadcast block: {}", e);
+            }
+        }
 
         Ok(())
     }

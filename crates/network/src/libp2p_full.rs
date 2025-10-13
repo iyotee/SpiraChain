@@ -1,10 +1,11 @@
 use libp2p::{
-    gossipsub::{self, MessageId, GossipsubEvent, MessageAuthenticity, ValidationMode, GossipsubConfigBuilder, IdentTopic},
-    mdns::{self, tokio::Behaviour as MdnsBehaviour, MdnsEvent},
-    kad::{self, KademliaEvent, store::MemoryStore, KademliaConfig},
+    gossipsub::{self, MessageId, Event as GossipsubEvent, MessageAuthenticity, ValidationMode, ConfigBuilder as GossipsubConfigBuilder, IdentTopic},
+    mdns::tokio::Behaviour as Mdns,
+    mdns::Event as MdnsEvent,
+    kad::{self, Event as KademliaEvent, store::MemoryStore, Config as KademliaConfig},
     swarm::{NetworkBehaviour, SwarmEvent, Swarm, SwarmBuilder},
-    identity, PeerId, Multiaddr, Transport, core::upgrade,
-    tcp::TcpConfig, noise::NoiseConfig, yamux::YamuxConfig,
+    identity, PeerId, Multiaddr,
+    noise, yamux, tcp, core::upgrade,
 };
 use spirachain_core::{Block, Transaction, Result, SpiraChainError};
 use crate::protocol::NetworkMessage;

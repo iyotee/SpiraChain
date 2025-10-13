@@ -79,3 +79,4 @@ check_db.py
 testnet_data/
 testnet_logs/
 benchmark_results.json
+test_p2p_data/
