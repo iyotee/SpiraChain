@@ -126,7 +126,10 @@ impl ValidatorNode {
         let latest_block = self.storage.get_latest_block()?;
         if let Some(block) = latest_block {
             info!("   Latest block: {}", block.header.block_height);
-            self.state.write().await.set_height(block.header.block_height);
+            self.state
+                .write()
+                .await
+                .set_height(block.header.block_height);
         } else {
             info!("   No blocks yet - will create genesis");
         }
