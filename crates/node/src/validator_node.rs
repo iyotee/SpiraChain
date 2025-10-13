@@ -109,7 +109,10 @@ impl ValidatorNode {
                         e
                     );
                 } else {
-                    self.network = Some(Arc::new(RwLock::new(network)));
+                    #[allow(clippy::arc_with_non_send_sync)]
+                    {
+                        self.network = Some(Arc::new(RwLock::new(network)));
+                    }
                     info!("📡 P2P network ready - will poll in validator loop");
                 }
             }
