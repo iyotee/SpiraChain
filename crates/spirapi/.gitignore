@@ -1,0 +1,12 @@
+# SpiraPi runtime data
+data/
+pi_schemas.db/
+scripts/data/
+app.log
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
