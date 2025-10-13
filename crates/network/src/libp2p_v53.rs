@@ -22,10 +22,11 @@ pub struct LibP2PNetwork {
     block_topic: gossipsub::IdentTopic,
     tx_topic: gossipsub::IdentTopic,
     is_listening: bool,
+    listen_port: u16,
 }
 
 impl LibP2PNetwork {
-    pub async fn new(_port: u16) -> Result<Self> {
+    pub async fn new(port: u16) -> Result<Self> {
         info!("🌐 Initializing LibP2P Network (v0.53 - Gossipsub only)");
 
         // Generate keypair
@@ -73,6 +74,7 @@ impl LibP2PNetwork {
             block_topic,
             tx_topic,
             is_listening: false,
+            listen_port: port,
         })
     }
 
@@ -82,8 +84,8 @@ impl LibP2PNetwork {
             return Ok(());
         }
 
-        // Listen on all interfaces
-        let listen_addr: Multiaddr = "/ip4/0.0.0.0/tcp/9000"
+        // Listen on all interfaces with the specified port
+        let listen_addr: Multiaddr = format!("/ip4/0.0.0.0/tcp/{}", self.listen_port)
             .parse()
             .map_err(|e| SpiraChainError::NetworkError(format!("Invalid addr: {}", e)))?;
 
@@ -102,7 +104,7 @@ impl LibP2PNetwork {
             .map_err(|e| SpiraChainError::NetworkError(format!("Subscribe tx: {}", e)))?;
 
         self.is_listening = true;
-        info!("✅ P2P network listening on port 9000");
+        info!("✅ P2P network listening on port {}", self.listen_port);
 
         // Discover and connect to bootstrap peers
         info!("🔍 Discovering bootstrap peers...");

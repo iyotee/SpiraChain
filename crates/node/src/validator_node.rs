@@ -102,8 +102,8 @@ impl ValidatorNode {
             Ok(mut network) => {
                 info!("✅ P2P network created");
 
-                // Initialize listening
-                if let Err(e) = network.initialize() {
+                // Initialize listening with bootstrap
+                if let Err(e) = network.initialize_with_bootstrap().await {
                     warn!(
                         "⚠️ P2P initialization failed: {}. Running without network.",
                         e
