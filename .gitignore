@@ -76,3 +76,6 @@ data/
 *.log
 *_wallet.json
 check_db.py
+testnet_data/
+testnet_logs/
+benchmark_results.json

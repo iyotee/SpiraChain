@@ -68,6 +68,9 @@ enum Commands {
         
         #[arg(long)]
         wallet: Option<String>,
+        
+        #[arg(long)]
+        data_dir: Option<String>,
     },
 }
 
@@ -225,8 +228,8 @@ async fn main() -> anyhow::Result<()> {
             calculate::handle_calculate_command(cmd);
         }
         
-        Commands::Node { validator, wallet } => {
-            node::handle_node_start(validator, wallet).await?;
+        Commands::Node { validator, wallet, data_dir } => {
+            node::handle_node_start(validator, wallet, data_dir).await?;
         }
     }
 

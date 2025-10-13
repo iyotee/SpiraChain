@@ -6,13 +6,16 @@ use spirachain_core::Amount;
 use std::fs;
 use tracing::info;
 
-pub async fn handle_node_start(validator_mode: bool, wallet_path: Option<String>) -> Result<()> {
+pub async fn handle_node_start(validator_mode: bool, wallet_path: Option<String>, data_dir: Option<String>) -> Result<()> {
     let _ = tracing_subscriber::fmt::try_init();
     
     info!("🚀 Starting SpiraChain Node");
     info!("   Mode: {}", if validator_mode { "Validator" } else { "Full Node" });
 
-    let config = NodeConfig::default();
+    let mut config = NodeConfig::default();
+    if let Some(dir) = data_dir {
+        config.data_dir = std::path::PathBuf::from(dir);
+    }
 
     if validator_mode {
         let wallet_file = wallet_path.as_deref().unwrap_or("validator_wallet.json");

@@ -87,15 +87,17 @@ function Create-Wallets {
 function Start-Node {
     param([int]$NodeId, [int]$Port, [int]$MetricsPort, [string]$DataDir, [bool]$IsValidator)
     
-    Write-Info "Starting node $NodeId on port $Port..."
+    Write-Info "Starting node $NodeId on port $Port (Validator: $IsValidator)..."
     
-    # Build command
-    $cmd = "./target/release/spira.exe node --validator --wallet $DataDir/validator.json"
-    
-    # Command already includes validator and wallet
+    # Build command with proper flags, data-dir, and logging
+    if ($IsValidator) {
+        $cmd = "./target/release/spira.exe node --validator --wallet $DataDir/validator.json --data-dir $DataDir 2>&1 | Out-File -FilePath $LOG_DIR/node_$NodeId.log"
+    } else {
+        $cmd = "./target/release/spira.exe node --wallet $DataDir/validator.json --data-dir $DataDir 2>&1 | Out-File -FilePath $LOG_DIR/node_$NodeId.log"
+    }
     
     # Start node in background
-    $process = Start-Process -FilePath "powershell" -ArgumentList "-Command", "cd '$PWD'; $cmd" -PassThru -WindowStyle Hidden
+    $process = Start-Process -FilePath "powershell" -ArgumentList "-NoProfile", "-Command", "cd '$PWD'; $cmd" -PassThru -WindowStyle Hidden
     
     # Save PID
     $process.Id | Out-File -FilePath "$LOG_DIR/node_$NodeId.pid" -Encoding ASCII
@@ -110,12 +112,9 @@ function Start-AllNodes {
     for ($i = 1; $i -le $NUM_NODES; $i++) {
         $port = $BASE_PORT + $i - 1
         $metricsPort = $BASE_METRICS_PORT + $i - 1
-        $isValidator = $false
         
-        # First node is validator
-        if ($i -eq 1) {
-            $isValidator = $true
-        }
+        # All nodes are validators for now (full node not yet implemented)
+        $isValidator = $true
         
         Start-Node -NodeId $i -Port $port -MetricsPort $metricsPort -DataDir "$DATA_DIR/node_$i" -IsValidator $isValidator
         
