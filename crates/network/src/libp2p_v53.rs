@@ -4,14 +4,13 @@
 use futures::StreamExt;
 use libp2p::{
     gossipsub,
-    identity::Keypair,
-    mdns, noise,
+    identity::Keypair, noise,
     swarm::{Swarm, SwarmEvent},
     tcp, yamux, Multiaddr, PeerId,
 };
 use spirachain_core::{Block, Result, SpiraChainError, Transaction};
 use std::collections::HashSet;
-use tracing::{error, info, warn};
+use tracing::{info, warn};
 
 pub struct LibP2PNetwork {
     swarm: Swarm<gossipsub::Behaviour>,

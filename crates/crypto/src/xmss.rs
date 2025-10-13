@@ -119,7 +119,7 @@ impl XmssKeyPair {
             let mut hasher = Sha256::new();
             hasher.update(prf_seed);
             hasher.update(pub_seed);
-            hasher.update(&(i as u64).to_be_bytes());
+            hasher.update((i as u64).to_be_bytes());
             let hash = hasher.finalize();
 
             let mut leaf = [0u8; 32];
@@ -163,8 +163,8 @@ impl XmssKeyPair {
 
     fn generate_wots_key(&self, index: u64) -> Vec<u8> {
         let mut hasher = Sha256::new();
-        hasher.update(&self.secret_key.prf_seed);
-        hasher.update(&index.to_be_bytes());
+        hasher.update(self.secret_key.prf_seed);
+        hasher.update(index.to_be_bytes());
         hasher.finalize().to_vec()
     }
 
@@ -178,7 +178,7 @@ impl XmssKeyPair {
             let mut hasher = Sha256::new();
             hasher.update(key);
             hasher.update(&msg_hash[i..i + 1]);
-            hasher.update(&(i as u32).to_be_bytes());
+            hasher.update((i as u32).to_be_bytes());
             signature.extend_from_slice(&hasher.finalize());
         }
 

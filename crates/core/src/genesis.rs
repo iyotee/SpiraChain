@@ -154,15 +154,19 @@ impl GenesisConfig {
             spiral_type: SpiralType::Ramanujan,
             complexity: 100.0,
             self_similarity: 1.618,
-            information_density: 3.14159,
+            information_density: std::f64::consts::PI,
             semantic_coherence: 1.0,
             geometry_data: vec![],
         };
 
         genesis_block.header.spiral = genesis_spiral;
 
-        genesis_block.header.pi_coordinates =
-            PiCoordinate::new(3.141592653589793, 2.718281828459045, 1.618033988749895, 0.0);
+        genesis_block.header.pi_coordinates = PiCoordinate::new(
+            std::f64::consts::PI,
+            std::f64::consts::E,
+            1.618033988749895, // Golden ratio
+            0.0,
+        );
 
         let mut transactions = Vec::new();
 
