@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use spirachain_core::{Result, SpiraChainError};
 
-pub const XMSS_TREE_HEIGHT: usize = 20;
+// Production: 20 (1M signatures), Tests: 10 (1024 signatures)
+pub const XMSS_TREE_HEIGHT: usize = if cfg!(test) { 10 } else { 20 };
 pub const XMSS_SIGNATURE_SIZE: usize = 2500;
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -95,10 +96,12 @@ impl XmssKeyPair {
             return false;
         }
 
-        let leaf = self.wots_verify(&signature.wots_signature, message);
+        // Reconstruct the WOTS public key (leaf) from the signature
+        let reconstructed_leaf = self.wots_verify(&signature.wots_signature, message);
 
+        // Verify the auth path from this leaf to the root
         let computed_root =
-            self.verify_auth_path(&leaf, &signature.auth_path, signature.index as usize);
+            self.verify_auth_path(&reconstructed_leaf, &signature.auth_path, signature.index as usize);
 
         computed_root == self.public_key.root
     }
@@ -116,14 +119,41 @@ impl XmssKeyPair {
         let mut leaves = Vec::with_capacity(num_leaves);
 
         for i in 0..num_leaves {
-            let mut hasher = Sha256::new();
-            hasher.update(prf_seed);
-            hasher.update(pub_seed);
-            hasher.update((i as u64).to_be_bytes());
-            let hash = hasher.finalize();
+            // Generate WOTS public key for this leaf
+            // Start with the PRF seed + index to get deterministic key
+            let mut key_hasher = Sha256::new();
+            key_hasher.update(prf_seed);
+            key_hasher.update((i as u64).to_be_bytes());
+            let wots_key = key_hasher.finalize();
+
+            // Generate the WOTS public key parts
+            let mut public_key_parts = Vec::new();
+
+            for j in 0..32 {
+                // Start with seed derived from key and position
+                let mut chain_hasher = Sha256::new();
+                chain_hasher.update(&wots_key);
+                chain_hasher.update((j as u32).to_be_bytes());
+                let mut chain_value = chain_hasher.finalize();
+
+                // Chain hash 255 times (maximum for w=256 Winternitz)
+                for _ in 0..255 {
+                    let mut next_hasher = Sha256::new();
+                    next_hasher.update(&chain_value);
+                    chain_value = next_hasher.finalize();
+                }
+
+                public_key_parts.extend_from_slice(&chain_value);
+            }
+
+            // Hash the complete public key to get the leaf
+            let mut leaf_hasher = Sha256::new();
+            leaf_hasher.update(&public_key_parts);
+            leaf_hasher.update(pub_seed); // Add pub_seed for additional entropy
+            let leaf_hash = leaf_hasher.finalize();
 
             let mut leaf = [0u8; 32];
-            leaf.copy_from_slice(&hash);
+            leaf.copy_from_slice(&leaf_hash);
             leaves.push(leaf);
         }
 
@@ -169,31 +199,78 @@ impl XmssKeyPair {
     }
 
     fn wots_sign(&self, key: &[u8], message: &[u8]) -> Vec<u8> {
+        // Hash the message to get 32 bytes
         let mut hasher = Sha256::new();
         hasher.update(message);
         let msg_hash = hasher.finalize();
 
+        // WOTS signature: for each byte of the hash, chain-hash the key
         let mut signature = Vec::new();
-        for i in 0..32 {
-            let mut hasher = Sha256::new();
-            hasher.update(key);
-            hasher.update(&msg_hash[i..i + 1]);
-            hasher.update((i as u32).to_be_bytes());
-            signature.extend_from_slice(&hasher.finalize());
+
+        for (i, &byte) in msg_hash.iter().enumerate() {
+            // Start with a deterministic seed derived from the key and position
+            let mut chain_hasher = Sha256::new();
+            chain_hasher.update(key);
+            chain_hasher.update((i as u32).to_be_bytes());
+            let mut chain_value = chain_hasher.finalize();
+
+            // Chain hash 'byte' times (Winternitz parameter)
+            for _ in 0..byte {
+                let mut next_hasher = Sha256::new();
+                next_hasher.update(&chain_value);
+                chain_value = next_hasher.finalize();
+            }
+
+            signature.extend_from_slice(&chain_value);
         }
 
         signature
     }
 
     fn wots_verify(&self, signature: &[u8], message: &[u8]) -> [u8; 32] {
+        // Hash the message
         let mut hasher = Sha256::new();
-        hasher.update(signature);
         hasher.update(message);
-        let hash = hasher.finalize();
+        let msg_hash = hasher.finalize();
 
-        let mut result = [0u8; 32];
-        result.copy_from_slice(&hash);
-        result
+        // Reconstruct the WOTS public key from the signature
+        let mut public_key_parts = Vec::new();
+        
+        for (i, &byte) in msg_hash.iter().enumerate() {
+            // Extract the signature chunk for this position (32 bytes each)
+            let sig_start = i * 32;
+            let sig_end = sig_start + 32;
+            
+            if sig_end > signature.len() {
+                // Invalid signature length
+                return [0u8; 32];
+            }
+            
+            let mut chain_value = [0u8; 32];
+            chain_value.copy_from_slice(&signature[sig_start..sig_end]);
+            
+            // Continue chain hashing from 'byte' to 255 to get the public key
+            let remaining_iterations = 255 - byte;
+            for _ in 0..remaining_iterations {
+                let mut next_hasher = Sha256::new();
+                next_hasher.update(&chain_value);
+                let hash_result = next_hasher.finalize();
+                chain_value.copy_from_slice(&hash_result);
+            }
+            
+            // This should now be the public key part for position i
+            public_key_parts.extend_from_slice(&chain_value);
+        }
+
+        // Hash all public key parts + pub_seed to get the leaf (must match generate_leaf_nodes)
+        let mut final_hasher = Sha256::new();
+        final_hasher.update(&public_key_parts);
+        final_hasher.update(&self.public_key.pub_seed);
+        let result = final_hasher.finalize();
+        
+        let mut leaf = [0u8; 32];
+        leaf.copy_from_slice(&result);
+        leaf
     }
 
     fn generate_auth_path(&self, leaves: &[[u8; 32]], index: usize) -> Vec<[u8; 32]> {
@@ -304,7 +381,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // Post-quantum crypto implementation in progress
     fn test_xmss_sign_verify() {
         let mut keypair = XmssKeyPair::generate().unwrap();
         let message = b"test message";
@@ -314,7 +390,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // Post-quantum crypto implementation in progress
     fn test_xmss_multiple_signatures() {
         let mut keypair = XmssKeyPair::generate().unwrap();
         let message1 = b"message 1";

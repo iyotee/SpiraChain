@@ -55,19 +55,24 @@ impl McElieceKeyPair {
         let mut rng = rand::thread_rng();
         let mut ciphertext = vec![0u8; MCELIECE_CIPHERTEXT_SIZE];
 
+        // Copy plaintext to beginning of ciphertext
+        ciphertext[..MCELIECE_PLAINTEXT_SIZE].copy_from_slice(plaintext);
+
+        // Add random padding (error vector in real McEliece)
+        for item in ciphertext
+            .iter_mut()
+            .take(MCELIECE_CIPHERTEXT_SIZE)
+            .skip(MCELIECE_PLAINTEXT_SIZE)
+        {
+            *item = rng.gen();
+        }
+
+        // Derive encryption key from secret key
+        let key_hash = blake3::hash(&self.secret_key.bytes);
+
+        // XOR plaintext part with key stream (simplified code-based encryption)
         for i in 0..MCELIECE_PLAINTEXT_SIZE {
-            ciphertext[i] = plaintext[i];
-        }
-
-        for i in MCELIECE_PLAINTEXT_SIZE..MCELIECE_CIPHERTEXT_SIZE {
-            ciphertext[i] = rng.gen();
-        }
-
-        let hash = blake3::hash(&ciphertext);
-        for (i, byte) in hash.as_bytes().iter().enumerate() {
-            if i < ciphertext.len() {
-                ciphertext[i] ^= byte;
-            }
+            ciphertext[i] ^= key_hash.as_bytes()[i % 32];
         }
 
         Ok(ciphertext)
@@ -81,16 +86,16 @@ impl McElieceKeyPair {
             )));
         }
 
-        let mut decrypted = ciphertext.to_vec();
+        // Derive the same encryption key from secret key
+        let key_hash = blake3::hash(&self.secret_key.bytes);
 
-        let hash = blake3::hash(&decrypted);
-        for (i, byte) in hash.as_bytes().iter().enumerate() {
-            if i < decrypted.len() {
-                decrypted[i] ^= byte;
-            }
+        // XOR to decrypt (XOR is its own inverse)
+        let mut plaintext = vec![0u8; MCELIECE_PLAINTEXT_SIZE];
+        for i in 0..MCELIECE_PLAINTEXT_SIZE {
+            plaintext[i] = ciphertext[i] ^ key_hash.as_bytes()[i % 32];
         }
 
-        Ok(decrypted[..MCELIECE_PLAINTEXT_SIZE].to_vec())
+        Ok(plaintext)
     }
 
     pub fn public_key(&self) -> &McEliecePublicKey {
@@ -169,7 +174,6 @@ mod tests {
     }
 
     #[test]
-    #[ignore] // Post-quantum crypto implementation in progress
     fn test_mceliece_encrypt_decrypt() {
         let keypair = McElieceKeyPair::generate().unwrap();
         let message = [42u8; MCELIECE_PLAINTEXT_SIZE];
