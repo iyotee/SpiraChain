@@ -1,10 +1,10 @@
 use crate::{BlockStorage, Mempool, NodeConfig, WorldState};
-use parking_lot::RwLock;
 use spirachain_consensus::{ProofOfSpiral, Validator};
 use spirachain_core::{Address, Amount, Result, Transaction};
 use spirachain_crypto::KeyPair;
 use spirachain_network::LibP2PNetwork;
 use std::sync::Arc;
+use tokio::sync::RwLock;
 use tokio::time::{interval, Duration};
 use tracing::{error, info, warn};
 
@@ -109,10 +109,7 @@ impl ValidatorNode {
                         e
                     );
                 } else {
-                    #[allow(clippy::arc_with_non_send_sync)]
-                    {
-                        self.network = Some(Arc::new(RwLock::new(network)));
-                    }
+                    self.network = Some(Arc::new(RwLock::new(network)));
                     info!("📡 P2P network ready - will poll in validator loop");
                 }
             }
@@ -124,12 +121,12 @@ impl ValidatorNode {
             }
         }
 
-        *self.is_running.write() = true;
+        *self.is_running.write().await = true;
 
         let latest_block = self.storage.get_latest_block()?;
         if let Some(block) = latest_block {
             info!("   Latest block: {}", block.header.block_height);
-            self.state.write().set_height(block.header.block_height);
+            self.state.write().await.set_height(block.header.block_height);
         } else {
             info!("   No blocks yet - will create genesis");
         }
@@ -159,7 +156,7 @@ impl ValidatorNode {
                 }
 
                 _ = stats_timer.tick() => {
-                    self.print_stats();
+                    self.print_stats().await;
                 }
 
                 _ = mempool_check.tick() => {
@@ -169,13 +166,13 @@ impl ValidatorNode {
                 _ = network_tick.tick() => {
                     // Poll P2P events (non-blocking)
                     if let Some(ref network) = self.network {
-                        let mut net = network.write();
+                        let mut net = network.write().await;
                         net.poll_events();
                     }
                 }
             }
 
-            if !*self.is_running.read() {
+            if !*self.is_running.read().await {
                 info!("Validator stopped");
                 break;
             }
@@ -232,7 +229,7 @@ impl ValidatorNode {
         self.storage.store_block(&block)?;
 
         {
-            let mut state = self.state.write();
+            let mut state = self.state.write().await;
             for tx in &block.transactions {
                 if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
                     warn!("Failed to transfer in block: {}", e);
@@ -261,12 +258,9 @@ impl ValidatorNode {
 
         // Broadcast block to P2P network
         if let Some(ref network) = self.network {
-            #[allow(clippy::await_holding_lock)]
-            {
-                let mut net = network.write();
-                if let Err(e) = net.broadcast_block(&block).await {
-                    warn!("Failed to broadcast block: {}", e);
-                }
+            let mut net = network.write().await;
+            if let Err(e) = net.broadcast_block(&block).await {
+                warn!("Failed to broadcast block: {}", e);
             }
         }
 
@@ -283,7 +277,7 @@ impl ValidatorNode {
 
         tx.validate()?;
 
-        let state = self.state.read();
+        let state = self.state.read().await;
         let balance = state.get_balance(&tx.from);
         drop(state);
 
@@ -304,10 +298,10 @@ impl ValidatorNode {
         }
     }
 
-    fn print_stats(&self) {
+    async fn print_stats(&self) {
         let height = self.storage.get_chain_height().unwrap_or(0);
         let mempool_size = self.mempool.size();
-        let state = self.state.read();
+        let state = self.state.read().await;
 
         info!("📊 Validator Stats:");
         info!("   Height: {}", height);
@@ -317,8 +311,8 @@ impl ValidatorNode {
         info!("   Reputation: {:.2}", self.validator.reputation_score);
     }
 
-    pub fn stop(&self) {
-        *self.is_running.write() = false;
+    pub async fn stop(&self) {
+        *self.is_running.write().await = false;
         info!("Stopping validator node...");
     }
 
