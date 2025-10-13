@@ -1,5 +1,5 @@
 use spirachain_core::{Block, Hash, Result, SpiraChainError, Address, Transaction};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tracing::{info, warn, error};
 

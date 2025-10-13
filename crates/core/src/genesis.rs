@@ -1,6 +1,5 @@
-use crate::{Block, BlockHeader, Transaction, Hash, PiCoordinate, SpiralMetadata, SpiralType, Address, Amount, Entity, Intent, EntityType, IntentType};
+use crate::{Block, Transaction, Hash, PiCoordinate, SpiralMetadata, SpiralType, Address, Amount, Intent, IntentType};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenesisConfig {

@@ -83,19 +83,29 @@ impl PiCoordinate {
         let hash = blake3::hash(entity_hash);
         let hash_bytes = hash.as_bytes();
         
-        let x = f64::from_le_bytes([
+        // Normaliser les valeurs entre -1.0 et 1.0 pour éviter les distances infinies
+        let x_u64 = u64::from_le_bytes([
             hash_bytes[0], hash_bytes[1], hash_bytes[2], hash_bytes[3],
             hash_bytes[4], hash_bytes[5], hash_bytes[6], hash_bytes[7],
         ]);
-        let y = f64::from_le_bytes([
+        let y_u64 = u64::from_le_bytes([
             hash_bytes[8], hash_bytes[9], hash_bytes[10], hash_bytes[11],
             hash_bytes[12], hash_bytes[13], hash_bytes[14], hash_bytes[15],
         ]);
-        let z = f64::from_le_bytes([
+        let z_u64 = u64::from_le_bytes([
             hash_bytes[16], hash_bytes[17], hash_bytes[18], hash_bytes[19],
             hash_bytes[20], hash_bytes[21], hash_bytes[22], hash_bytes[23],
         ]);
-        let t = (timestamp ^ nonce) as f64;
+        let t_u64 = u64::from_le_bytes([
+            hash_bytes[24], hash_bytes[25], hash_bytes[26], hash_bytes[27],
+            hash_bytes[28], hash_bytes[29], hash_bytes[30], hash_bytes[31],
+        ]) ^ timestamp ^ nonce;
+        
+        // Normaliser: u64::MAX -> 1.0, 0 -> -1.0
+        let x = (x_u64 as f64 / u64::MAX as f64) * 2.0 - 1.0;
+        let y = (y_u64 as f64 / u64::MAX as f64) * 2.0 - 1.0;
+        let z = (z_u64 as f64 / u64::MAX as f64) * 2.0 - 1.0;
+        let t = (t_u64 as f64 / u64::MAX as f64) * 2.0 - 1.0;
         
         Self { x, y, z, t }
     }

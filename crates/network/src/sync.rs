@@ -1,4 +1,4 @@
-use spirachain_core::{Block, Hash, Result};
+use spirachain_core::{Block, Result};
 
 pub struct SyncManager {
     current_height: u64,

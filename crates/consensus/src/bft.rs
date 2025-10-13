@@ -1,9 +1,9 @@
 use spirachain_core::{Block, Hash, Result, SpiraChainError, Address};
 use spirachain_crypto::KeyPair;
-use crate::{Validator, ValidatorSet};
+use crate::ValidatorSet;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
-use tracing::{info, warn, error};
+use tracing::{info, warn};
 
 pub const BFT_QUORUM_THRESHOLD: f64 = 0.67;
 pub const BFT_TIMEOUT_SECONDS: u64 = 30;

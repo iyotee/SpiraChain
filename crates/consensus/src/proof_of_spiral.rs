@@ -1,8 +1,7 @@
-use spirachain_core::{Block, Transaction, Spiral, SpiralType, SpiralMetadata, Hash, PiCoordinate, Result, SpiraChainError, Amount};
+use spirachain_core::{Block, Transaction, Spiral, SpiralType, SpiralMetadata, PiCoordinate, Result, SpiraChainError, Amount};
 use spirachain_crypto::KeyPair;
 use spirapi_bridge;
-use crate::{Validator, ValidatorSet, RewardCalculator};
-use std::collections::HashMap;
+use crate::{Validator, ValidatorSet};
 
 pub struct ProofOfSpiral {
     min_complexity: f64,
@@ -190,7 +189,7 @@ impl ProofOfSpiral {
         }
 
         let coord_distance = block.header.pi_coordinates.distance(&previous_block.header.pi_coordinates);
-        if coord_distance > self.max_spiral_jump {
+        if coord_distance.is_finite() && coord_distance > self.max_spiral_jump {
             return Err(SpiraChainError::InvalidSpiral(
                 format!("Spiral jump too large: {} > {}", coord_distance, self.max_spiral_jump)
             ));

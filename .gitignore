@@ -72,3 +72,7 @@ htmlcov/
 # Environment
 .env
 .env.local
+data/
+*.log
+*_wallet.json
+check_db.py

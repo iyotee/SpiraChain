@@ -24,7 +24,7 @@ impl PatternDetector {
     }
 
     pub fn detect_patterns(&self, transactions: &[Transaction]) -> Vec<Pattern> {
-        let mut patterns = Vec::new();
+        let patterns = Vec::new();
         
         patterns
     }

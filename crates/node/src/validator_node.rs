@@ -1,4 +1,4 @@
-use spirachain_core::{Block, Transaction, Hash, Result, Amount, Address};
+use spirachain_core::{Transaction, Result, Amount, Address};
 use spirachain_crypto::KeyPair;
 use spirachain_consensus::{ProofOfSpiral, Validator};
 use crate::{NodeConfig, Mempool, WorldState, BlockStorage};
@@ -37,10 +37,28 @@ impl ValidatorNode {
             last_block_height: 0,
         };
 
-        let consensus = ProofOfSpiral::new(
+        let mut consensus = ProofOfSpiral::new(
             spirachain_core::MIN_SPIRAL_COMPLEXITY,
             spirachain_core::MAX_SPIRAL_JUMP
         );
+        
+        // Enregistrer ce validator dans le consensus
+        consensus.add_validator(validator.clone())?;
+
+        // Initialiser SpiraPi AI engine
+        let spirapi_path = std::env::current_dir()
+            .unwrap_or_else(|_| std::path::PathBuf::from("."))
+            .join("crates/spirapi");
+        
+        if spirapi_path.exists() {
+            info!("🤖 Initializing SpiraPi AI engine...");
+            match spirapi_bridge::SpiraPiEngine::initialize(spirapi_path) {
+                Ok(_) => info!("✅ SpiraPi AI engine initialized successfully"),
+                Err(e) => warn!("⚠️ SpiraPi not available: {}. Using fallback embeddings.", e),
+            }
+        } else {
+            warn!("⚠️ SpiraPi directory not found. AI semantic layer will use fallback mode.");
+        }
 
         Ok(Self {
             config,
@@ -116,20 +134,21 @@ impl ValidatorNode {
             .into_iter()
             .take(1000)
             .collect::<Vec<_>>();
-        let state = self.state.read();
-        let current_height = state.current_height();
-        drop(state);
 
-        let previous_block = if current_height > 0 {
-            self.storage.get_block_by_height(current_height)?
+        // Get latest block from storage (not state height!)
+        let previous_block = self.storage.get_latest_block()?;
+
+        let current_height = if let Some(ref prev) = previous_block {
+            prev.header.block_height
         } else {
-            None
+            0
         };
 
         info!("   Height: {} → {}", current_height, current_height + 1);
         info!("   Transactions: {}", pending_txs.len());
 
         let block = if let Some(prev_block) = previous_block {
+            // Generate normal block
             self.consensus.generate_block_candidate(
                 &self.validator,
                 &self.keypair,
@@ -137,14 +156,18 @@ impl ValidatorNode {
                 &prev_block,
             )?
         } else {
+            // Only create genesis if no blocks exist
             info!("   Creating genesis block");
             let config = spirachain_core::GenesisConfig::default();
             let genesis = spirachain_core::create_genesis_block(&config);
             genesis
         };
 
-        if let Some(prev) = self.storage.get_latest_block()? {
-            self.consensus.validate_block(&block, &prev)?;
+        // Only validate non-genesis blocks
+        if current_height > 0 {
+            if let Some(prev) = self.storage.get_latest_block()? {
+                self.consensus.validate_block(&block, &prev)?;
+            }
         }
 
         self.storage.store_block(&block)?;
@@ -195,7 +218,7 @@ impl ValidatorNode {
             return Err(spirachain_core::SpiraChainError::InsufficientBalance);
         }
 
-        self.mempool.add_transaction(tx)?;
+        self.mempool.add_transaction_sync(tx)?;
 
         Ok(())
     }

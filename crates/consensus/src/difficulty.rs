@@ -1,4 +1,4 @@
-use spirachain_core::{Block, Result};
+use spirachain_core::Block;
 
 pub struct DifficultyAdjuster {
     target_block_time: u64,

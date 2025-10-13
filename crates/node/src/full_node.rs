@@ -4,7 +4,7 @@ use crate::{NodeConfig, Mempool, WorldState, BlockStorage};
 use std::sync::Arc;
 use parking_lot::RwLock;
 use tokio::time::{interval, Duration};
-use tracing::{info, error, warn};
+use tracing::{info, error};
 
 pub struct FullNode {
     config: NodeConfig,
@@ -118,7 +118,7 @@ impl FullNode {
         );
 
         tx.validate()?;
-        self.mempool.add_transaction(tx)?;
+        self.mempool.add_transaction_sync(tx)?;
         
         Ok(())
     }

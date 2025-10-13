@@ -1,4 +1,5 @@
 use spirachain_core::{Transaction, Hash, Result, SpiraChainError};
+use spirachain_semantic::SemanticProcessor;
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 use parking_lot::RwLock;
@@ -8,6 +9,7 @@ pub struct Mempool {
     transactions: Arc<RwLock<HashMap<Hash, Transaction>>>,
     pending_queue: Arc<RwLock<VecDeque<Hash>>>,
     max_size: usize,
+    semantic_processor: Arc<SemanticProcessor>,
 }
 
 impl Mempool {
@@ -16,10 +18,25 @@ impl Mempool {
             transactions: Arc::new(RwLock::new(HashMap::new())),
             pending_queue: Arc::new(RwLock::new(VecDeque::new())),
             max_size,
+            semantic_processor: Arc::new(SemanticProcessor::default()),
         }
     }
 
-    pub fn add_transaction(&self, tx: Transaction) -> Result<()> {
+    pub async fn add_transaction(&self, mut tx: Transaction) -> Result<()> {
+        // Enrichissement sémantique si purpose présent
+        if !tx.purpose.is_empty() {
+            match self.semantic_processor.enrich_transaction(tx.clone()).await {
+                Ok(enriched_tx) => {
+                    tracing::debug!("Transaction enriched with semantic data");
+                    tx = enriched_tx;
+                }
+                Err(e) => {
+                    tracing::warn!("Failed to enrich transaction semantically: {}", e);
+                    // Continue avec la transaction non-enrichie
+                }
+            }
+        }
+        
         let tx_hash = tx.hash();
         
         let mut txs = self.transactions.write();
@@ -37,6 +54,29 @@ impl Mempool {
         queue.push_back(tx_hash);
         
         tracing::info!("Added transaction {} to mempool", hex::encode(tx_hash.as_bytes()));
+        
+        Ok(())
+    }
+    
+    pub fn add_transaction_sync(&self, tx: Transaction) -> Result<()> {
+        // Version synchrone sans enrichissement pour compatibilité
+        let tx_hash = tx.hash();
+        
+        let mut txs = self.transactions.write();
+        let mut queue = self.pending_queue.write();
+        
+        if txs.len() >= self.max_size {
+            return Err(SpiraChainError::Internal("Mempool full".to_string()));
+        }
+
+        if txs.contains_key(&tx_hash) {
+            return Err(SpiraChainError::InvalidTransaction("Transaction already in mempool".to_string()));
+        }
+
+        txs.insert(tx_hash, tx);
+        queue.push_back(tx_hash);
+        
+        tracing::info!("Added transaction {} to mempool (sync)", hex::encode(tx_hash.as_bytes()));
         
         Ok(())
     }

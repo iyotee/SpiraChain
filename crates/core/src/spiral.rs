@@ -1,4 +1,4 @@
-use crate::{Hash, PiCoordinate, SpiralType};
+use crate::{Hash, SpiralType};
 use serde::{Deserialize, Serialize};
 use std::f64::consts::{E, PI};
 

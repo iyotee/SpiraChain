@@ -1,4 +1,4 @@
-use spirachain_core::{Block, Transaction, Hash, BlockHeader};
+use spirachain_core::{Block, Transaction, BlockHeader};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

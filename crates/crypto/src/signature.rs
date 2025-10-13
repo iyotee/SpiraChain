@@ -1,5 +1,5 @@
 // Signature types for different cryptographic schemes
-use crate::{KeyPair, PublicKey, XmssKeyPair, XmssSignature};
+use crate::{KeyPair, PublicKey};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

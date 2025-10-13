@@ -1,4 +1,4 @@
-use spirachain_core::{Address, Amount, Hash, Result, SpiraChainError};
+use spirachain_core::{Address, Amount, Result, SpiraChainError};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

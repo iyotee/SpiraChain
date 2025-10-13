@@ -4,7 +4,7 @@ pub struct RewardCalculator;
 
 impl RewardCalculator {
     pub fn calculate_block_reward(block: &Block, recent_spiral_types: &[spirachain_core::SpiralType]) -> Amount {
-        let mut base_reward = Self::base_reward_at_height(block.header.block_height);
+        let base_reward = Self::base_reward_at_height(block.header.block_height);
 
         let complexity_multiplier = (block.header.spiral.complexity / 100.0).min(1.5);
         let coherence_multiplier = block.avg_semantic_coherence();

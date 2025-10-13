@@ -136,7 +136,7 @@ impl P2PEncryption {
 
     fn aes_gcm_encrypt(key: &[u8; 32], plaintext: &[u8]) -> Result<Vec<u8>> {
         use aes_gcm::{Aes256Gcm, KeyInit};
-        use aes_gcm::aead::{Aead, OsRng};
+        use aes_gcm::aead::Aead;
         use aes_gcm::Nonce;
 
         let cipher = Aes256Gcm::new(key.into());

@@ -22,10 +22,10 @@ pub const E_PRECISION: usize = 1000;
 pub const PHI_PRECISION: usize = 1000;
 
 pub const SEMANTIC_VECTOR_DIM: usize = 1536;
-pub const MIN_SEMANTIC_COHERENCE: f64 = 0.7;
+pub const MIN_SEMANTIC_COHERENCE: f64 = 0.0; // Testnet: accepter blocs vides
 
 pub const MIN_SPIRAL_COMPLEXITY: f64 = 50.0;
-pub const MAX_SPIRAL_JUMP: f64 = 2.5;
+pub const MAX_SPIRAL_JUMP: f64 = 3.0; // Testnet: augmenté pour accommoder normalisation π-coordinates
 
 pub const FEE_BURN_RATE: f64 = 0.3;
 pub const MIN_TX_FEE: u128 = 1_000_000_000_000_000;

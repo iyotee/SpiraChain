@@ -90,11 +90,9 @@ function Start-Node {
     Write-Info "Starting node $NodeId on port $Port..."
     
     # Build command
-    $cmd = "./target/release/spira.exe node start --port $Port --data-dir $DataDir --metrics-port $MetricsPort"
+    $cmd = "./target/release/spira.exe node --validator --wallet $DataDir/validator.json"
     
-    if ($IsValidator) {
-        $cmd += " --validator --wallet $DataDir/validator.json"
-    }
+    # Command already includes validator and wallet
     
     # Start node in background
     $process = Start-Process -FilePath "powershell" -ArgumentList "-Command", "cd '$PWD'; $cmd" -PassThru -WindowStyle Hidden

@@ -326,3 +326,76 @@ mod tests {
     }
 }
 
+// ============================================================================
+// AI SEMANTIC LAYER - Embeddings via Python
+// ============================================================================
+
+impl SpiraPiEngine {
+    /// Génère un embedding sémantique pour un texte via le service Python
+    pub fn generate_embedding(text: &str) -> Result<Vec<f32>, SpiraChainError> {
+        let engine_lock = Self::get_instance();
+        let engine_opt = engine_lock.lock();
+        
+        if engine_opt.is_none() {
+            warn!("SpiraPi not initialized, returning zero vector");
+            return Ok(vec![0.0; 384]);
+        }
+        
+        Python::with_gil(|py| {
+            let embedding_module = PyModule::import(py, "ai.embedding_service")
+                .map_err(|e| SpiraChainError::Internal(format!("Failed to import embedding_service: {}", e)))?;
+            
+            let get_service_fn = embedding_module.getattr("get_embedding_service")
+                .map_err(|e| SpiraChainError::Internal(format!("Failed to get get_embedding_service: {}", e)))?;
+            
+            let service = get_service_fn.call0()
+                .map_err(|e| SpiraChainError::Internal(format!("Failed to create EmbeddingService: {}", e)))?;
+            
+            let result = service.call_method1("generate_embedding", (text,))
+                .map_err(|e| SpiraChainError::Internal(format!("Failed to generate embedding: {}", e)))?;
+            
+            let embedding: Vec<f32> = result.extract()
+                .map_err(|e| SpiraChainError::Internal(format!("Failed to extract embedding: {}", e)))?;
+            
+            Ok(embedding)
+        })
+    }
+    
+    /// Calcule la cohérence sémantique entre plusieurs embeddings
+    pub fn calculate_coherence(embeddings: &[Vec<f32>]) -> Result<f64, SpiraChainError> {
+        if embeddings.len() < 2 {
+            return Ok(1.0);
+        }
+        
+        let mut total_similarity = 0.0;
+        let mut count = 0;
+        
+        for i in 0..embeddings.len() {
+            for j in (i+1)..embeddings.len() {
+                let sim = cosine_similarity(&embeddings[i], &embeddings[j]);
+                total_similarity += sim;
+                count += 1;
+            }
+        }
+        
+        Ok(total_similarity / count as f64)
+    }
+}
+
+/// Calcule la similarité cosinus entre deux vecteurs
+fn cosine_similarity(a: &[f32], b: &[f32]) -> f64 {
+    if a.len() != b.len() || a.is_empty() {
+        return 0.0;
+    }
+    
+    let dot: f32 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
+    let norm_a: f32 = a.iter().map(|x| x * x).sum::<f32>().sqrt();
+    let norm_b: f32 = b.iter().map(|x| x * x).sum::<f32>().sqrt();
+    
+    if norm_a == 0.0 || norm_b == 0.0 {
+        return 0.0;
+    }
+    
+    (dot / (norm_a * norm_b)) as f64
+}
+

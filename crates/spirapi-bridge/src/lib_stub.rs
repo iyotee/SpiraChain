@@ -110,3 +110,22 @@ pub fn cleanup_spirapi() -> Result<(), SpiraChainError> {
     Ok(())
 }
 
+// AI Semantic Layer Stubs
+pub struct SpiraPiEngine;
+
+impl SpiraPiEngine {
+    pub fn initialize(_spirapi_path: PathBuf) -> Result<(), SpiraChainError> {
+        Ok(())
+    }
+    
+    pub fn generate_embedding(_text: &str) -> Result<Vec<f32>, SpiraChainError> {
+        // Return zero vector as fallback
+        Ok(vec![0.0; 384])
+    }
+    
+    pub fn calculate_coherence(_embeddings: &[Vec<f32>]) -> Result<f64, SpiraChainError> {
+        // Return default coherence
+        Ok(1.0)
+    }
+}
+

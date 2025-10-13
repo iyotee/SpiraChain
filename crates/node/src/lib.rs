@@ -12,7 +12,6 @@ pub use validator_node::*;
 pub use full_node::*;
 pub use light_node::*;
 
-use spirachain_core::Result;
 use std::path::PathBuf;
 
 #[derive(Debug, Clone)]

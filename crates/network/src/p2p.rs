@@ -1,9 +1,9 @@
-use spirachain_core::{Block, Transaction, Hash, Result, SpiraChainError};
+use spirachain_core::{Block, Transaction, Result, SpiraChainError};
 use crate::protocol::NetworkMessage;
 use std::collections::HashMap;
 use std::time::Duration;
 use tokio::sync::mpsc;
-use tracing::{info, warn, error, debug};
+use tracing::{info, debug};
 
 pub struct P2PNetwork {
     peers: HashMap<String, PeerInfo>,

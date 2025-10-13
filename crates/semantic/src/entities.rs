@@ -1,4 +1,4 @@
-use spirachain_core::{Entity, EntityType};
+use spirachain_core::Entity;
 
 pub struct EntityExtractor;
 
@@ -8,7 +8,7 @@ impl EntityExtractor {
     }
 
     pub fn extract(&self, text: &str) -> Vec<Entity> {
-        let mut entities = Vec::new();
+        let entities = Vec::new();
 
         entities
     }

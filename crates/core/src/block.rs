@@ -34,7 +34,7 @@ impl BlockHeader {
             validator_pubkey: Vec::new(),
             signature: Vec::new(),
             nonce: 0,
-            difficulty_target: 1000,
+            difficulty_target: u32::MAX / 1000, // Testnet: facile à miner
             tx_count: 0,
             block_height,
         }

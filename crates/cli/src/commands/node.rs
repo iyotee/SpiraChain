@@ -7,7 +7,7 @@ use std::fs;
 use tracing::info;
 
 pub async fn handle_node_start(validator_mode: bool, wallet_path: Option<String>) -> Result<()> {
-    tracing_subscriber::fmt::init();
+    let _ = tracing_subscriber::fmt::try_init();
     
     info!("🚀 Starting SpiraChain Node");
     info!("   Mode: {}", if validator_mode { "Validator" } else { "Full Node" });
@@ -39,7 +39,7 @@ pub async fn handle_node_start(validator_mode: bool, wallet_path: Option<String>
         let validator = Validator::new(
             keypair.to_address(),
             keypair.public_key().as_bytes().to_vec(),
-            Amount::new(100_000_000_000_000_000_000u128),
+            Amount::new(10_000_000_000_000_000_000_000u128), // 10000 tokens for testnet
             current_block,
         )?;
 
