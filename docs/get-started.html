@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Started - SpiraChain Validator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 60px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .logo h1 {
+            font-size: 48px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .tagline {
+            color: #666;
+            font-size: 18px;
+            margin-bottom: 40px;
+        }
+        
+        .install-section {
+            margin-bottom: 40px;
+        }
+        
+        .install-section h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .install-section h2::before {
+            content: '⚡';
+            margin-right: 10px;
+            font-size: 28px;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            position: relative;
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        
+        .code-block code {
+            display: block;
+            white-space: pre;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background: #764ba2;
+        }
+        
+        .copy-btn.copied {
+            background: #48bb78;
+        }
+        
+        .features {
+            background: #f7fafc;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 40px;
+        }
+        
+        .features h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .features ul {
+            list-style: none;
+        }
+        
+        .features li {
+            padding: 10px 0;
+            color: #555;
+            display: flex;
+            align-items: center;
+        }
+        
+        .features li::before {
+            content: '✅';
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        
+        .platform-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .platform-tab {
+            padding: 12px 24px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .platform-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .platform-tab:hover {
+            transform: translateY(-2px);
+        }
+        
+        .platform-content {
+            display: none;
+        }
+        
+        .platform-content.active {
+            display: block;
+        }
+        
+        .footer {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>🌀 SpiraChain</h1>
+            <p class="tagline">Post-Quantum Semantic Blockchain</p>
+        </div>
+        
+        <div class="install-section">
+            <h2>Become a Validator in 1 Line!</h2>
+            
+            <div class="platform-tabs">
+                <button class="platform-tab active" onclick="showPlatform('linux')">Linux / macOS</button>
+                <button class="platform-tab" onclick="showPlatform('windows')">Windows</button>
+            </div>
+            
+            <div id="linux" class="platform-content active">
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode('linux-cmd')">Copy</button>
+                    <code id="linux-cmd">curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install_validator.sh | bash</code>
+                </div>
+            </div>
+            
+            <div id="windows" class="platform-content">
+                <div class="code-block">
+                    <button class="copy-btn" onclick="copyCode('windows-cmd')">Copy</button>
+                    <code id="windows-cmd">iwr -useb https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install_validator.ps1 | iex</code>
+                </div>
+            </div>
+        </div>
+        
+        <div class="features">
+            <h3>What the installer does:</h3>
+            <ul>
+                <li>Installs all dependencies (Rust, Git, Python)</li>
+                <li>Builds SpiraChain from source</li>
+                <li>Generates your validator wallet</li>
+                <li>Sets up systemd service (Linux) or background process</li>
+                <li>Creates management scripts (start/stop/status)</li>
+                <li>Configures everything for you automatically</li>
+            </ul>
+        </div>
+        
+        <div class="install-section">
+            <h2>After Installation</h2>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyCode('post-install')">Copy</button>
+                <code id="post-install">cd ~/.spirachain/validator
+./start.sh  # Start your validator
+./status.sh # Check status</code>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Need help? Check out our <a href="https://github.com/iyotee/SpiraChain" target="_blank">GitHub</a></p>
+            <p style="margin-top: 10px;">Join the revolution of post-quantum blockchain! 🚀</p>
+        </div>
+    </div>
+    
+    <script>
+        function showPlatform(platform) {
+            // Hide all platform contents
+            document.querySelectorAll('.platform-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.platform-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected platform
+            document.getElementById(platform).classList.add('active');
+            
+            // Activate clicked tab
+            event.target.classList.add('active');
+        }
+        
+        function copyCode(elementId) {
+            const code = document.getElementById(elementId).textContent;
+            const button = event.target;
+            
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
+

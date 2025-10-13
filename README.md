@@ -20,9 +20,39 @@
 
 ---
 
-## 🚀 Quick Start (5 minutes)
+## 🚀 Quick Start - Become a Validator in 1 Line!
 
-### 1. **Build SpiraChain**
+### **One-Line Installation** ⚡
+
+**Linux / macOS:**
+```bash
+curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install_validator.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+iwr -useb https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install_validator.ps1 | iex
+```
+
+That's it! The script will:
+- ✅ Install all dependencies (Rust, Git, Python)
+- ✅ Build SpiraChain from source
+- ✅ Generate your validator wallet
+- ✅ Set up systemd service (Linux) or background process
+- ✅ Create management scripts (start/stop/status)
+
+After installation:
+```bash
+cd ~/.spirachain/validator
+./start.sh  # Start your validator
+./status.sh # Check status
+```
+
+---
+
+### **Manual Installation** (Traditional Way)
+
+#### 1. **Build SpiraChain**
 ```bash
 # Clone the repository
 git clone https://github.com/iyotee/SpiraChain.git
@@ -31,17 +61,17 @@ cd SpiraChain
 # Build in release mode
 cargo build --workspace --release
 
-# Binary ready at: target/release/spira.exe (or spira on Linux/Mac)
+# Binary ready at: target/release/spira (or spira.exe on Windows)
 ```
 
-### 2. **Create Your Wallet**
+#### 2. **Create Your Wallet**
 ```bash
 ./target/release/spira wallet new --output my_wallet.json
 ```
 
 ⚠️ **IMPORTANT:** Never share your `secret_key`! This is your private key.
 
-### 3. **Send a Transaction**
+#### 3. **Send a Transaction**
 ```bash
 ./target/release/spira tx send \
   --from my_wallet.json \
@@ -50,9 +80,9 @@ cargo build --workspace --release
   --purpose "Coffee payment"
 ```
 
-### 4. **Start a Node** (Coming Soon)
+#### 4. **Start a Validator Node**
 ```bash
-./target/release/spira node start --validator --wallet my_wallet.json
+./target/release/spira node --validator --wallet my_wallet.json
 ```
 
 ---
