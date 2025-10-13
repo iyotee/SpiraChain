@@ -16,14 +16,14 @@ from pathlib import Path
 
 
 # Import our advanced components
-from math_engine.pi_sequences import (
+from .math_engine.pi_sequences import (
     PiDIndexationEngine, PiAlgorithm, PrecisionLevel,
     AdvancedPiCalculator, EnhancedPiSequenceGenerator, AdvancedSpiralCalculator
 )
-from storage.schema_manager import (
+from .storage.schema_manager import (
     SchemaManager, AdaptiveSchema, SchemaZone, SchemaField, FieldType, ValidationRule
 )
-from query.spiral_engine import (
+from .query.spiral_engine import (
     SpiralQueryEngine, SpiralQuery, QueryTraversalType, QueryOptimizationLevel, QueryNode
 )
 
