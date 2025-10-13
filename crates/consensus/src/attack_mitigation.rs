@@ -52,6 +52,7 @@ struct ValidatorMonitor {
 
 #[derive(Debug, Clone)]
 struct SuspicionRecord {
+    #[allow(dead_code)]
     validator: Address,
     offense_count: usize,
     last_offense: Instant,
@@ -87,6 +88,7 @@ impl SuspicionRecord {
     }
 
     /// Get validator address
+    #[allow(dead_code)]
     pub fn validator(&self) -> &Address {
         &self.validator
     }
