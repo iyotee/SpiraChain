@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Install nightly for edition2024 support
+RUN rustup install nightly && rustup default nightly
+
 RUN cargo build --release
 
 FROM debian:bookworm-slim
