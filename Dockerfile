@@ -28,7 +28,7 @@ COPY --from=builder /app/target/release/spira /usr/local/bin/
 COPY --from=builder /app/crates/spirapi /app/crates/spirapi
 COPY scripts/ /app/scripts/
 
-RUN pip3 install --no-cache-dir -r /app/crates/spirapi/requirements.txt
+RUN pip3 install --no-cache-dir --break-system-packages -r /app/crates/spirapi/requirements.txt
 
 EXPOSE 30333 9615
 
