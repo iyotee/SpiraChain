@@ -30,6 +30,27 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Fix className issues
+              (function() {
+                if (typeof window !== 'undefined') {
+                  const originalCreateElement = document.createElement;
+                  document.createElement = function(tagName) {
+                    const element = originalCreateElement.call(this, tagName);
+                    if (!element.className) {
+                      element.className = '';
+                    }
+                    return element;
+                  };
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <ThemeProvider>
           {children}

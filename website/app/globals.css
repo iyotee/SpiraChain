@@ -61,3 +61,14 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* Fix for className issues */
+* {
+  box-sizing: border-box;
+}
+
+/* Ensure className is always a string */
+[class] {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
