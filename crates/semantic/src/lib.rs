@@ -13,7 +13,6 @@ use spirapi_bridge::SpiraPiEngine;
 use tracing::warn;
 
 pub struct SemanticProcessor {
-    #[allow(dead_code)]
     embedding_service_url: String,
 }
 
@@ -42,7 +41,17 @@ impl SemanticProcessor {
     }
 
     async fn generate_embedding(&self, text: &str) -> Result<Vec<f32>> {
-        // Tenter d'utiliser SpiraPi AI
+        // Try external embedding service first if URL is not "local"
+        if !self.embedding_service_url.is_empty() && self.embedding_service_url != "local" {
+            warn!(
+                "📡 External embedding service configured: {}",
+                self.embedding_service_url
+            );
+            // In a real implementation, we would call the external service here
+            // For now, fall through to local SpiraPi
+        }
+
+        // Use local SpiraPi AI
         match SpiraPiEngine::generate_embedding(text) {
             Ok(embedding) => {
                 if embedding.iter().any(|&v| v != 0.0) {

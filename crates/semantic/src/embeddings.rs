@@ -1,9 +1,20 @@
 use spirachain_core::Result;
 
 pub struct EmbeddingGenerator {
-    #[allow(dead_code)]
     model_name: String,
     dimensions: usize,
+}
+
+impl EmbeddingGenerator {
+    /// Get the model name
+    pub fn model_name(&self) -> &str {
+        &self.model_name
+    }
+
+    /// Get the embedding dimensions
+    pub fn dimensions(&self) -> usize {
+        self.dimensions
+    }
 }
 
 impl EmbeddingGenerator {

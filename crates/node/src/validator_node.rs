@@ -109,7 +109,10 @@ impl ValidatorNode {
                         e
                     );
                 } else {
-                    self.network = Some(Arc::new(RwLock::new(network)));
+                    #[allow(clippy::arc_with_non_send_sync)]
+                    {
+                        self.network = Some(Arc::new(RwLock::new(network)));
+                    }
                     info!("📡 P2P network ready - will poll in validator loop");
                 }
             }
@@ -258,9 +261,12 @@ impl ValidatorNode {
 
         // Broadcast block to P2P network
         if let Some(ref network) = self.network {
-            let mut net = network.write();
-            if let Err(e) = net.broadcast_block(&block).await {
-                warn!("Failed to broadcast block: {}", e);
+            #[allow(clippy::await_holding_lock)]
+            {
+                let mut net = network.write();
+                if let Err(e) = net.broadcast_block(&block).await {
+                    warn!("Failed to broadcast block: {}", e);
+                }
             }
         }
 

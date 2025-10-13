@@ -21,12 +21,28 @@ struct DoubleSpendDetector {
 
 #[derive(Debug, Clone)]
 struct TransactionInfo {
-    #[allow(dead_code)]
     transaction: Transaction,
-    #[allow(dead_code)]
     block_height: Option<u64>,
     first_seen: Instant,
     times_seen: usize,
+}
+
+impl TransactionInfo {
+    /// Check if this transaction is suspicious (seen multiple times)
+    fn is_suspicious(&self) -> bool {
+        self.times_seen > 1
+    }
+
+    /// Get the age of this transaction info
+    fn age(&self) -> Duration {
+        self.first_seen.elapsed()
+    }
+
+    /// Check if transaction is from a high-risk address
+    fn is_high_risk(&self) -> bool {
+        // Check if amount is suspiciously high
+        self.transaction.amount.value() > 1_000_000_000_000 // > 1M QBT
+    }
 }
 
 struct ValidatorMonitor {
@@ -36,12 +52,44 @@ struct ValidatorMonitor {
 
 #[derive(Debug, Clone)]
 struct SuspicionRecord {
-    #[allow(dead_code)]
     validator: Address,
     offense_count: usize,
-    #[allow(dead_code)]
     last_offense: Instant,
     total_slashed: u128,
+}
+
+impl SuspicionRecord {
+    fn new(validator: Address) -> Self {
+        Self {
+            validator,
+            offense_count: 0,
+            last_offense: Instant::now(),
+            total_slashed: 0,
+        }
+    }
+
+    /// Record a new offense
+    fn record_offense(&mut self, slashed_amount: u128) {
+        self.offense_count += 1;
+        self.last_offense = Instant::now();
+        self.total_slashed += slashed_amount;
+    }
+
+    /// Check if validator should be permanently banned
+    fn should_ban(&self) -> bool {
+        self.offense_count >= 3 || self.total_slashed > 10_000_000_000_000 // > 10M QBT slashed
+    }
+
+    /// Get time since last offense
+    #[allow(dead_code)]
+    fn time_since_last_offense(&self) -> Duration {
+        self.last_offense.elapsed()
+    }
+
+    /// Get validator address
+    pub fn validator(&self) -> &Address {
+        &self.validator
+    }
 }
 
 impl AttackMitigationSystem {
@@ -94,11 +142,18 @@ impl AttackMitigationSystem {
             {
                 existing.times_seen += 1;
 
-                if existing.times_seen > 1 {
+                if existing.is_suspicious() {
                     error!("🚨 DOUBLE-SPEND DETECTED!");
                     error!("   Transaction: {}", tx_hash);
                     error!("   From: {}", tx.from);
                     error!("   Times seen: {}", existing.times_seen);
+                    error!("   Block height: {:?}", existing.block_height);
+                    error!("   Age: {:?}", existing.age());
+
+                    // Check if it's also high-risk
+                    if existing.is_high_risk() {
+                        error!("   ⚠️  HIGH-RISK TRANSACTION (amount > 1M QBT)");
+                    }
 
                     return Err(SpiraChainError::ConsensusError(format!(
                         "Double-spend detected: {}",
@@ -152,21 +207,37 @@ impl AttackMitigationSystem {
 
             if actual_share > expected_share * 2.0 {
                 warn!(
-                    "⚠️  Validator {} producing {}% of blocks (suspicious)",
+                    "⚠️  Validator {} producing {:.1}% of blocks (suspicious)",
                     validator_addr,
                     actual_share * 100.0
                 );
 
-                self.validator_monitor
+                // Record the offense
+                let record = self
+                    .validator_monitor
                     .suspicious_validators
                     .entry(validator_addr)
-                    .or_insert_with(|| SuspicionRecord {
-                        validator: validator_addr,
-                        offense_count: 0,
-                        last_offense: Instant::now(),
-                        total_slashed: 0,
-                    })
-                    .offense_count += 1;
+                    .or_insert_with(|| SuspicionRecord::new(validator_addr));
+
+                // Calculate slashing amount based on offense severity
+                let slashing_amount = (actual_share * 1_000_000_000_000.0) as u128; // Proportional to dominance
+                record.record_offense(slashing_amount);
+
+                warn!(
+                    "   Offense count: {} | Total slashed: {} QBT",
+                    record.offense_count,
+                    record.total_slashed / 1_000_000_000
+                );
+
+                // Check if validator should be banned
+                if record.should_ban() {
+                    error!("🚨 VALIDATOR {} SHOULD BE BANNED!", validator_addr);
+                    error!("   Total offenses: {}", record.offense_count);
+                    error!(
+                        "   Total slashed: {} QBT",
+                        record.total_slashed / 1_000_000_000
+                    );
+                }
             }
         }
     }

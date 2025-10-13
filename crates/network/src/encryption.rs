@@ -17,8 +17,21 @@ struct PeerEncryptionState {
     public_key: KyberPublicKey,
     shared_secret: Option<KyberSharedSecret>,
     messages_exchanged: usize,
-    #[allow(dead_code)]
     established_at: std::time::Instant,
+}
+
+impl PeerEncryptionState {
+    /// Get the age of this encryption state
+    #[allow(dead_code)]
+    fn age(&self) -> std::time::Duration {
+        self.established_at.elapsed()
+    }
+
+    /// Check if encryption state should be rotated (older than 1 hour)
+    #[allow(dead_code)]
+    fn should_rotate(&self) -> bool {
+        self.age().as_secs() > 3600
+    }
 }
 
 impl P2PEncryption {

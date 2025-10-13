@@ -10,7 +10,6 @@ pub const MCELIECE_PLAINTEXT_SIZE: usize = 32;
 #[derive(Clone)]
 pub struct McElieceKeyPair {
     public_key: McEliecePublicKey,
-    #[allow(dead_code)]
     secret_key: McElieceSecretKey,
 }
 

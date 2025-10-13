@@ -11,9 +11,7 @@ pub struct Pattern {
 }
 
 pub struct PatternDetector {
-    #[allow(dead_code)]
     min_cluster_size: usize,
-    #[allow(dead_code)]
     coherence_threshold: f64,
 }
 
@@ -25,16 +23,91 @@ impl PatternDetector {
         }
     }
 
-    pub fn detect_patterns(&self, _transactions: &[Transaction]) -> Vec<Pattern> {
-        Vec::new()
+    /// Detect patterns in transactions using clustering
+    pub fn detect_patterns(&self, transactions: &[Transaction]) -> Vec<Pattern> {
+        if transactions.is_empty() {
+            return vec![];
+        }
+
+        // Cluster transactions by semantic similarity
+        let clusters = self.cluster_transactions(transactions);
+
+        // Convert clusters to patterns
+        let mut patterns = Vec::new();
+        for cluster_indices in clusters {
+            if cluster_indices.len() >= self.min_cluster_size {
+                let cluster_txs: Vec<&Transaction> = cluster_indices
+                    .iter()
+                    .filter_map(|&i| transactions.get(i))
+                    .collect();
+
+                if !cluster_txs.is_empty() {
+                    let centroid = self.calculate_centroid(&cluster_txs);
+                    let coherence = self.calculate_cluster_coherence(&cluster_txs, &centroid);
+
+                    if coherence >= self.coherence_threshold {
+                        // Generate a unique pattern ID
+                        let pattern_id = format!(
+                            "pattern_{}",
+                            blake3::hash(format!("{:?}", cluster_indices).as_bytes()).to_hex()
+                        );
+
+                        patterns.push(Pattern {
+                            id: pattern_id,
+                            cluster_size: cluster_indices.len(),
+                            centroid,
+                            coherence,
+                            transactions: cluster_indices
+                                .iter()
+                                .map(|&i| transactions[i].tx_hash.to_string())
+                                .collect(),
+                        });
+                    }
+                }
+            }
+        }
+
+        patterns
     }
 
-    #[allow(dead_code)]
-    fn cluster_transactions(&self, _transactions: &[Transaction]) -> Vec<Vec<usize>> {
-        vec![]
+    /// Cluster transactions by semantic similarity (simple k-means-like approach)
+    fn cluster_transactions(&self, transactions: &[Transaction]) -> Vec<Vec<usize>> {
+        if transactions.is_empty() {
+            return vec![];
+        }
+
+        // Simple clustering: group by semantic vector similarity
+        let mut clusters: Vec<Vec<usize>> = Vec::new();
+
+        for (i, tx) in transactions.iter().enumerate() {
+            let mut added_to_cluster = false;
+
+            // Try to add to existing cluster
+            for cluster in &mut clusters {
+                if let Some(&first_idx) = cluster.first() {
+                    if let Some(first_tx) = transactions.get(first_idx) {
+                        let similarity =
+                            self.cosine_similarity(&tx.semantic_vector, &first_tx.semantic_vector);
+
+                        if similarity > 0.7 {
+                            // High similarity threshold
+                            cluster.push(i);
+                            added_to_cluster = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Create new cluster if not added
+            if !added_to_cluster {
+                clusters.push(vec![i]);
+            }
+        }
+
+        clusters
     }
 
-    #[allow(dead_code)]
     fn calculate_centroid(&self, cluster: &[&Transaction]) -> Vec<f32> {
         if cluster.is_empty() {
             return vec![];
@@ -56,7 +129,6 @@ impl PatternDetector {
         centroid
     }
 
-    #[allow(dead_code)]
     fn calculate_cluster_coherence(&self, cluster: &[&Transaction], centroid: &[f32]) -> f64 {
         if cluster.is_empty() {
             return 0.0;
@@ -70,7 +142,6 @@ impl PatternDetector {
         similarities.iter().sum::<f64>() / similarities.len() as f64
     }
 
-    #[allow(dead_code)]
     fn cosine_similarity(&self, a: &[f32], b: &[f32]) -> f64 {
         if a.len() != b.len() || a.is_empty() {
             return 0.0;
