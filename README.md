@@ -14,7 +14,7 @@
 
 **SpiraChain** combines quantum-resistant cryptography, AI-powered semantic understanding, and revolutionary π-dimensional indexing to create the next generation of blockchain technology.
 
-[Whitepaper](whitepaper.md) • [Manifesto](manifest.md) • [Architecture](docs/ARCHITECTURE.md) • [Contributing](CONTRIBUTING.md)
+[Whitepaper](whitepaper.md) • [Manifesto](manifest.md) • [Roadmap](ROADMAP.md) • [Architecture](docs/ARCHITECTURE.md) • [Contributing](CONTRIBUTING.md)
 
 </div>
 
@@ -160,16 +160,19 @@ Validators don't just mine—they create **geometrically beautiful spirals**:
 - Entity extraction
 
 ### 💎 Qubitum (QBT) Token
-- **Initial supply:** 21,000,000 QBT
-- **Dynamic supply** based on semantic complexity
-- **Halving every 210,000 blocks** (like Bitcoin)
-- **Rewards:** 50-450 QBT per block (geometry + semantic bonuses)
+- **Total supply:** 21,000,000 QBT (fixed, like Bitcoin)
+- **Distribution:** 100% via staking/validation (no premine)
+- **Halving:** Every 2,102,400 blocks (~2 years)
+- **Base reward:** 10 QBT per block (up to 20 QBT with bonuses)
+- **Fee burning:** 30% of all transaction fees are burned (deflationary)
+- **Validator minimum:** 10,000 QBT stake required
 
 ### 🚀 Performance
-- **Block time:** 60 seconds
-- **TPS:** 10,000+ (planned)
-- **Finality:** 6 confirmations (~6 minutes)
+- **Block time:** 30 seconds (20x faster than Bitcoin)
+- **TPS:** ~33 (1000 tx per block)
+- **Finality:** 12 blocks (~6 minutes)
 - **Scalability:** Sharding-ready architecture
+- **Energy:** 99.9% less than Bitcoin (no wasteful PoW)
 
 ---
 
@@ -604,36 +607,82 @@ free -h
 |----------|-------|
 | **Token Name** | Qubitum |
 | **Symbol** | QBT |
-| **Initial Supply** | 21,000,000 QBT |
-| **Max Supply** | Dynamic (based on semantic complexity) |
+| **Total Supply** | 21,000,000 QBT (fixed) |
 | **Decimals** | 18 |
-| **Block Reward** | 50 QBT (base) + bonuses |
-| **Halving** | Every 210,000 blocks (~4 years) |
+| **Block Time** | 30 seconds |
+| **Block Reward** | 10 QBT (base) + bonuses |
+| **Halving** | Every 2,102,400 blocks (~2 years) |
+| **Fee Burning** | 30% of all transaction fees |
+
+### Distribution Model
+
+**100% Fair Launch - No Premine**
+
+Like Bitcoin, all QBT are distributed through validation:
+- **Validators:** 100% via block rewards
+- **No ICO, No Premine, No Team Allocation**
+- **Fair and Decentralized from Day 1**
 
 ### Reward Structure
 
-**Base Block Reward:** 50 QBT
+**Base Block Reward:** 10 QBT
 
-**Bonuses:**
-- **Geometric Bonus:** 0-250 QBT
-  - Based on spiral complexity
-  - Higher for Ramanujan > Fibonacci > Logarithmic
-- **Semantic Bonus:** 0-150 QBT
-  - Based on transaction coherence
-  - Rewards meaningful transactions
-- **Transaction Fees:** All fees in block
+**Multipliers (up to 2x):**
+- **Spiral Complexity:** x1.0 to x1.5 (quality of spiral)
+- **Semantic Coherence:** x0.0 to x1.0 (transaction quality)
+- **Novelty Bonus:** x1.2 (new spiral type)
+- **Full Block Bonus:** x1.1 (>80 transactions)
 
-**Total per block:** Up to 450+ QBT
+**Maximum Reward:** 10 QBT × 2.0 = **20 QBT per block**
 
-### Distribution
+### Fee Distribution
 
-- **Genesis:** 21,000,000 QBT
-- **Validators:** 60% (block rewards)
-- **Development:** 15% (vested 4 years)
-- **Community:** 15% (ecosystem grants)
-- **Reserve:** 10% (protocol treasury)
+Every transaction pays a fee. The fee is distributed as follows:
+- **50%** to the block validator (incentive)
+- **30%** burned forever (deflationary)
+- **20%** to protocol treasury (development)
 
-[Full tokenomics details](docs/REWARDS_SYSTEM.md)
+### Validator Requirements
+
+To become a validator and earn rewards:
+- **Minimum Stake:** 10,000 QBT
+- **Lock Period:** 100,000 blocks (~35 days)
+- **Reputation:** Must maintain >30% reputation score
+- **No Slashing:** No penalties in history
+
+**How to get 10,000 QBT:**
+1. Join testnet early and accumulate rewards
+2. Buy on exchanges after mainnet launch
+3. Contribute to development (grants)
+
+### Halving Schedule
+
+| Halving | Block Height | Reward | Year (approx) |
+|---------|--------------|--------|---------------|
+| 0 | 0 - 2,102,400 | 10 QBT | 2026-2028 |
+| 1 | 2,102,400 - 4,204,800 | 5 QBT | 2028-2030 |
+| 2 | 4,204,800 - 6,307,200 | 2.5 QBT | 2030-2032 |
+| 3 | 6,307,200 - 8,409,600 | 1.25 QBT | 2032-2034 |
+| ... | ... | ... | ... |
+
+### Economic Model
+
+**Deflationary by Design:**
+- Fixed supply (21M QBT)
+- Halving every ~2 years
+- 30% fee burning
+- Decreasing inflation over time
+
+**Comparison with Bitcoin:**
+| Metric | Bitcoin | SpiraChain |
+|--------|---------|------------|
+| Total Supply | 21M BTC | 21M QBT |
+| Block Time | 10 min | 30 sec |
+| Halving Period | ~4 years | ~2 years |
+| Fee Burning | No | Yes (30%) |
+| Energy Cost | Very High | Very Low |
+
+[Full tokenomics analysis](WHITEPAPER_VALIDATION.md)
 
 ---
 

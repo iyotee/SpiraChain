@@ -25,6 +25,7 @@ pub const SEMANTIC_VECTOR_DIM: usize = 1536;
 pub const MIN_SEMANTIC_COHERENCE: f64 = 0.0; // Testnet: accepter blocs vides
 
 pub const MIN_SPIRAL_COMPLEXITY: f64 = 50.0;
+pub const MAX_SPIRAL_COMPLEXITY: f64 = 250.0; // Cap to keep Raspberry Pi validators viable
 pub const MAX_SPIRAL_JUMP: f64 = 3.0; // Testnet: augmenté pour accommoder normalisation π-coordinates
 
 pub const FEE_BURN_RATE: f64 = 0.3;

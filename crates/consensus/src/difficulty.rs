@@ -39,6 +39,9 @@ impl DifficultyAdjuster {
             min_complexity = (min_complexity + 0.01).min(0.8);
         }
 
+        // Cap complexity to keep Raspberry Pi validators viable
+        min_complexity = min_complexity.min(spirachain_core::MAX_SPIRAL_COMPLEXITY);
+
         (min_complexity, geometric_difficulty)
     }
 
