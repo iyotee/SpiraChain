@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SpiraPiWeb 2025{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ 
+    refreshStats() {
+        // Simulate refresh with HTMX
+        this.$dispatch('refresh-stats');
+    }
+}">
+    
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">Welcome to SpiraPiWeb</h1>
+            <p class="text-slate-600 dark:text-slate-400 mt-2">Your π-based semantic database dashboard</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button @click="refreshStats()" 
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl">
+                <i class="w-4 h-4 mr-2" data-lucide="refresh-cw"></i>
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Status Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 card-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Total Records</p>
+                    <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ system_stats.total_records or 0 }}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-xl flex items-center justify-center">
+                    <i class="w-6 h-6 text-blue-600 dark:text-blue-400" data-lucide="database"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 card-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Active Tables</p>
+                    <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ system_stats.active_tables or 0 }}</p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-xl flex items-center justify-center">
+                    <i class="w-6 h-6 text-green-600 dark:text-green-400" data-lucide="table"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 card-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-600 dark:text-slate-400">π-IDs Generated</p>
+                    <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ system_stats.pi_ids_generated or 0 }}</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center">
+                    <i class="w-6 h-6 text-purple-600 dark:text-purple-400" data-lucide="hash"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 card-shadow">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Storage Used</p>
+                    <p class="text-2xl font-bold text-slate-900 dark:text-white">{{ system_stats.storage_used or '0 MB' }}</p>
+                </div>
+                <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-xl flex items-center justify-center">
+                    <i class="w-6 h-6 text-orange-600 dark:text-orange-400" data-lucide="hard-drive"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 card-shadow">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Performance Metrics</h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Current Speed</span>
+                    <span class="text-sm font-medium text-slate-900 dark:text-white">{{ system_stats.current_speed or 0 }} IDs/sec</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Peak Speed</span>
+                    <span class="text-sm font-medium text-slate-900 dark:text-white">{{ system_stats.peak_speed or 0 }} IDs/sec</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Cache Hit Rate</span>
+                    <span class="text-sm font-medium text-slate-900 dark:text-white">{{ system_stats.cache_hit_rate or 0 }}%</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">ID Pool Size</span>
+                    <span class="text-sm font-medium text-slate-900 dark:text-white">{{ system_stats.id_pool_size or 0 }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 card-shadow">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">AI Engine Status</h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Engine</span>
+                    <span class="text-sm font-medium text-slate-900 dark:text-white">{{ system_stats.ai_engine or 'sentence-transformers/all-MiniLM-L6-v2 @ Huggingface' }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Device</span>
+                    <span class="text-sm font-medium text-slate-900 dark:text-white">{{ system_stats.ai_device or 'CPU' }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Vector Dimensions</span>
+                    <span class="text-sm font-medium text-slate-900 dark:text-white">{{ system_stats.vector_dimensions or 384 }}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Indexed Content</span>
+                    <span class="text-sm font-medium text-slate-900 dark:text-white">{{ system_stats.indexed_content or 0 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tables Overview -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 card-shadow">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Tables Overview</h3>
+        {% if tables %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for table in tables[:6] %}
+            <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="font-medium text-slate-900 dark:text-white">{{ table.name }}</h4>
+                    <span class="text-xs text-slate-500 dark:text-slate-400">{{ table.fields_count }} fields</span>
+                </div>
+                <p class="text-sm text-slate-600 dark:text-slate-400">{{ table.description or 'No description' }}</p>
+            </div>
+            {% endfor %}
+        </div>
+        {% if tables|length > 6 %}
+        <div class="mt-4 text-center">
+            <a href="/tables" class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium">
+                View all {{ tables|length }} tables →
+            </a>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="text-center py-8 text-slate-500 dark:text-slate-400">
+            <i class="w-12 h-12 mx-auto mb-3" data-lucide="table"></i>
+            <p>No tables created yet</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,707 @@
+{% extends "base.html" %}
+
+{% block title %}Tables - SpiraPiWeb 2025{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ 
+    showCreateModal: false,
+    newTableName: '',
+    newTableDescription: '',
+    
+    createTable() {
+        if (!this.newTableName.trim()) return;
+        
+        const formData = new FormData();
+        formData.append('name', this.newTableName);
+        formData.append('description', this.newTableDescription);
+        
+        fetch('/api/tables', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                this.showCreateModal = false;
+                this.newTableName = '';
+                this.newTableDescription = '';
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error creating table');
+        });
+    },
+    showEditModal: false,
+    editingTableName: '',
+    editingTableDescription: '',
+    editTable(name, description) {
+        this.editingTableName = name;
+        this.editingTableDescription = description;
+        this.showEditModal = true;
+    },
+    updateTable() {
+        if (!this.editingTableName.trim()) return;
+        
+        const formData = new FormData();
+        formData.append('name', this.editingTableName);
+        formData.append('description', this.editingTableDescription);
+        
+        fetch(`/api/tables/${this.editingTableName}`, {
+            method: 'PUT',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                this.showEditModal = false;
+                this.editingTableName = '';
+                this.editingTableDescription = '';
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating table');
+        });
+    },
+    showDeleteModal: false,
+    deletingTableName: '',
+    deleteTable(name) {
+        this.deletingTableName = name;
+        this.showDeleteModal = true;
+    },
+    confirmDeleteTable() {
+        if (!this.deletingTableName) return;
+        
+        fetch(`/api/tables/${this.deletingTableName}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                this.showDeleteModal = false;
+                this.deletingTableName = '';
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting table');
+        });
+    },
+    showSchemaModal: false,
+    editingSchemaTable: '',
+    newField: {
+        name: '',
+        type: 'STRING',
+        required: false,
+        unique: false
+    },
+    schemaFields: [],
+    customFields: [],
+    addCustomField() {
+        this.customFields.push({
+            name: '',
+            type: 'STRING',
+            required: false,
+            unique: false
+        });
+    },
+    removeCustomField(index) {
+        this.customFields.splice(index, 1);
+    },
+    addSchemaField() {
+        if (this.newField.name.trim() && this.newField.type) {
+            this.schemaFields.push({
+                name: this.newField.name,
+                type: this.newField.type,
+                required: this.newField.required,
+                unique: this.newField.unique
+            });
+            this.newField.name = '';
+            this.newField.type = 'STRING';
+            this.newField.required = false;
+            this.newField.unique = false;
+        }
+    },
+    removeSchemaField(index) {
+        this.schemaFields.splice(index, 1);
+    },
+                   saveSchemaChanges() {
+          if (!this.editingSchemaTable) return;
+
+          const formData = new FormData();
+          formData.append('table_name', this.editingSchemaTable);
+          formData.append('fields', JSON.stringify(this.schemaFields));
+          
+          fetch(`/api/tables/${this.editingSchemaTable}/schema`, {
+              method: 'PUT',
+              body: formData
+          })
+          .then(response => response.json())
+          .then(data => {
+              if (data.status === 'success') {
+                  this.showSchemaModal = false;
+                  this.schemaFields = []; // Clear fields after saving
+                  // Force page refresh to show schema changes immediately
+                  location.reload();
+              } else {
+                  alert('Error: ' + data.message);
+              }
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              alert('Error saving schema changes');
+          });
+      },
+     
+     openSchemaEditor(tableName) {
+         this.editingSchemaTable = tableName;
+         this.schemaFields = []; // Will be populated from API
+         this.showSchemaModal = true;
+         
+         // Load current schema fields
+         fetch(`/api/tables/${tableName}/schema`)
+         .then(response => response.json())
+         .then(data => {
+             if (data.status === 'success') {
+                 this.schemaFields = data.fields || [];
+             }
+         })
+         .catch(error => {
+             console.error('Error loading schema:', error);
+         });
+     },
+     
+     createTable() {
+         if (!this.newTableName.trim()) {
+             alert('Please enter a table name');
+             return;
+         }
+
+         const formData = new FormData();
+         formData.append('name', this.newTableName);
+         formData.append('description', this.newTableDescription);
+         
+         // Add custom fields if any
+         if (this.customFields.length > 0) {
+             formData.append('custom_fields', JSON.stringify(this.customFields));
+         }
+         
+         fetch('/api/tables', {
+             method: 'POST',
+             body: formData
+         })
+         .then(response => response.json())
+         .then(data => {
+             if (data.status === 'success') {
+                 this.showCreateModal = false;
+                 this.newTableName = '';
+                 this.newTableDescription = '';
+                 this.customFields = [];
+                 location.reload();
+             } else {
+                 alert('Error: ' + data.message);
+             }
+         })
+         .catch(error => {
+             console.error('Error:', error);
+             alert('Error creating table');
+         });
+     }
+}">
+    
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">Tables Management</h1>
+            <p class="text-slate-600 dark:text-slate-400 mt-2">Create and manage your database schemas</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button @click="showCreateModal = true" 
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl">
+                <i class="w-4 h-4 mr-2" data-lucide="plus"></i>
+                Create Table
+            </button>
+        </div>
+    </div>
+
+    <!-- Tables List -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 card-shadow">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Database Tables</h3>
+            <span class="text-sm text-slate-500 dark:text-slate-400">{{ tables|length }} table{{ 's' if tables|length != 1 else '' }}</span>
+        </div>
+        
+        {% if tables %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for table in tables %}
+            <div class="p-6 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 transition-all duration-200 hover:scale-105 group">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="text-lg font-semibold text-slate-900 dark:text-white">{{ table.name }}</h4>
+                    <span class="inline-flex items-center px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs font-medium rounded-full">
+                        v{{ table.version }}
+                    </span>
+                </div>
+                
+                <p class="text-sm text-slate-600 dark:text-slate-400 mb-4 min-h-[3rem]">
+                    {{ table.description or "No description available" }}
+                </p>
+                
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                        <i class="w-4 h-4 mr-2" data-lucide="columns"></i>
+                        {{ table.fields_count }} fields
+                    </div>
+                    <div class="text-xs text-slate-500 dark:text-slate-400">
+                        Created: {{ table.created_at }}
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-2">
+                    <a href="/tables/{{ table.name }}" 
+                       class="flex-1 inline-flex items-center justify-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                        <i class="w-4 h-4 mr-2" data-lucide="eye"></i>
+                        View Details
+                    </a>
+                    <button @click="editTable('{{ table.name }}', '{{ table.description }}')" 
+                            class="p-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 rounded-lg transition-colors"
+                            title="Edit Table">
+                        <i class="w-4 h-4" data-lucide="edit-3"></i>
+                    </button>
+                    <button @click="openSchemaEditor('{{ table.name }}')" 
+                            class="p-2 text-purple-500 hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                            title="Schema Editor">
+                        <i class="w-4 h-4" data-lucide="database"></i>
+                    </button>
+                    <button @click="deleteTable('{{ table.name }}')" 
+                            class="p-2 text-red-500 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            title="Delete Table">
+                        <i class="w-4 h-4" data-lucide="trash-2"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-12">
+            <div class="w-20 h-20 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-6">
+                <i class="w-10 h-10 text-slate-400" data-lucide="table"></i>
+            </div>
+            <h4 class="text-xl font-medium text-slate-900 dark:text-white mb-3">No tables yet</h4>
+            <p class="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">
+                Create your first table to start building your database. Tables in SpiraPi use adaptive schemas that evolve with your data.
+            </p>
+            <button @click="showCreateModal = true" 
+                    class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 hover:scale-105 shadow-lg">
+                <i class="w-5 h-5 mr-2" data-lucide="plus"></i>
+                Create Your First Table
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 card-shadow">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Quick Actions</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <a href="/query" class="group">
+                <div class="p-4 bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-700 hover:border-green-300 dark:hover:border-green-600 transition-all duration-200 hover:scale-105">
+                    <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200">
+                        <i class="w-5 h-5 text-white" data-lucide="search"></i>
+                    </div>
+                    <h4 class="font-medium text-slate-900 dark:text-white">Run Queries</h4>
+                    <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Execute SQL-like queries on your tables</p>
+                </div>
+            </a>
+            
+            <div class="group">
+                <div class="p-4 bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/20 dark:to-violet-900/20 rounded-xl border border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-200 hover:scale-105">
+                    <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200">
+                        <i class="w-5 h-5 text-white" data-lucide="database"></i>
+                    </div>
+                    <h4 class="font-medium text-slate-900 dark:text-white">Schema Management</h4>
+                    <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Add, edit, and manage table fields and types</p>
+                </div>
+            </div>
+            
+            <a href="/semantic" class="group">
+                <div class="p-4 bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/20 dark:to-violet-900/20 rounded-xl border border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-600 transition-all duration-200 hover:scale-105">
+                    <div class="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200">
+                        <i class="w-5 h-5 text-white" data-lucide="brain"></i>
+                    </div>
+                    <h4 class="font-medium text-slate-900 dark:text-white">Semantic Search</h4>
+                    <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">AI-powered content search across tables</p>
+                </div>
+            </a>
+            
+            <a href="/stats" class="group">
+                <div class="p-4 bg-gradient-to-br from-orange-50 to-red-100 dark:from-orange-900/20 dark:to-red-900/20 rounded-xl border border-orange-200 dark:border-orange-700 hover:border-orange-300 dark:hover:border-orange-600 transition-all duration-200 hover:scale-105">
+                    <div class="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200">
+                        <i class="w-5 h-5 text-white" data-lucide="bar-chart-3"></i>
+                    </div>
+                    <h4 class="font-medium text-slate-900 dark:text-white">View Stats</h4>
+                    <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">Monitor database performance and usage</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Create Table Modal -->
+    <div x-show="showCreateModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 overflow-y-auto" 
+         style="display: none;">
+        
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showCreateModal = false"></div>
+            
+            <!-- Modal panel -->
+            <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+                <div class="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/20 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="w-6 h-6 text-blue-600 dark:text-blue-400" data-lucide="table"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-slate-900 dark:text-white">
+                                Create New Table
+                            </h3>
+                            <div class="mt-4 space-y-4">
+                                <div>
+                                    <label for="table-name" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Table Name</label>
+                                    <input type="text" 
+                                           id="table-name"
+                                           x-model="newTableName"
+                                           class="mt-1 block w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                           placeholder="Enter table name">
+                                </div>
+                                <div>
+                                    <label for="table-description" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Description (Optional)</label>
+                                    <textarea id="table-description"
+                                              x-model="newTableDescription"
+                                              rows="2"
+                                              class="mt-1 block w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                              placeholder="Describe what this table will store"></textarea>
+                                </div>
+                                
+                                <!-- Custom Fields Section -->
+                                <div>
+                                    <div class="flex items-center justify-between mb-3">
+                                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Custom Fields</label>
+                                        <button type="button" 
+                                                @click="addCustomField()"
+                                                class="inline-flex items-center px-2 py-1 text-xs bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors">
+                                            <i class="w-3 h-3 mr-1" data-lucide="plus"></i>
+                                            Add Field
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Default Fields Info -->
+                                    <div class="mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+                                        <p class="text-xs text-blue-700 dark:text-blue-400">
+                                            <strong>Default fields:</strong> id (π-ID), created_at, updated_at
+                                        </p>
+                                    </div>
+                                    
+                                    <!-- Custom Fields List -->
+                                    <div x-show="customFields.length > 0" class="space-y-3">
+                                        <template x-for="(field, index) in customFields" :key="index">
+                                            <div class="flex items-center space-x-2 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-md">
+                                                <input type="text" 
+                                                       x-model="field.name"
+                                                       placeholder="Field name"
+                                                       class="flex-1 px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded-md dark:bg-slate-700 dark:text-white">
+                                                
+                                                <select x-model="field.type" 
+                                                        class="px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded-md dark:bg-slate-700 dark:text-white">
+                                                    <option value="STRING">String</option>
+                                                    <option value="INTEGER">Integer</option>
+                                                    <option value="FLOAT">Float</option>
+                                                    <option value="BOOLEAN">Boolean</option>
+                                                    <option value="DATETIME">DateTime</option>
+                                                    <option value="JSON">JSON</option>
+                                                    <option value="BLOB">Blob</option>
+                                                </select>
+                                                
+                                                <label class="flex items-center text-xs text-slate-600 dark:text-slate-400">
+                                                    <input type="checkbox" x-model="field.required" class="mr-1">
+                                                    Required
+                                                </label>
+                                                
+                                                <label class="flex items-center text-xs text-slate-600 dark:text-slate-400">
+                                                    <input type="checkbox" x-model="field.unique" class="mr-1">
+                                                    Unique
+                                                </label>
+                                                
+                                                <button type="button" 
+                                                        @click="removeCustomField(index)"
+                                                        class="p-1 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 rounded">
+                                                    <i class="w-3 h-3" data-lucide="x"></i>
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" 
+                            @click="createTable()"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Create Table
+                    </button>
+                    <button type="button" 
+                            @click="showCreateModal = false"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schema Editor Modal -->
+    <div x-show="showSchemaModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 overflow-y-auto" 
+         style="display: none;">
+        
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showSchemaModal = false"></div>
+            
+            <!-- Modal panel -->
+            <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+                <div class="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/20 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="w-6 h-6 text-purple-600 dark:text-purple-400" data-lucide="database"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-slate-900 dark:text-white">
+                                Schema Editor: <span x-text="editingSchemaTable"></span>
+                            </h3>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                                Manage table fields, types, and constraints
+                            </p>
+                            
+                            <div class="mt-4">
+                                <!-- Add New Field -->
+                                <div class="mb-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700">
+                                    <h4 class="font-medium text-green-800 dark:text-green-300 mb-3">Add New Field</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                        <input type="text" 
+                                               x-model="newField.name"
+                                               placeholder="Field name"
+                                               class="px-3 py-2 text-sm border border-green-300 dark:border-green-600 rounded-md dark:bg-slate-700 dark:text-white">
+                                        
+                                        <select x-model="newField.type" 
+                                                class="px-3 py-2 text-sm border border-green-300 dark:border-green-600 rounded-md dark:bg-slate-700 dark:text-white">
+                                            <option value="STRING">String</option>
+                                            <option value="INTEGER">Integer</option>
+                                            <option value="FLOAT">Float</option>
+                                            <option value="BOOLEAN">Boolean</option>
+                                            <option value="DATETIME">DateTime</option>
+                                            <option value="JSON">JSON</option>
+                                            <option value="BLOB">Blob</option>
+                                        </select>
+                                        
+                                        <div class="flex items-center space-x-3">
+                                            <label class="flex items-center text-sm text-green-700 dark:text-green-400">
+                                                <input type="checkbox" x-model="newField.required" class="mr-2">
+                                                Required
+                                            </label>
+                                            <label class="flex items-center text-sm text-green-700 dark:text-green-400">
+                                                <input type="checkbox" x-model="newField.unique" class="mr-2">
+                                                Unique
+                                            </label>
+                                        </div>
+                                        
+                                        <button type="button" 
+                                                @click="addSchemaField()"
+                                                class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded-md transition-colors">
+                                            Add Field
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Existing Fields -->
+                                <div class="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-4">
+                                    <h4 class="font-medium text-slate-900 dark:text-white mb-3">Table Fields</h4>
+                                    <div class="space-y-2">
+                                        <template x-for="(field, index) in schemaFields" :key="index">
+                                            <div class="flex items-center justify-between p-3 bg-white dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-600">
+                                                <div class="flex items-center space-x-4">
+                                                    <span class="font-medium text-slate-900 dark:text-white" x-text="field.name"></span>
+                                                    <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs rounded-full" x-text="field.type"></span>
+                                                    <div class="flex items-center space-x-2">
+                                                        <span x-show="field.required" class="px-2 py-1 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-xs rounded-full">Required</span>
+                                                        <span x-show="field.unique" class="px-2 py-1 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 text-xs rounded-full">Unique</span>
+                                                    </div>
+                                                </div>
+                                                <button type="button" 
+                                                        @click="removeSchemaField(index)"
+                                                        class="p-1 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 rounded">
+                                                    <i class="w-4 h-4" data-lucide="trash-2"></i>
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" 
+                            @click="saveSchemaChanges()"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-purple-600 text-base font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Save Changes
+                    </button>
+                    <button type="button" 
+                            @click="showSchemaModal = false"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Table Modal -->
+    <div x-show="showEditModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 overflow-y-auto" 
+         style="display: none;">
+        
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showEditModal = false"></div>
+            
+            <!-- Modal panel -->
+            <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/20 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="w-6 h-6 text-blue-600 dark:text-blue-400" data-lucide="edit-3"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-slate-900 dark:text-white">
+                                Edit Table: <span x-text="editingTableName"></span>
+                            </h3>
+                            <div class="mt-4 space-y-4">
+                                <div>
+                                    <label for="edit-table-name" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Table Name</label>
+                                    <input type="text" 
+                                           id="edit-table-name"
+                                           x-model="editingTableName"
+                                           class="mt-1 block w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                           placeholder="Enter table name">
+                                </div>
+                                <div>
+                                    <label for="edit-table-description" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Description (Optional)</label>
+                                    <textarea id="edit-table-description"
+                                              x-model="editingTableDescription"
+                                              rows="3"
+                                              class="mt-1 block w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-white"
+                                              placeholder="Describe what this table will store"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" 
+                            @click="updateTable()"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Update Table
+                    </button>
+                    <button type="button" 
+                            @click="showEditModal = false"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div x-show="showDeleteModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 overflow-y-auto" 
+         style="display: none;">
+        
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showDeleteModal = false"></div>
+            
+            <!-- Modal panel -->
+            <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                <div class="bg-white dark:bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20 sm:mx-0 sm:h-10 sm:w-10">
+                            <i class="w-6 h-6 text-red-600 dark:text-red-400" data-lucide="alert-triangle"></i>
+                        </div>
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-slate-900 dark:text-white">
+                                Delete Table
+                            </h3>
+                            <div class="mt-2">
+                                <p class="text-sm text-slate-500 dark:text-slate-400">
+                                    Are you sure you want to delete the table "<span x-text="deletingTableName"></span>"? This action cannot be undone and will permanently remove all data associated with this table.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-700/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" 
+                            @click="confirmDeleteTable()"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Delete Table
+                    </button>
+                    <button type="button" 
+                            @click="showDeleteModal = false"
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-slate-300 dark:border-slate-600 shadow-sm px-4 py-2 bg-white dark:bg-slate-700 text-base font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

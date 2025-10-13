@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Error - SpiraPi Admin 2025{% endblock %}
+
+{% block content %}
+<div class="min-h-screen flex items-center justify-center px-4">
+    <div class="max-w-md w-full text-center" x-data="{ 
+        goBack() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '/';
+            }
+        }
+    }">
+        
+        <!-- Error Icon -->
+        <div class="w-24 h-24 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="w-12 h-12 text-red-500 dark:text-red-400" data-lucide="alert-triangle"></i>
+        </div>
+        
+        <!-- Error Title -->
+        <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-4">Oops! Something went wrong</h1>
+        
+        <!-- Error Message -->
+        <div class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6">
+            <p class="text-sm text-red-700 dark:text-red-300">
+                <strong>Error Details:</strong>
+            </p>
+            <p class="text-sm text-red-600 dark:text-red-400 mt-2 break-words">
+                {{ error_message or "An unexpected error occurred" }}
+            </p>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="space-y-3">
+            <a href="/" 
+               class="inline-flex items-center justify-center w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl">
+                <i class="w-5 h-5 mr-2" data-lucide="home"></i>
+                Back to Dashboard
+            </a>
+            
+            <button @click="goBack()" 
+                    class="inline-flex items-center justify-center w-full px-6 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-xl transition-all duration-200 hover:scale-105">
+                <i class="w-5 h-5 mr-2" data-lucide="arrow-left"></i>
+                Go Back
+            </button>
+        </div>
+        
+        <!-- Help Text -->
+        <div class="mt-8 text-sm text-slate-500 dark:text-slate-400">
+            <p>If this error persists, please check the server logs</p>
+            <p class="mt-1">or contact the system administrator</p>
+        </div>
+        
+        <!-- Error Code (if available) -->
+        {% if error_code %}
+        <div class="mt-6 p-3 bg-slate-100 dark:bg-slate-800 rounded-lg">
+            <p class="text-xs text-slate-600 dark:text-slate-400">
+                Error Code: <code class="bg-slate-200 dark:bg-slate-700 px-2 py-1 rounded">{{ error_code }}</code>
+            </p>
+        </div>
+        {% endif %}
+        
+    </div>
+</div>
+{% endblock %}

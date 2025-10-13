@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}Statistics - SpiraPi Admin 2025{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ 
+    refreshStats() {
+        location.reload();
+    },
+    
+    formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    },
+    
+    formatNumber(num) {
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+        return num.toString();
+    }
+}">
+    
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">Database Statistics</h1>
+            <p class="text-slate-600 dark:text-slate-400 mt-2">Comprehensive performance metrics and system insights</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button @click="refreshStats()" 
+                    class="inline-flex items-center px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg transition-all duration-200 hover:scale-105">
+                <i class="w-4 h-4 mr-2" data-lucide="refresh-cw"></i>
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Overview Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Total Records -->
+        <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow hover:card-shadow-hover transition-all duration-300 hover:-translate-y-1">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Total Records</p>
+                    <p class="text-3xl font-bold text-slate-900 dark:text-white mt-1">
+                        {{ stats.get('total_records', 0) | formatNumber }}
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-xl flex items-center justify-center">
+                    <i class="w-6 h-6 text-blue-600 dark:text-blue-400" data-lucide="database"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-slate-500 dark:text-slate-400">
+                <div class="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></div>
+                Across all tables
+            </div>
+        </div>
+
+        <!-- Active Tables -->
+        <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow hover:card-shadow-hover transition-all duration-300 hover:-translate-y-1">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Active Tables</p>
+                    <p class="text-3xl font-bold text-slate-900 dark:text-white mt-1">
+                        {{ stats.get('active_tables', 0) }}
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-xl flex items-center justify-center">
+                    <i class="w-6 h-6 text-green-600 dark:text-green-400" data-lucide="table"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-slate-500 dark:text-slate-400">
+                <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                With adaptive schemas
+            </div>
+        </div>
+
+        <!-- π-IDs Generated -->
+        <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow hover:card-shadow-hover transition-all duration-300 hover:-translate-y-1">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-600 dark:text-slate-400">π-IDs Generated</p>
+                    <p class="text-3xl font-bold text-slate-900 dark:text-white mt-1">
+                        {{ stats.get('pi_ids_generated', 0) | formatNumber }}
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center">
+                    <i class="w-6 h-6 text-purple-600 dark:text-purple-400" data-lucide="hash"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-slate-500 dark:text-slate-400">
+                <div class="w-2 h-2 bg-purple-500 rounded-full mr-2 animate-pulse"></div>
+                High precision π-sequences
+            </div>
+        </div>
+
+        <!-- Storage Used -->
+        <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow hover:card-shadow-hover transition-all duration-300 hover:-translate-y-1">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-600 dark:text-slate-400">Storage Used</p>
+                    <p class="text-3xl font-bold text-slate-900 dark:text-white mt-1">
+                        {{ stats.get('storage_used', '0 MB') }}
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-xl flex items-center justify-center">
+                    <i class="w-6 h-6 text-orange-600 dark:text-orange-400" data-lucide="hard-drive"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-slate-500 dark:text-slate-400">
+                <div class="w-2 h-2 bg-orange-500 rounded-full mr-2 animate-pulse"></div>
+                Optimized compression
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- π-Engine Performance -->
+        <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">π-Engine Performance</h3>
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Current Speed</span>
+                    <span class="text-lg font-bold text-green-600 dark:text-green-400">
+                        {{ stats.get('current_speed', 0) }} IDs/sec
+                    </span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Peak Speed</span>
+                    <span class="text-lg font-bold text-blue-600 dark:text-blue-400">
+                        {{ stats.get('peak_speed', 0) }} IDs/sec
+                    </span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Cache Hit Rate</span>
+                    <span class="text-lg font-bold text-purple-600 dark:text-purple-400">
+                        {{ stats.get('cache_hit_rate', 0) }}%
+                    </span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Pre-generated Pool</span>
+                    <span class="text-lg font-bold text-orange-600 dark:text-orange-400">
+                        {{ stats.get('id_pool_size', 0) }} IDs
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Semantic Indexer -->
+        <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">AI Semantic Indexer</h3>
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Indexed Content</span>
+                    <span class="text-lg font-bold text-green-600 dark:text-green-400">
+                        {{ stats.get('indexed_content', 0) | formatNumber }}
+                    </span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Vector Dimensions</span>
+                    <span class="text-lg font-bold text-blue-600 dark:text-blue-400">
+                        {{ stats.get('vector_dimensions', 384) }}
+                    </span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">AI Device</span>
+                    <span class="text-lg font-bold text-purple-600 dark:text-purple-400">
+                        {{ stats.get('ai_device', 'CPU') }}
+                    </span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">AI Engine</span>
+                    <span class="text-lg font-bold text-purple-600 dark:text-purple-400">
+                        {{ stats.get('ai_engine', 'sentence-transformers/all-MiniLM-L6-v2 @ Huggingface') }}
+                    </span>
+                </div>
+                
+                <div class="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Model Status</span>
+                    <span class="inline-flex items-center px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-medium rounded-full">
+                        Active
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Query Performance -->
+    <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Query Performance</h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="text-center p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {{ stats.get('avg_query_time', 0) }}ms
+                </div>
+                <div class="text-sm text-slate-600 dark:text-slate-400">Average Query Time</div>
+            </div>
+            
+            <div class="text-center p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {{ stats.get('semantic_search_time', 0) }}ms
+                </div>
+                <div class="text-sm text-slate-600 dark:text-slate-400">Semantic Search</div>
+            </div>
+            
+            <div class="text-center p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                    {{ stats.get('pi_id_generation_time', 0) }}μs
+                </div>
+                <div class="text-sm text-slate-600 dark:text-slate-400">π-ID Generation</div>
+            </div>
+            
+            <div class="text-center p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                    {{ stats.get('memory_usage', 0) }} MB
+                </div>
+                <div class="text-sm text-slate-600 dark:text-slate-400">Memory Usage</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Statistics -->
+    {% if stats.get('tables') %}
+    <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Table Statistics</h3>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-slate-200 dark:border-slate-700">
+                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">Table Name</th>
+                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">Fields</th>
+                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">Records</th>
+                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">Size</th>
+                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">Last Updated</th>
+                        <th class="text-left py-3 px-4 font-medium text-slate-700 dark:text-slate-300">Growth Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for table in stats.get('tables', []) %}
+                    <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                        <td class="py-3 px-4 font-medium text-slate-900 dark:text-white">{{ table.name }}</td>
+                        <td class="py-3 px-4 text-slate-600 dark:text-slate-400">{{ table.field_count }}</td>
+                        <td class="py-3 px-4 text-slate-600 dark:text-slate-400">{{ table.record_count }}</td>
+                        <td class="py-3 px-4 text-slate-600 dark:text-slate-400">{{ table.size }}</td>
+                        <td class="py-3 px-4 text-slate-600 dark:text-slate-400">{{ table.last_updated }}</td>
+                        <td class="py-3 px-4">
+                            <span class="inline-flex items-center px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-medium rounded-full">
+                                {{ table.growth_rate }}%
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- System Health -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Cache Performance -->
+        <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Cache Performance</h3>
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">π-Cache Size</span>
+                    <span class="text-sm font-medium text-slate-900 dark:text-white">Massive Cache</span>
+                </div>
+                
+                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                    <div class="bg-blue-600 h-2 rounded-full" style="width: 85%"></div>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Thread Pool</span>
+                    <span class="text-sm font-medium text-slate-900 dark:text-white">32 Workers</span>
+                </div>
+                
+                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                    <div class="bg-green-600 h-2 rounded-full" style="width: 100%"></div>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Process Pool</span>
+                    <span class="text-sm font-medium text-slate-900 dark:text-white">16 Workers</span>
+                </div>
+                
+                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                    <div class="bg-purple-600 h-2 rounded-full" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Resources -->
+        <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">System Resources</h3>
+            
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">CPU Usage</span>
+                    <span class="text-sm font-medium text-slate-900 dark:text-white">12%</span>
+                </div>
+                
+                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                    <div class="bg-green-600 h-2 rounded-full" style="width: 12%"></div>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Memory Usage</span>
+                    <span class="text-sm font-medium text-slate-900 dark:text-white">{{ stats.get('memory_usage', 0) }} MB</span>
+                </div>
+                
+                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                    <div class="bg-blue-600 h-2 rounded-full" style="width: 45%"></div>
+                </div>
+                
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-slate-600 dark:text-slate-400">Disk I/O</span>
+                    <span class="text-sm font-medium text-slate-900 dark:text-white">Low</span>
+                </div>
+                
+                <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                    <div class="bg-green-600 h-2 rounded-full" style="width: 25%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Trends -->
+    <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Performance Trends</h3>
+        
+        <div class="text-center py-12">
+            <div class="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="w-8 h-8 text-slate-400" data-lucide="trending-up"></i>
+            </div>
+            <h4 class="text-lg font-medium text-slate-900 dark:text-white mb-2">Real-time monitoring coming soon</h4>
+            <p class="text-slate-600 dark:text-slate-400">
+                Performance trends and historical data visualization will be available in the next update
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

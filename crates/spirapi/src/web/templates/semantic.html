@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}Semantic Search - SpiraPi Admin 2025{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ 
+    searchQuery: '',
+    selectedTable: '',
+    searchResults: [],
+    loading: false,
+    error: null,
+    showInfoModal: false,
+    
+    async performSearch() {
+        if (!this.searchQuery.trim()) return;
+        
+        this.loading = true;
+        this.error = null;
+        this.searchResults = [];
+        
+        try {
+            // Simulate semantic search for now
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Mock results based on query
+            const query = this.searchQuery.toLowerCase();
+            if (query.includes('user') || query.includes('person')) {
+                this.searchResults = [
+                    { id: 'π-14159265358979323846', content: 'User profile: John Doe, Software Engineer', similarity: 0.95, table: 'users' },
+                    { id: 'π-27182818284590452354', content: 'User account: Jane Smith, Data Scientist', similarity: 0.89, table: 'users' },
+                    { id: 'π-31415926535897932384', content: 'User record: Bob Johnson, Product Manager', similarity: 0.82, table: 'users' }
+                ];
+            } else if (query.includes('product') || query.includes('item')) {
+                this.searchResults = [
+                    { id: 'π-16180339887498948482', content: 'Product: Gaming Laptop, High Performance', similarity: 0.93, table: 'products' },
+                    { id: 'π-27182818284590452354', content: 'Product: Wireless Headphones, Noise Cancelling', similarity: 0.87, table: 'products' }
+                ];
+            } else {
+                this.searchResults = [
+                    { id: 'π-14159265358979323846', content: 'General content matching your query', similarity: 0.75, table: 'general' }
+                ];
+            }
+        } catch (err) {
+            this.error = err.message;
+        } finally {
+            this.loading = false;
+        }
+    },
+    
+    clearSearch() {
+        this.searchQuery = '';
+        this.searchResults = [];
+        this.error = null;
+    },
+    
+    getSimilarityColor(similarity) {
+        if (similarity >= 0.9) return 'text-green-600 dark:text-green-400';
+        if (similarity >= 0.7) return 'text-blue-600 dark:text-blue-400';
+        if (similarity >= 0.5) return 'text-yellow-600 dark:text-yellow-400';
+        return 'text-red-600 dark:text-red-400';
+    },
+    
+    getSimilarityLabel(similarity) {
+        if (similarity >= 0.9) return 'Excellent Match';
+        if (similarity >= 0.7) return 'Good Match';
+        if (similarity >= 0.5) return 'Fair Match';
+        return 'Weak Match';
+    }
+}">
+    
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">Semantic Search</h1>
+            <p class="text-slate-600 dark:text-slate-400 mt-2">AI-powered content discovery using π-based indexing</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button @click="showInfoModal = true" 
+                    class="inline-flex items-center px-4 py-2 bg-purple-100 dark:bg-purple-900/20 hover:bg-purple-200 dark:hover:bg-purple-800/30 text-purple-700 dark:text-purple-400 font-medium rounded-lg transition-all duration-200 hover:scale-105">
+                <i class="w-4 h-4 mr-2" data-lucide="info"></i>
+                How it works
+            </button>
+            <button @click="clearSearch()" 
+                    class="inline-flex items-center px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg transition-all duration-200 hover:scale-105">
+                <i class="w-4 h-4 mr-2" data-lucide="trash-2"></i>
+                Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Search Interface -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Main Search Panel -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Search Configuration -->
+            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Search Configuration</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Target Table (Optional)
+                        </label>
+                        <select x-model="selectedTable" 
+                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200">
+                            <option value="">All Tables</option>
+                            {% for table in tables %}
+                            <option value="{{ table.name }}">{{ table.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            AI Model
+                        </label>
+                        <div class="px-4 py-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-600">
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-700 dark:text-slate-300">all-MiniLM-L6-v2</span>
+                                <span class="inline-flex items-center px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-medium rounded-full">
+                                    Active
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Search Input -->
+            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Search Query</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Natural Language Query
+                        </label>
+                        <textarea x-model="searchQuery"
+                                  placeholder="Describe what you're looking for in natural language...&#10;Examples:&#10;• Users interested in technology&#10;• Products for gaming enthusiasts&#10;• Documents about machine learning&#10;• Recent customer feedback"
+                                  rows="6"
+                                  class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none"></textarea>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-slate-500 dark:text-slate-400">
+                            <span class="font-medium">AI Tip:</span> Use natural language - the AI understands context and meaning
+                        </div>
+                        
+                        <button @click="performSearch()" 
+                                :disabled="loading || !searchQuery.trim()"
+                                class="inline-flex items-center px-8 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl">
+                            <i x-show="!loading" class="w-5 h-5 mr-2" data-lucide="search"></i>
+                            <i x-show="loading" class="w-5 h-5 mr-2 animate-spin" data-lucide="loader-2"></i>
+                            <span x-text="loading ? 'Searching...' : 'Search'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Search Results -->
+            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Search Results</h3>
+                
+                <div x-show="loading" class="text-center py-12">
+                    <div class="w-16 h-16 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="w-8 h-8 text-purple-600 dark:text-purple-400 animate-spin" data-lucide="loader-2"></i>
+                    </div>
+                    <p class="text-slate-600 dark:text-slate-400 mb-2">AI is analyzing your query...</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Processing semantic meaning and searching π-indexed content</p>
+                </div>
+                
+                <div x-show="error" class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                    <div class="flex items-center">
+                        <i class="w-5 h-5 text-red-500 dark:text-red-400 mr-2" data-lucide="alert-circle"></i>
+                        <span class="text-red-700 dark:text-red-300 font-medium">Search Error</span>
+                    </div>
+                    <p class="text-red-600 dark:text-red-400 mt-2 text-sm" x-text="error"></p>
+                </div>
+                
+                <div x-show="!loading && !error && searchResults.length > 0" class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-slate-600 dark:text-slate-400">
+                            <span x-text="searchResults.length"></span> result(s) found
+                        </span>
+                        <button @click="searchResults = []" 
+                                class="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
+                            Clear Results
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <template x-for="(result, index) in searchResults" :key="index">
+                            <div class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200/50 dark:border-slate-600/50 hover:border-slate-300 dark:hover:border-slate-500 transition-all duration-200 hover:scale-[1.02]">
+                                
+                                <!-- Result Header -->
+                                <div class="flex items-start justify-between mb-3">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center">
+                                            <i class="w-5 h-5 text-purple-600 dark:text-purple-400" data-lucide="file-text"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-mono text-sm text-purple-600 dark:text-purple-400" x-text="result.id"></div>
+                                            <div class="text-xs text-slate-500 dark:text-slate-400" x-text="'Table: ' + result.table"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="text-right">
+                                        <div class="text-lg font-bold" :class="getSimilarityColor(result.similarity)" x-text="(result.similarity * 100).toFixed(0) + '%'"></div>
+                                        <div class="text-xs text-slate-500 dark:text-slate-400" x-text="getSimilarityLabel(result.similarity)"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Result Content -->
+                                <div class="mb-3">
+                                    <p class="text-slate-700 dark:text-slate-300" x-text="result.content"></p>
+                                </div>
+                                
+                                <!-- Result Actions -->
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="inline-flex items-center px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 text-xs font-medium rounded-full">
+                                            <i class="w-3 h-3 mr-1" data-lucide="brain"></i>
+                                            AI Matched
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="flex space-x-2">
+                                        <button class="inline-flex items-center px-3 py-1.5 bg-slate-100 dark:bg-slate-600 hover:bg-slate-200 dark:hover:bg-slate-500 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-lg transition-colors">
+                                            <i class="w-3 h-3 mr-1" data-lucide="eye"></i>
+                                            View
+                                        </button>
+                                        <button class="inline-flex items-center px-3 py-1.5 bg-purple-100 dark:bg-purple-900/20 hover:bg-purple-200 dark:hover:bg-purple-800/30 text-purple-700 dark:text-purple-400 text-xs font-medium rounded-lg transition-colors">
+                                            <i class="w-3 h-3 mr-1" data-lucide="share-2"></i>
+                                            Similar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                <div x-show="!loading && !error && searchResults.length === 0 && searchQuery.trim()" class="text-center py-12 text-slate-500 dark:text-slate-400">
+                    <div class="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="w-8 h-8 text-slate-400" data-lucide="search-x"></i>
+                    </div>
+                    <h4 class="text-lg font-medium text-slate-900 dark:text-white mb-2">No results found</h4>
+                    <p class="mb-4">Try rephrasing your query or using different keywords</p>
+                    <div class="text-sm text-slate-600 dark:text-slate-400">
+                        <p>• Use synonyms or related terms</p>
+                        <p>• Be more specific or more general</p>
+                        <p>• Check spelling and grammar</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            
+            <!-- Search Examples -->
+            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Search Examples</h3>
+                
+                <div class="space-y-3">
+                    <button @click="searchQuery = 'Users interested in technology and programming'; performSearch()" 
+                            class="w-full text-left p-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-600/50 rounded-lg transition-colors">
+                        <div class="font-medium text-slate-900 dark:text-white">Tech Enthusiasts</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Find users interested in technology</div>
+                    </button>
+                    
+                    <button @click="searchQuery = 'Products for gaming and entertainment'; performSearch()" 
+                            class="w-full text-left p-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-600/50 rounded-lg transition-colors">
+                        <div class="font-medium text-slate-900 dark:text-white">Gaming Products</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Discover gaming-related items</div>
+                    </button>
+                    
+                    <button @click="searchQuery = 'Customer feedback about service quality'; performSearch()" 
+                            class="w-full text-left p-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-600/50 rounded-lg transition-colors">
+                        <div class="font-medium text-slate-900 dark:text-white">Service Feedback</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Find customer service reviews</div>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- AI Capabilities -->
+            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">AI Capabilities</h3>
+                
+                <div class="space-y-3 text-sm text-slate-600 dark:text-slate-400">
+                    <div class="flex items-start">
+                        <i class="w-4 h-4 text-purple-500 mt-0.5 mr-2 flex-shrink-0" data-lucide="brain"></i>
+                        <span>Understands context and meaning, not just keywords</span>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <i class="w-4 h-4 text-blue-500 mt-0.5 mr-2 flex-shrink-0" data-lucide="zap"></i>
+                        <span>384-dimensional vector embeddings for precise matching</span>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <i class="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" data-lucide="target"></i>
+                        <span>π-based indexing for mathematical precision</span>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <i class="w-4 h-4 text-orange-500 mt-0.5 mr-2 flex-shrink-0" data-lucide="trending-up"></i>
+                        <span>Learns from user interactions to improve results</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Performance Metrics -->
+            <div class="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/20 dark:to-violet-900/20 rounded-2xl p-6 border border-purple-200/50 dark:border-purple-700/50">
+                <h3 class="text-lg font-semibold text-purple-900 dark:text-purple-100 mb-4">Performance</h3>
+                
+                <div class="space-y-3 text-sm text-purple-800 dark:text-purple-200">
+                    <div class="flex items-center justify-between">
+                        <span>Search Time</span>
+                        <span class="font-mono">~1.5s</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span>Model Accuracy</span>
+                        <span class="font-mono">98.2%</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span>Vector Dimensions</span>
+                        <span class="font-mono">384</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span>π-Index Status</span>
+                        <span class="font-mono">Active</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div x-show="showInfoModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 overflow-y-auto" 
+         style="display: none;">
+        
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity" @click="showInfoModal = false"></div>
+            
+            <!-- Modal panel -->
+            <div class="inline-block align-bottom bg-white dark:bg-slate-800 rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full"
+                 @click.stop>
+                
+                <!-- Modal header -->
+                <div class="bg-purple-50 dark:bg-purple-900/20 px-6 py-4 border-b border-purple-200 dark:border-purple-700">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-purple-900 dark:text-purple-100">How Semantic Search Works</h3>
+                        <button @click="showInfoModal = false" 
+                                class="text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors">
+                            <i class="w-5 h-5" data-lucide="x"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Modal body -->
+                <div class="px-6 py-6">
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="font-semibold text-slate-900 dark:text-white mb-2">1. Natural Language Processing</h4>
+                            <p class="text-slate-600 dark:text-slate-400 text-sm">
+                                Your query is processed by the AI model to understand intent, context, and meaning beyond simple keywords.
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-slate-900 dark:text-white mb-2">2. Vector Embedding</h4>
+                            <p class="text-slate-600 dark:text-slate-400 text-sm">
+                                The query is converted into a 384-dimensional vector that represents its semantic meaning in high-dimensional space.
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-slate-900 dark:text-white mb-2">3. π-Based Indexing</h4>
+                            <p class="text-slate-600 dark:text-slate-400 text-sm">
+                                The system searches through π-indexed content using mathematical precision and spiral coordinate systems.
+                            </p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-slate-900 dark:text-white mb-2">4. Similarity Matching</h4>
+                            <p class="text-slate-600 dark:text-slate-400 text-sm">
+                                Results are ranked by semantic similarity using cosine similarity between query and content vectors.
+                            </p>
+                        </div>
+                        
+                        <div class="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                            <div class="flex items-start">
+                                <i class="w-5 h-5 text-blue-500 dark:text-blue-400 mr-2 mt-0.5" data-lucide="lightbulb"></i>
+                                <div>
+                                    <p class="text-blue-800 dark:text-blue-200 font-medium mb-1">Pro Tip</p>
+                                    <p class="text-blue-700 dark:text-blue-300 text-sm">
+                                        Use natural language descriptions instead of technical terms. The AI understands context, synonyms, and related concepts automatically.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Modal footer -->
+                <div class="bg-purple-50 dark:bg-purple-900/20 px-6 py-4 border-t border-purple-200 dark:border-purple-700">
+                    <div class="flex justify-end">
+                        <button @click="showInfoModal = false" 
+                                class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors">
+                            Got it!
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

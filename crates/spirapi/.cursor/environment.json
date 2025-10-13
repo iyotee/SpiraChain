@@ -1,0 +1,5 @@
+{
+  "snapshot": "snapshot-20250827-b57f2c01-e2ef-4488-a4d5-c703fbf136de",
+  "start": "apt-get update -y && apt-get upgrade -y && apt-get dist-upgrade -y && apt-get full-upgrade -y",
+  "terminals": []
+}

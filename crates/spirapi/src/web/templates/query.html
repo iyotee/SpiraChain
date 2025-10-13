@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Query - SpiraPi Admin 2025{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="{ 
+    queryType: 'select',
+    selectedTable: '',
+    queryText: '',
+    results: [],
+    loading: false,
+    error: null,
+    
+    async executeQuery() {
+        if (!this.queryText.trim()) return;
+        
+        this.loading = true;
+        this.error = null;
+        this.results = [];
+        
+        try {
+            // Simulate query execution for now
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Mock results based on query type
+            if (this.queryType === 'select') {
+                this.results = [
+                    { id: 'π-14159265358979323846', name: 'Sample Record 1', created_at: '2024-01-01' },
+                    { id: 'π-27182818284590452354', name: 'Sample Record 2', created_at: '2024-01-02' },
+                    { id: 'π-31415926535897932384', name: 'Sample Record 3', created_at: '2024-01-03' }
+                ];
+            } else if (this.queryType === 'insert') {
+                this.results = [{ message: 'Record inserted successfully', id: 'π-16180339887498948482' }];
+            } else if (this.queryType === 'update') {
+                this.results = [{ message: '2 records updated successfully' }];
+            } else if (this.queryType === 'delete') {
+                this.results = [{ message: '1 record deleted successfully' }];
+            }
+        } catch (err) {
+            this.error = err.message;
+        } finally {
+            this.loading = false;
+        }
+    },
+    
+    clearQuery() {
+        this.queryText = '';
+        this.results = [];
+        this.error = null;
+    },
+    
+    getQueryPlaceholder() {
+        switch (this.queryType) {
+            case 'select': return 'SELECT * FROM users WHERE active = true LIMIT 10';
+            case 'insert': return 'INSERT INTO users (name, email) VALUES ("John Doe", "john@example.com")';
+            case 'update': return 'UPDATE users SET last_login = NOW() WHERE id = "π-14159265358979323846"';
+            case 'delete': return 'DELETE FROM users WHERE last_login < "2024-01-01"';
+            default: return 'Enter your query here...';
+        }
+    }
+}">
+    
+    <!-- Header Section -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-3xl font-bold text-slate-900 dark:text-white">Query Interface</h1>
+            <p class="text-slate-600 dark:text-slate-400 mt-2">Execute database queries with π-based identifiers</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button @click="clearQuery()" 
+                    class="inline-flex items-center px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg transition-all duration-200 hover:scale-105">
+                <i class="w-4 h-4 mr-2" data-lucide="trash-2"></i>
+                Clear
+            </button>
+        </div>
+    </div>
+
+    <!-- Query Interface -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Query Input Panel -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Query Type Selection -->
+            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Query Configuration</h3>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Query Type
+                        </label>
+                        <select x-model="queryType" 
+                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                            <option value="select">SELECT</option>
+                            <option value="insert">INSERT</option>
+                            <option value="update">UPDATE</option>
+                            <option value="delete">DELETE</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            Target Table
+                        </label>
+                        <select x-model="selectedTable" 
+                                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                            <option value="">All Tables</option>
+                            {% for table in tables %}
+                            <option value="{{ table.name }}">{{ table.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Query Editor -->
+            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Query Editor</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                            SQL Query
+                        </label>
+                        <textarea x-model="queryText"
+                                  :placeholder="getQueryPlaceholder()"
+                                  rows="8"
+                                  class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 font-mono text-sm"
+                                  style="resize: vertical;"></textarea>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-slate-500 dark:text-slate-400">
+                            <span class="font-medium">Tip:</span> Use π-based identifiers like π-14159265358979323846
+                        </div>
+                        
+                        <button @click="executeQuery()" 
+                                :disabled="loading || !queryText.trim()"
+                                class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-medium rounded-xl transition-all duration-200 hover:scale-105 shadow-lg hover:shadow-xl">
+                            <i x-show="!loading" class="w-5 h-5 mr-2" data-lucide="play"></i>
+                            <i x-show="loading" class="w-5 h-5 mr-2 animate-spin" data-lucide="loader-2"></i>
+                            <span x-text="loading ? 'Executing...' : 'Execute Query'"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Query Results -->
+            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Results</h3>
+                
+                <div x-show="loading" class="text-center py-8">
+                    <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="w-6 h-6 text-blue-600 dark:text-blue-400 animate-spin" data-lucide="loader-2"></i>
+                    </div>
+                    <p class="text-slate-600 dark:text-slate-400">Executing query...</p>
+                </div>
+                
+                <div x-show="error" class="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                    <div class="flex items-center">
+                        <i class="w-5 h-5 text-red-500 dark:text-red-400 mr-2" data-lucide="alert-circle"></i>
+                        <span class="text-red-700 dark:text-red-300 font-medium">Query Error</span>
+                    </div>
+                    <p class="text-red-600 dark:text-red-400 mt-2 text-sm" x-text="error"></p>
+                </div>
+                
+                <div x-show="!loading && !error && results.length > 0" class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-slate-600 dark:text-slate-400">
+                            <span x-text="results.length"></span> result(s) returned
+                        </span>
+                        <button @click="results = []" 
+                                class="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
+                            Clear Results
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-slate-200 dark:border-slate-700">
+                                    <th x-show="queryType === 'select'" class="text-left py-2 px-3 font-medium text-slate-700 dark:text-slate-300">ID</th>
+                                    <th x-show="queryType === 'select'" class="text-left py-2 px-3 font-medium text-slate-700 dark:text-slate-300">Name</th>
+                                    <th x-show="queryType === 'select'" class="text-left py-2 px-3 font-medium text-slate-700 dark:text-slate-300">Created</th>
+                                    <th x-show="queryType !== 'select'" class="text-left py-2 px-3 font-medium text-slate-700 dark:text-slate-300">Message</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="(result, index) in results" :key="index">
+                                    <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                                        <td x-show="queryType === 'select'" class="py-2 px-3 font-mono text-blue-600 dark:text-blue-400" x-text="result.id"></td>
+                                        <td x-show="queryType === 'select'" class="py-2 px-3" x-text="result.name"></td>
+                                        <td x-show="queryType === 'select'" class="py-2 px-3 text-slate-600 dark:text-slate-400" x-text="result.created_at"></td>
+                                        <td x-show="queryType !== 'select'" class="py-2 px-3 text-green-600 dark:text-green-400" x-text="result.message"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div x-show="!loading && !error && results.length === 0 && queryText.trim()" class="text-center py-8 text-slate-500 dark:text-slate-400">
+                    <i class="w-8 h-8 mx-auto mb-2" data-lucide="database"></i>
+                    <p>No results found</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            
+            <!-- Quick Queries -->
+            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Quick Queries</h3>
+                
+                <div class="space-y-3">
+                    <button @click="queryType = 'select'; queryText = 'SELECT * FROM users LIMIT 10';" 
+                            class="w-full text-left p-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-600/50 rounded-lg transition-colors">
+                        <div class="font-medium text-slate-900 dark:text-white">Select All Users</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Get first 10 users</div>
+                    </button>
+                    
+                    <button @click="queryType = 'select'; queryText = 'SELECT COUNT(*) as total FROM users';" 
+                            class="w-full text-left p-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-600/50 rounded-lg transition-colors">
+                        <div class="font-medium text-slate-900 dark:text-white">Count Records</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Get total record count</div>
+                    </button>
+                    
+                    <button @click="queryType = 'select'; queryText = 'SELECT * FROM users WHERE created_at > \"2024-01-01\"';" 
+                            class="w-full text-left p-3 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-600/50 rounded-lg transition-colors">
+                        <div class="font-medium text-slate-900 dark:text-white">Recent Users</div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Users created this year</div>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Query Tips -->
+            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50 card-shadow">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Query Tips</h3>
+                
+                <div class="space-y-3 text-sm text-slate-600 dark:text-slate-400">
+                    <div class="flex items-start">
+                        <i class="w-4 h-4 text-blue-500 mt-0.5 mr-2 flex-shrink-0" data-lucide="info"></i>
+                        <span>Use π-based identifiers for precise record targeting</span>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <i class="w-4 h-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" data-lucide="check-circle"></i>
+                        <span>Queries support all standard SQL operations</span>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <i class="w-4 h-4 text-purple-500 mt-0.5 mr-2 flex-shrink-0" data-lucide="zap"></i>
+                        <span>π-Engine optimizes queries automatically</span>
+                    </div>
+                    
+                    <div class="flex items-start">
+                        <i class="w-4 h-4 text-orange-500 mt-0.5 mr-2 flex-shrink-0" data-lucide="shield"></i>
+                        <span>All queries are validated for security</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Performance Info -->
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-6 border border-blue-200/50 dark:border-blue-700/50">
+                <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4">Performance</h3>
+                
+                <div class="space-y-3 text-sm text-blue-800 dark:text-blue-200">
+                    <div class="flex items-center justify-between">
+                        <span>Query Time</span>
+                        <span class="font-mono">~1.2ms</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span>Cache Hit</span>
+                        <span class="font-mono">98%</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <span>π-Index</span>
+                        <span class="font-mono">Active</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

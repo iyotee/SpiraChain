@@ -1,0 +1,310 @@
+version: '3.8'
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-healthcheck: &default-healthcheck
+  test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+  interval: 30s
+  timeout: 10s
+  retries: 3
+  start_period: 60s
+
+services:
+  # Main SpiraPi Application
+  spirapi-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: spirapi-main
+    ports:
+      - "8000:8000"  # API server
+      - "8001:8001"  # Admin interface
+    volumes:
+      - spirapi-data:/app/data
+      - spirapi-logs:/app/logs
+      - ./config:/app/config:ro
+      - ./ssl:/app/ssl:ro
+    environment:
+      - SPIRAPI_ENV=production
+      - SPIRAPI_DATA_DIR=/app/data
+      - SPIRAPI_LOG_LEVEL=INFO
+      - SPIRAPI_HOST=0.0.0.0
+      - SPIRAPI_PORT=8000
+      - SPIRAPI_ADMIN_PORT=8001
+      - SPIRAPI_WORKERS=4
+      - SPIRAPI_MAX_CONNECTIONS=1000
+      - SPIRAPI_TIMEOUT=300
+      - REDIS_URL=redis://spirapi-redis:6379
+      - POSTGRES_URL=postgresql://spirapi:spirapi123@spirapi-postgres:5432/spirapi
+    healthcheck:
+      <<: *default-healthcheck
+    restart: unless-stopped
+    networks:
+      - spirapi-network
+    logging: *default-logging
+    depends_on:
+      - spirapi-redis
+      - spirapi-postgres
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '1.0'
+
+  # Redis Cache
+  spirapi-redis:
+    image: redis:7-alpine
+    container_name: spirapi-cache
+    ports:
+      - "6379:6379"
+    volumes:
+      - spirapi-redis:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    networks:
+      - spirapi-network
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  # PostgreSQL Database
+  spirapi-postgres:
+    image: postgres:15-alpine
+    container_name: spirapi-database
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=spirapi
+      - POSTGRES_USER=spirapi
+      - POSTGRES_PASSWORD=spirapi123
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - spirapi-postgres:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    networks:
+      - spirapi-network
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spirapi"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  # Nginx Reverse Proxy
+  spirapi-nginx:
+    image: nginx:alpine
+    container_name: spirapi-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - spirapi-app
+    restart: unless-stopped
+    networks:
+      - spirapi-network
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus Monitoring
+  spirapi-prometheus:
+    image: prom/prometheus:latest
+    container_name: spirapi-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - spirapi-prometheus:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=30d'
+    restart: unless-stopped
+    networks:
+      - spirapi-network
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  # Grafana Dashboard
+  spirapi-grafana:
+    image: grafana/grafana:latest
+    container_name: spirapi-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - spirapi-grafana:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    restart: unless-stopped
+    networks:
+      - spirapi-network
+    logging: *default-logging
+    depends_on:
+      - spirapi-prometheus
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  # Elasticsearch for Logging
+  spirapi-elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: spirapi-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - spirapi-elasticsearch:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    restart: unless-stopped
+    networks:
+      - spirapi-network
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  # Kibana for Log Visualization
+  spirapi-kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: spirapi-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://spirapi-elasticsearch:9200
+    ports:
+      - "5601:5601"
+    restart: unless-stopped
+    networks:
+      - spirapi-network
+    logging: *default-logging
+    depends_on:
+      - spirapi-elasticsearch
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  # Kafka for Event Streaming
+  spirapi-kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: spirapi-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: spirapi-zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_HOST://spirapi-kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    volumes:
+      - spirapi-kafka:/var/lib/kafka/data
+    restart: unless-stopped
+    networks:
+      - spirapi-network
+    logging: *default-logging
+    depends_on:
+      - spirapi-zookeeper
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  # Zookeeper for Kafka
+  spirapi-zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: spirapi-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - spirapi-zookeeper:/var/lib/zookeeper/data
+      - spirapi-zookeeper:/var/lib/zookeeper/log
+    restart: unless-stopped
+    networks:
+      - spirapi-network
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+volumes:
+  spirapi-data:
+    driver: local
+  spirapi-logs:
+    driver: local
+  spirapi-redis:
+    driver: local
+  spirapi-postgres:
+    driver: local
+  spirapi-prometheus:
+    driver: local
+  spirapi-grafana:
+    driver: local
+  spirapi-elasticsearch:
+    driver: local
+  spirapi-kafka:
+    driver: local
+  spirapi-zookeeper:
+    driver: local
+
+networks:
+  spirapi-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SpiraPiWeb 2025{% endblock %}</title>
+    
+    <!-- Tailwind CSS 3.4 - Latest version -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+    
+    <!-- Alpine.js 3.x - Latest version -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <!-- HTMX - Modern interactions -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <!-- Lucide Icons - Modern icon set -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- Custom CSS for animations and dark mode -->
+    <style>
+        /* Custom styles for dark mode, card shadows, and animations */
+        .card-shadow { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1); }
+        .dark .card-shadow { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2), 0 10px 15px rgba(0, 0, 0, 0.3); }
+        .card-shadow-hover:hover { box-shadow: 0 6px 8px rgba(0, 0, 0, 0.08), 0 12px 20px rgba(0, 0, 0, 0.15); }
+        .dark .card-shadow-hover:hover { box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3), 0 12px 20px rgba(0, 0, 0, 0.4); }
+        @keyframes bounce-gentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-bounce-gentle { animation: bounce-gentle 1.5s infinite ease-in-out; }
+        
+        /* SpiraPi logo animation */
+        @keyframes spiral-rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spiral-logo { animation: spiral-rotate 20s linear infinite; }
+    </style>
+</head>
+<body class="h-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans antialiased">
+    <div class="flex h-full" x-data="{ 
+        sidebarOpen: false, 
+        darkMode: localStorage.getItem('darkMode') === 'true',
+        toggleTheme() {
+            this.darkMode = !this.darkMode;
+            localStorage.setItem('darkMode', this.darkMode);
+            document.documentElement.classList.toggle('dark', this.darkMode);
+        }
+    }" x-init="
+        $watch('darkMode', val => {
+            localStorage.setItem('darkMode', val);
+            document.documentElement.classList.toggle('dark', val);
+        });
+        document.documentElement.classList.toggle('dark', darkMode);
+    ">
+        
+        <!-- Sidebar -->
+        <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shadow-lg transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out"
+               :class="{ '-translate-x-full': !sidebarOpen, 'translate-x-0': sidebarOpen }"
+               @click.away="sidebarOpen = false">
+            
+            <!-- Logo Section -->
+            <div class="relative flex items-center justify-center h-16 px-6 border-b border-slate-200 dark:border-slate-700">
+                <a href="/" class="flex items-center text-xl font-bold text-blue-600 dark:text-blue-400">
+                    <span class="text-slate-900 dark:text-white">SpiraPi</span>
+                    <span class="text-blue-600 dark:text-blue-400 ml-1">Web</span>
+                </a>
+                <button @click="sidebarOpen = false" class="absolute right-4 lg:hidden text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+                    <i class="w-6 h-6" data-lucide="x"></i>
+                </button>
+            </div>
+            
+            <!-- Navigation Menu -->
+            <nav class="flex-1 p-4 space-y-2">
+                <a href="/" class="flex items-center px-4 py-3 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
+                   :class="{ 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400': '{{ current_page }}' === 'dashboard' }">
+                    <i class="w-5 h-5 mr-3" data-lucide="layout-dashboard"></i>
+                    Dashboard
+                </a>
+                
+                <a href="/tables" class="flex items-center px-4 py-3 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
+                   :class="{ 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400': '{{ current_page }}' === 'tables' }">
+                    <i class="w-5 h-5 mr-3" data-lucide="table"></i>
+                    Tables
+                </a>
+                
+                <a href="/query" class="flex items-center px-4 py-3 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
+                   :class="{ 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400': '{{ current_page }}' === 'query' }">
+                    <i class="w-5 h-5 mr-3" data-lucide="search"></i>
+                    Query
+                </a>
+                
+                <a href="/semantic" class="flex items-center px-4 py-3 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
+                   :class="{ 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400': '{{ current_page }}' === 'semantic' }">
+                    <i class="w-5 h-5 mr-3" data-lucide="brain"></i>
+                    Semantic Search
+                </a>
+                
+                <a href="/stats" class="flex items-center px-4 py-3 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
+                   :class="{ 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400': '{{ current_page }}' === 'stats' }">
+                    <i class="w-5 h-5 mr-3" data-lucide="bar-chart-3"></i>
+                    Statistics
+                </a>
+            </nav>
+            
+            <!-- Bottom Section -->
+            <div class="absolute bottom-0 left-0 w-full p-4 border-t border-slate-200 dark:border-slate-700">
+                <button @click="toggleTheme()" class="w-full flex items-center justify-center p-2 text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
+                    <svg x-show="!darkMode" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                    <svg x-show="darkMode" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                    </svg>
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col lg:ml-64">
+            
+            <!-- Top Bar -->
+            <header class="sticky top-0 z-40 flex-shrink-0 h-16 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 shadow-sm">
+                <div class="flex items-center space-x-4">
+                    <button @click="sidebarOpen = true" class="lg:hidden text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+                        <i class="w-6 h-6" data-lucide="menu"></i>
+                    </button>
+                    
+                    <!-- Breadcrumbs -->
+                    <nav class="flex items-center space-x-2 text-sm">
+                        {% if breadcrumbs %}
+                            {% for breadcrumb in breadcrumbs %}
+                                {% if not loop.last %}
+                                    <a href="{{ breadcrumb.url }}" class="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                                        {{ breadcrumb.name }}
+                                    </a>
+                                    <i class="w-4 h-4 text-slate-400" data-lucide="chevron-right"></i>
+                                {% else %}
+                                    <span class="text-slate-900 dark:text-white font-medium">{{ breadcrumb.name }}</span>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    </nav>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <span class="text-slate-700 dark:text-slate-300 text-sm">Admin User</span>
+                    <img class="h-8 w-8 rounded-full" src="https://api.dicebear.com/7.x/initials/svg?seed=Admin" alt="User Avatar">
+                </div>
+            </header>
+            
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-slate-900">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        lucide.createIcons();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

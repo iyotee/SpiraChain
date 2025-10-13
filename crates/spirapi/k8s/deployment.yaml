@@ -1,0 +1,372 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spirapi-app
+  namespace: spirapi
+  labels:
+    app: spirapi
+    component: app
+    version: "1.0.0"
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: spirapi
+      component: app
+  template:
+    metadata:
+      labels:
+        app: spirapi
+        component: app
+        version: "1.0.0"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: spirapi-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+      - name: spirapi-app
+        image: spirapi:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        - name: admin
+          containerPort: 8001
+          protocol: TCP
+        env:
+        - name: SPIRAPI_ENV
+          value: "production"
+        - name: SPIRAPI_DATA_DIR
+          value: "/app/data"
+        - name: SPIRAPI_LOG_LEVEL
+          value: "INFO"
+        - name: SPIRAPI_HOST
+          value: "0.0.0.0"
+        - name: SPIRAPI_PORT
+          value: "8000"
+        - name: SPIRAPI_ADMIN_PORT
+          value: "8001"
+        - name: SPIRAPI_WORKERS
+          value: "4"
+        - name: SPIRAPI_MAX_CONNECTIONS
+          value: "1000"
+        - name: SPIRAPI_TIMEOUT
+          value: "300"
+        - name: REDIS_URL
+          value: "redis://spirapi-redis:6379"
+        - name: POSTGRES_URL
+          valueFrom:
+            secretKeyRef:
+              name: spirapi-secrets
+              key: postgres-url
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: spirapi-secrets
+              key: jwt-secret
+        - name: API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: spirapi-secrets
+              key: api-key
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: spirapi-data
+          mountPath: /app/data
+        - name: spirapi-logs
+          mountPath: /app/logs
+        - name: spirapi-config
+          mountPath: /app/config
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+      volumes:
+      - name: spirapi-data
+        persistentVolumeClaim:
+          claimName: spirapi-data-pvc
+      - name: spirapi-logs
+        persistentVolumeClaim:
+          claimName: spirapi-logs-pvc
+      - name: spirapi-config
+        configMap:
+          name: spirapi-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spirapi-redis
+  namespace: spirapi
+  labels:
+    app: spirapi
+    component: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spirapi
+      component: redis
+  template:
+    metadata:
+      labels:
+        app: spirapi
+        component: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        command:
+        - redis-server
+        - --appendonly
+        - yes
+        - --maxmemory
+        - 512mb
+        - --maxmemory-policy
+        - allkeys-lru
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: spirapi-redis-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spirapi-postgres
+  namespace: spirapi
+  labels:
+    app: spirapi
+    component: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spirapi
+      component: postgres
+  template:
+    metadata:
+      labels:
+        app: spirapi
+        component: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: "spirapi"
+        - name: POSTGRES_USER
+          value: "spirapi"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: spirapi-secrets
+              key: postgres-password
+        - name: POSTGRES_INITDB_ARGS
+          value: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - spirapi
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - spirapi
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: spirapi-postgres-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spirapi-prometheus
+  namespace: spirapi
+  labels:
+    app: spirapi
+    component: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spirapi
+      component: prometheus
+  template:
+    metadata:
+      labels:
+        app: spirapi
+        component: prometheus
+    spec:
+      containers:
+      - name: prometheus
+        image: prom/prometheus:latest
+        ports:
+        - containerPort: 9090
+        args:
+        - --config.file=/etc/prometheus/prometheus.yml
+        - --storage.tsdb.path=/prometheus
+        - --web.console.libraries=/etc/prometheus/console_libraries
+        - --web.console.templates=/etc/prometheus/consoles
+        - --web.enable-lifecycle
+        - --storage.tsdb.retention.time=30d
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: prometheus-config
+          mountPath: /etc/prometheus
+          readOnly: true
+        - name: prometheus-data
+          mountPath: /prometheus
+      volumes:
+      - name: prometheus-config
+        configMap:
+          name: prometheus-config
+      - name: prometheus-data
+        persistentVolumeClaim:
+          claimName: spirapi-prometheus-pvc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spirapi-grafana
+  namespace: spirapi
+  labels:
+    app: spirapi
+    component: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spirapi
+      component: grafana
+  template:
+    metadata:
+      labels:
+        app: spirapi
+        component: grafana
+    spec:
+      containers:
+      - name: grafana
+        image: grafana/grafana:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: spirapi-secrets
+              key: grafana-password
+        - name: GF_USERS_ALLOW_SIGN_UP
+          value: "false"
+        - name: GF_INSTALL_PLUGINS
+          value: "grafana-clock-panel,grafana-simple-json-datasource"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - name: grafana-data
+          mountPath: /var/lib/grafana
+        - name: grafana-provisioning
+          mountPath: /etc/grafana/provisioning
+          readOnly: true
+      volumes:
+      - name: grafana-data
+        persistentVolumeClaim:
+          claimName: spirapi-grafana-pvc
+      - name: grafana-provisioning
+        configMap:
+          name: grafana-provisioning
