@@ -252,11 +252,17 @@ mod tests {
         } else {
             crate::INITIAL_SUPPLY - total
         };
-        
+
         // Allow up to 0.01% difference (due to floating point precision)
         let tolerance = crate::INITIAL_SUPPLY / 10000;
-        assert!(difference <= tolerance, "Total allocation {} differs from initial supply {} by {}, tolerance: {}", 
-                total, crate::INITIAL_SUPPLY, difference, tolerance);
+        assert!(
+            difference <= tolerance,
+            "Total allocation {} differs from initial supply {} by {}, tolerance: {}",
+            total,
+            crate::INITIAL_SUPPLY,
+            difference,
+            tolerance
+        );
     }
 
     #[test]

@@ -4,7 +4,8 @@
 use futures::StreamExt;
 use libp2p::{
     gossipsub,
-    identity::Keypair, noise,
+    identity::Keypair,
+    noise,
     swarm::{Swarm, SwarmEvent},
     tcp, yamux, Multiaddr, PeerId,
 };
