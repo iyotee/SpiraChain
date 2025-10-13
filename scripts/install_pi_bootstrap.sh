@@ -96,7 +96,7 @@ cargo build --release
 
 echo ""
 echo "🐍 Step 6/6: Installing Python dependencies..."
-pip3 install -r crates/spirapi/requirements.txt
+pip3 install --break-system-packages -r crates/spirapi/requirements.txt
 
 echo ""
 echo "🔑 Creating validator wallet..."
