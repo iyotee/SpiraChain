@@ -1,6 +1,8 @@
 use spirachain_core::{Transaction, Result, Amount, Address};
 use spirachain_crypto::KeyPair;
 use spirachain_consensus::{ProofOfSpiral, Validator};
+// P2P network temporairement désactivé - needs LibP2P dependency fixes
+// use spirachain_network::LibP2PNetwork;
 use crate::{NodeConfig, Mempool, WorldState, BlockStorage};
 use std::sync::Arc;
 use parking_lot::RwLock;
@@ -15,6 +17,7 @@ pub struct ValidatorNode {
     state: Arc<RwLock<WorldState>>,
     storage: BlockStorage,
     consensus: ProofOfSpiral,
+    // network: Option<Arc<RwLock<LibP2PNetwork>>>,  // Temporairement désactivé
     is_running: Arc<RwLock<bool>>,
     blocks_produced: u64,
 }
@@ -68,6 +71,7 @@ impl ValidatorNode {
             state: Arc::new(RwLock::new(WorldState::default())),
             storage,
             consensus,
+            // network: None,  // Temporairement désactivé
             is_running: Arc::new(RwLock::new(false)),
             blocks_produced: 0,
         })
@@ -78,6 +82,10 @@ impl ValidatorNode {
         info!("   Address: {}", self.validator.address);
         info!("   Stake: {} QBT", self.validator.stake.value() as f64 / 1e18);
         info!("   Data dir: {}", self.config.data_dir.display());
+
+        // TODO: P2P network integration (LibP2P deps need fixes)
+        warn!("⚠️ P2P network currently disabled - nodes produce independent blocks");
+        warn!("   LibP2P implementation exists but needs dependency resolution");
 
         *self.is_running.write() = true;
 

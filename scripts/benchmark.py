@@ -130,17 +130,26 @@ class SpiraChainBenchmark:
             }
     
     def count_blocks(self):
-        """Count blocks in testnet"""
+        """Count blocks in testnet by reading logs"""
         try:
-            # Lire depuis storage si possible
             import os
-            if os.path.exists("testnet_data/node_1"):
-                # Compter fichiers de blocs
-                blocks_dir = "testnet_data/node_1/blobs"
-                if os.path.exists(blocks_dir):
-                    return len(os.listdir(blocks_dir))
+            import re
+            
+            # Lire le log pour compter "Block X produced"
+            log_file = "testnet_logs/node_1.log"
+            if not os.path.exists(log_file):
+                return 0
+            
+            with open(log_file, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+                # Compter "Block X produced successfully"
+                matches = re.findall(r'Block (\d+) produced successfully', content)
+                if matches:
+                    # Retourner le numéro du dernier bloc + 1 (car commence à 0)
+                    return max([int(m) for m in matches]) + 1
             return 0
-        except:
+        except Exception as e:
+            print(f"   [DEBUG] Error counting blocks: {e}")
             return 0
     
     def save_results(self, filename="benchmark_results.json"):

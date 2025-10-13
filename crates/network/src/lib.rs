@@ -2,11 +2,15 @@ pub mod p2p;
 pub mod protocol;
 pub mod sync;
 pub mod encryption;
+// pub mod discovery;  // Temporairement désactivé
+// pub mod libp2p_full;  // Temporairement désactivé - needs dep fixes
 
 pub use p2p::*;
 pub use protocol::*;
 pub use sync::*;
 pub use encryption::*;
+// pub use discovery::*;
+// pub use libp2p_full::LibP2PNetwork;
 
 use spirachain_core::{Block, Transaction, Result};
 
