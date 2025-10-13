@@ -69,8 +69,8 @@ impl SpiraPiEngine {
             info!("   ✓ SemanticPiIndexer initialized");
 
             let engine = SpiraPiEngine {
-                pi_engine: pi_engine.unbind(),
-                semantic_indexer: semantic_indexer.unbind(),
+                pi_engine: pi_engine.into(),
+                semantic_indexer: semantic_indexer.into(),
             };
 
             *PYTHON_ENGINE.lock() = Some(engine);
@@ -102,37 +102,29 @@ impl SpiraPiEngine {
             )
         })?;
 
-        Python::with_gil(|py| {
+        Python::with_gil(|py| -> Result<PiCoordinate, SpiraChainError> {
             let _hash_hex = hex::encode(entity_hash);
 
-            let kwargs = PyDict::new(py);
-            kwargs
-                .set_item("length", 20)
-                .map_err(|e| SpiraChainError::Internal(format!("PyDict error: {}", e)))?;
-            kwargs
-                .set_item("include_spiral_component", true)
-                .map_err(|e| SpiraChainError::Internal(format!("PyDict error: {}", e)))?;
+            let result = (|| -> PyResult<String> {
+                let kwargs = PyDict::new(py);
+                kwargs.set_item("length", 20)?;
+                kwargs.set_item("include_spiral_component", true)?;
 
-            let result = engine
-                .pi_engine
-                .call_method(py, "generate_unique_identifier", (), Some(kwargs))
-                .map_err(|e| {
-                    SpiraChainError::Internal(format!("Python method call failed: {}", e))
-                })?;
+                let result = engine
+                    .pi_engine
+                    .call_method(py, "generate_unique_identifier", (), Some(kwargs))?;
 
-            let result_ref = result.as_ref(py);
-            let result_dict = result_ref
-                .downcast::<PyDict>()
-                .map_err(|e| SpiraChainError::Internal(format!("Result not a dict: {}", e)))?;
+                let result_ref = result.as_ref(py);
+                let result_dict = result_ref.downcast::<PyDict>()?;
 
-            let identifier = result_dict
-                .get_item("identifier")
-                .map_err(|e| SpiraChainError::Internal(format!("No identifier key: {}", e)))?
-                .ok_or_else(|| SpiraChainError::Internal("identifier is None".to_string()))?;
+                let identifier = result_dict
+                    .get_item("identifier")?
+                    .ok_or_else(|| pyo3::exceptions::PyKeyError::new_err("identifier is None"))?;
 
-            let id_str: String = identifier.extract().map_err(|e| {
-                SpiraChainError::Internal(format!("Failed to extract string: {}", e))
-            })?;
+                identifier.extract()
+            })().map_err(|e| SpiraChainError::Internal(format!("Python call failed: {}", e)))?;
+
+            let id_str = result;
 
             let hash = blake3::hash(id_str.as_bytes());
             let hash_bytes = hash.as_bytes();
@@ -167,52 +159,39 @@ impl SpiraPiEngine {
             .as_ref()
             .ok_or_else(|| SpiraChainError::Internal("Engine not initialized".to_string()))?;
 
-        Python::with_gil(|py| {
-            let request = PyDict::new(py);
-            request
-                .set_item("content", content)
-                .map_err(|e| SpiraChainError::Internal(format!("PyDict error: {}", e)))?;
-            request
-                .set_item("content_type", content_type)
-                .map_err(|e| SpiraChainError::Internal(format!("PyDict error: {}", e)))?;
+        Python::with_gil(|py| -> Result<SemanticIndexResult, SpiraChainError> {
+            (|| -> PyResult<SemanticIndexResult> {
+                let request = PyDict::new(py);
+                request.set_item("content", content)?;
+                request.set_item("content_type", content_type)?;
 
-            let result = engine
-                .semantic_indexer
-                .call_method(
+                let result = engine.semantic_indexer.call_method(
                     py,
                     "index_with_semantics",
                     (request, &engine.pi_engine),
                     None,
-                )
-                .map_err(|e| SpiraChainError::Internal(format!("Method call failed: {}", e)))?;
+                )?;
 
-            let result_dict = result
-                .downcast::<PyDict>()
-                .map_err(|e| SpiraChainError::Internal(format!("Result not dict: {}", e)))?;
+                let result_dict = result.downcast::<PyDict>()?;
 
-            let pi_id = result_dict
-                .get_item("pi_id")
-                .map_err(|e| SpiraChainError::Internal(format!("Get pi_id failed: {}", e)))?
-                .ok_or_else(|| SpiraChainError::Internal("pi_id missing".to_string()))?
-                .extract::<String>()
-                .unwrap_or_else(|_| {
-                    format!(
-                        "pi_{}",
-                        hex::encode(&blake3::hash(content.as_bytes()).as_bytes()[..8])
-                    )
-                });
+                let pi_id = result_dict
+                    .get_item("pi_id")?
+                    .and_then(|v| v.extract::<String>().ok())
+                    .unwrap_or_else(|| {
+                        format!(
+                            "pi_{}",
+                            hex::encode(&blake3::hash(content.as_bytes()).as_bytes()[..8])
+                        )
+                    });
 
-            let content_hash_obj = result_dict.get_item("content_hash").unwrap_or(None);
-            let content_hash = if let Some(obj) = content_hash_obj {
-                obj.extract::<String>()
-                    .unwrap_or_else(|_| blake3::hash(content.as_bytes()).to_hex().to_string())
-            } else {
-                blake3::hash(content.as_bytes()).to_hex().to_string()
-            };
+                let content_hash = result_dict
+                    .get_item("content_hash")?
+                    .and_then(|v| v.extract::<String>().ok())
+                    .unwrap_or_else(|| blake3::hash(content.as_bytes()).to_hex().to_string());
 
-            let semantic_analysis = result_dict.get_item("semantic_analysis").unwrap_or(None);
+                let semantic_analysis = result_dict.get_item("semantic_analysis")?;
 
-            let semantic_vector = if let Some(analysis) = semantic_analysis {
+                let semantic_vector = if let Some(analysis) = semantic_analysis {
                 if let Ok(analysis_dict) = analysis.downcast::<PyDict>() {
                     if let Ok(Some(embedding)) = analysis_dict.get_item("embedding") {
                         if let Ok(list) = embedding.downcast::<PyList>() {
@@ -246,19 +225,19 @@ impl SpiraPiEngine {
                 0.85
             };
 
-            let implicit_relations = vec![];
+                let implicit_relations = vec![];
 
-            Ok(SemanticIndexResult {
-                pi_id,
-                semantic_vector,
-                content_hash,
-                semantic_score,
-                implicit_relations,
+                Ok(SemanticIndexResult {
+                    pi_id,
+                    semantic_vector,
+                    content_hash,
+                    semantic_score,
+                    implicit_relations,
+                })
+            })().map_err(|e| {
+                error!("Semantic indexing error: {}", e);
+                SpiraChainError::Internal(format!("Python semantic indexing failed: {}", e))
             })
-        })
-        .map_err(|e: PyErr| {
-            error!("Semantic indexing error: {}", e);
-            SpiraChainError::Internal(format!("Python semantic indexing failed: {}", e))
         })
     }
 
@@ -269,28 +248,24 @@ impl SpiraPiEngine {
             .as_ref()
             .ok_or_else(|| SpiraChainError::Internal("Engine not initialized".to_string()))?;
 
-        Python::with_gil(|py| {
-            let result = engine
-                .pi_engine
-                .call_method1(py, "calculate_pi", (precision, algorithm))
-                .map_err(|e| SpiraChainError::Internal(format!("calculate_pi failed: {}", e)))?;
+        Python::with_gil(|py| -> Result<String, SpiraChainError> {
+            (|| -> PyResult<String> {
+                let result = engine
+                    .pi_engine
+                    .call_method1(py, "calculate_pi", (precision, algorithm))?;
 
-            let result_dict = result
-                .downcast::<PyDict>()
-                .map_err(|e| SpiraChainError::Internal(format!("Result not dict: {}", e)))?;
+                let result_dict = result.downcast::<PyDict>()?;
 
-            let value = result_dict
-                .get_item("value")
-                .map_err(|e| SpiraChainError::Internal(format!("Get value failed: {}", e)))?
-                .ok_or_else(|| SpiraChainError::Internal("value missing".to_string()))?
-                .extract::<String>()
-                .map_err(|e| SpiraChainError::Internal(format!("Extract string failed: {}", e)))?;
+                let value = result_dict
+                    .get_item("value")?
+                    .ok_or_else(|| pyo3::exceptions::PyKeyError::new_err("value missing"))?
+                    .extract::<String>()?;
 
-            Ok(value)
-        })
-        .map_err(|e: PyErr| {
-            error!("π calculation error: {}", e);
-            SpiraChainError::Internal(format!("Python π calculation failed: {}", e))
+                Ok(value)
+            })().map_err(|e| {
+                error!("π calculation error: {}", e);
+                SpiraChainError::Internal(format!("Python π calculation failed: {}", e))
+            })
         })
     }
 }
