@@ -70,6 +70,9 @@ enum Commands {
 
         #[arg(long)]
         data_dir: Option<String>,
+
+        #[arg(long, default_value = "9000")]
+        port: u16,
     },
 }
 
@@ -231,8 +234,9 @@ async fn main() -> anyhow::Result<()> {
             validator,
             wallet,
             data_dir,
+            port,
         } => {
-            node::handle_node_start(validator, wallet, data_dir).await?;
+            node::handle_node_start(validator, wallet, data_dir, port).await?;
         }
     }
 

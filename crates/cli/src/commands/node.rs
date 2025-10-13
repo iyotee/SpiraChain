@@ -10,6 +10,7 @@ pub async fn handle_node_start(
     validator_mode: bool,
     wallet_path: Option<String>,
     data_dir: Option<String>,
+    port: u16,
 ) -> Result<()> {
     let _ = tracing_subscriber::fmt::try_init();
 
@@ -27,6 +28,8 @@ pub async fn handle_node_start(
     if let Some(dir) = data_dir {
         config.data_dir = std::path::PathBuf::from(dir);
     }
+    config.network_addr = format!("0.0.0.0:{}", port);
+    info!("   P2P Port: {}", port);
 
     if validator_mode {
         let wallet_file = wallet_path.as_deref().unwrap_or("validator_wallet.json");
