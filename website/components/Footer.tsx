@@ -38,7 +38,7 @@ export default function Footer() {
               <span className="text-2xl font-black text-white">SpiraChain</span>
             </div>
             <p className="text-sm leading-relaxed">
-              The world's first post-quantum semantic blockchain. 
+              The world&apos;s first post-quantum semantic blockchain. 
               Powered by AI, secured by mathematics.
             </p>
           </div>

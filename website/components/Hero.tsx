@@ -42,7 +42,7 @@ export default function Hero() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-6xl md:text-8xl font-black mb-8 leading-tight"
           >
-            The World's First
+            The World&apos;s First
             <br />
             <span className="gradient-text">Post-Quantum</span>
             <br />

@@ -140,7 +140,7 @@ export default function Performance() {
                 <h4 className="font-bold text-xl mb-2">Difficulty Cap = Raspberry Pi Forever</h4>
                 <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
                   SpiraChain caps difficulty at <span className="font-bold text-indigo-600">250</span> to ensure Raspberry Pi validators remain viable forever. 
-                  Even in 2149, you'll be able to validate with a $80 device. No arms race, no centralization.
+                  Even in 2149, you&apos;ll be able to validate with a $80 device. No arms race, no centralization.
                 </p>
                 <div className="mt-4 flex items-center space-x-6 text-sm">
                   <div className="flex items-center space-x-2">
