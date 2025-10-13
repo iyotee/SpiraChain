@@ -70,7 +70,11 @@ impl AttackMitigationSystem {
 
         self.monitor_validator_behavior(block);
 
-        if block.header.block_height % CHECKPOINT_INTERVAL == 0 {
+        if block
+            .header
+            .block_height
+            .is_multiple_of(CHECKPOINT_INTERVAL)
+        {
             self.create_checkpoint(block);
         }
 

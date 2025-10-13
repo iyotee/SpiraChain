@@ -17,6 +17,7 @@ struct PeerEncryptionState {
     public_key: KyberPublicKey,
     shared_secret: Option<KyberSharedSecret>,
     messages_exchanged: usize,
+    #[allow(dead_code)]
     established_at: std::time::Instant,
 }
 
@@ -155,10 +156,10 @@ impl P2PEncryption {
 
         let cipher = Aes256Gcm::new(key.into());
         let nonce_bytes = rand::random::<[u8; 12]>();
-        let nonce = Nonce::from_slice(&nonce_bytes);
+        let nonce = Nonce::from(nonce_bytes);
 
         let ciphertext = cipher
-            .encrypt(nonce, plaintext)
+            .encrypt(&nonce, plaintext)
             .map_err(|e| SpiraChainError::CryptoError(format!("AES-GCM encrypt failed: {}", e)))?;
 
         let mut result = Vec::with_capacity(12 + ciphertext.len());
@@ -179,13 +180,15 @@ impl P2PEncryption {
             ));
         }
 
-        let nonce = Nonce::from_slice(&data[..12]);
+        let mut nonce_bytes = [0u8; 12];
+        nonce_bytes.copy_from_slice(&data[..12]);
+        let nonce = Nonce::from(nonce_bytes);
         let ciphertext = &data[12..];
 
         let cipher = Aes256Gcm::new(key.into());
 
         cipher
-            .decrypt(nonce, ciphertext)
+            .decrypt(&nonce, ciphertext)
             .map_err(|e| SpiraChainError::CryptoError(format!("AES-GCM decrypt failed: {}", e)))
     }
 }

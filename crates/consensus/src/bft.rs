@@ -13,7 +13,7 @@ pub enum BFTMessage {
     PrePrepare {
         view: u64,
         sequence: u64,
-        block: Block,
+        block: Box<Block>,
         signature: Vec<u8>,
     },
     Prepare {
@@ -87,7 +87,7 @@ impl BFTConsensus {
         let message = BFTMessage::PrePrepare {
             view: self.view_number,
             sequence: self.sequence_number,
-            block,
+            block: Box::new(block),
             signature,
         };
 

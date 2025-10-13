@@ -220,9 +220,6 @@ impl LibP2PNetwork {
             gossipsub::Event::GossipsubNotSupported { peer_id } => {
                 warn!("⚠️ Peer {} doesn't support Gossipsub", peer_id);
             }
-            _ => {
-                // Handle any other gossipsub events
-            }
         }
     }
 

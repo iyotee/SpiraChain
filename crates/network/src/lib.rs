@@ -13,6 +13,7 @@ pub use sync::*;
 use spirachain_core::{Block, Result, Transaction};
 
 pub struct NetworkNode {
+    #[allow(dead_code)]
     peer_id: String,
     listening_addr: String,
 }
