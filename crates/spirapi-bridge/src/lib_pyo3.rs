@@ -30,60 +30,41 @@ impl SpiraPiEngine {
 
         pyo3::prepare_freethreaded_python();
 
-        Python::with_gil(|py| {
-            let sys = py
-                .import_bound("sys")
-                .map_err(|e| SpiraChainError::Internal(format!("Failed to import sys: {}", e)))?;
+        Python::with_gil(|py| -> PyResult<()> {
+            let sys = py.import("sys")?;
 
-            let path = sys
-                .getattr("path")
-                .map_err(|e| SpiraChainError::Internal(format!("Failed to get sys.path: {}", e)))?;
+            let path = sys.getattr("path")?;
 
             let spirapi_src = spirapi_path.join("src");
             if !spirapi_src.exists() {
-                return Err(SpiraChainError::Internal(format!(
+                return Err(pyo3::exceptions::PyRuntimeError::new_err(format!(
                     "SpiraPi src directory not found: {}",
                     spirapi_src.display()
                 )));
             }
 
-            path.call_method1("insert", (0, spirapi_src.to_str().unwrap()))
-                .map_err(|e| {
-                    SpiraChainError::Internal(format!("Failed to add to sys.path: {}", e))
-                })?;
+            path.call_method1("insert", (0, spirapi_src.to_str().unwrap()))?;
 
             info!("   ✓ Added {} to Python path", spirapi_src.display());
 
-            let math_module = py.import_bound("math_engine.pi_sequences").map_err(|e| {
-                SpiraChainError::Internal(format!("Failed to import math_engine: {}", e))
-            })?;
+            let math_module = py.import("math_engine.pi_sequences")?;
 
-            let engine_class = math_module.getattr("PiDIndexationEngine").map_err(|e| {
-                SpiraChainError::Internal(format!("Failed to get PiDIndexationEngine: {}", e))
-            })?;
+            let engine_class = math_module.getattr("PiDIndexationEngine")?;
 
-            let pi_engine = engine_class.call0().map_err(|e| {
-                SpiraChainError::Internal(format!("Failed to create PiDIndexationEngine: {}", e))
-            })?;
+            let pi_engine = engine_class.call0()?;
 
             info!("   ✓ PiDIndexationEngine initialized");
 
-            let ai_module = py.import_bound("ai.semantic_indexer").map_err(|e| {
-                SpiraChainError::Internal(format!("Failed to import ai.semantic_indexer: {}", e))
-            })?;
+            let ai_module = py.import("ai.semantic_indexer")?;
 
-            let indexer_class = ai_module.getattr("SemanticPiIndexer").map_err(|e| {
-                SpiraChainError::Internal(format!("Failed to get SemanticPiIndexer: {}", e))
-            })?;
+            let indexer_class = ai_module.getattr("SemanticPiIndexer")?;
 
             let db_path = spirapi_path
                 .join("pi_schemas.db")
                 .to_str()
                 .unwrap()
                 .to_string();
-            let semantic_indexer = indexer_class.call1((db_path,)).map_err(|e| {
-                SpiraChainError::Internal(format!("Failed to create SemanticPiIndexer: {}", e))
-            })?;
+            let semantic_indexer = indexer_class.call1((db_path,))?;
 
             info!("   ✓ SemanticPiIndexer initialized");
 
@@ -206,7 +187,7 @@ impl SpiraPiEngine {
                 .map_err(|e| SpiraChainError::Internal(format!("Method call failed: {}", e)))?;
 
             let result_dict = result
-                .cast_as::<PyDict>(py)
+                .downcast::<PyDict>()
                 .map_err(|e| SpiraChainError::Internal(format!("Result not dict: {}", e)))?;
 
             let pi_id = result_dict
@@ -295,7 +276,7 @@ impl SpiraPiEngine {
                 .map_err(|e| SpiraChainError::Internal(format!("calculate_pi failed: {}", e)))?;
 
             let result_dict = result
-                .cast_as::<PyDict>(py)
+                .downcast::<PyDict>()
                 .map_err(|e| SpiraChainError::Internal(format!("Result not dict: {}", e)))?;
 
             let value = result_dict
