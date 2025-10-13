@@ -40,22 +40,30 @@ pub fn generate_pi_coordinate(
     timestamp: u64,
     nonce: u64,
 ) -> Result<PiCoordinate, SpiraChainError> {
-    Ok(PiCoordinate::from_hash_timestamp(entity_hash, timestamp, nonce))
+    Ok(PiCoordinate::from_hash_timestamp(
+        entity_hash,
+        timestamp,
+        nonce,
+    ))
 }
 
-pub fn generate_batch_identifiers(count: usize, length: usize) -> Result<Vec<PiIdentifier>, SpiraChainError> {
+pub fn generate_batch_identifiers(
+    count: usize,
+    length: usize,
+) -> Result<Vec<PiIdentifier>, SpiraChainError> {
     let mut identifiers = Vec::with_capacity(count);
-    
+
     for i in 0..count {
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap()
-            .as_micros() as u64 + i as u64;
-        
-        let pi_sequence = format!("{:0width$}", i, width=length);
+            .as_micros() as u64
+            + i as u64;
+
+        let pi_sequence = format!("{:0width$}", i, width = length);
         let timestamp_component = format!("{:x}", timestamp);
         let identifier = format!("{}.{}", pi_sequence, timestamp_component);
-        
+
         identifiers.push(PiIdentifier {
             identifier,
             pi_sequence,
@@ -66,11 +74,14 @@ pub fn generate_batch_identifiers(count: usize, length: usize) -> Result<Vec<PiI
             total_length: length + 16,
         });
     }
-    
+
     Ok(identifiers)
 }
 
-pub fn calculate_pi(_precision: usize, algorithm: &str) -> Result<PiCalculationResult, SpiraChainError> {
+pub fn calculate_pi(
+    _precision: usize,
+    algorithm: &str,
+) -> Result<PiCalculationResult, SpiraChainError> {
     Ok(PiCalculationResult {
         value: "3.141592653589793".to_string(),
         digits: "141592653589793".to_string(),
@@ -81,13 +92,16 @@ pub fn calculate_pi(_precision: usize, algorithm: &str) -> Result<PiCalculationR
     })
 }
 
-pub fn semantic_index_content(content: &str, _content_type: &str) -> Result<SemanticIndexResult, SpiraChainError> {
+pub fn semantic_index_content(
+    content: &str,
+    _content_type: &str,
+) -> Result<SemanticIndexResult, SpiraChainError> {
     let hash = blake3::hash(content.as_bytes());
     let content_hash = hash.to_hex().to_string();
     let pi_id = format!("pi_{}", &content_hash[..16]);
-    
+
     let semantic_vector = vec![0.0f32; 384];
-    
+
     Ok(SemanticIndexResult {
         pi_id,
         semantic_vector,
@@ -117,15 +131,14 @@ impl SpiraPiEngine {
     pub fn initialize(_spirapi_path: PathBuf) -> Result<(), SpiraChainError> {
         Ok(())
     }
-    
+
     pub fn generate_embedding(_text: &str) -> Result<Vec<f32>, SpiraChainError> {
         // Return zero vector as fallback
         Ok(vec![0.0; 384])
     }
-    
+
     pub fn calculate_coherence(_embeddings: &[Vec<f32>]) -> Result<f64, SpiraChainError> {
         // Return default coherence
         Ok(1.0)
     }
 }
-

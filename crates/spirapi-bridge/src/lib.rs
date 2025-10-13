@@ -1,4 +1,4 @@
-// SpiraPi Bridge - Real PyO3 Integration  
+// SpiraPi Bridge - Real PyO3 Integration
 // Connects Rust SpiraChain to Python SpiraPi engine
 
 #[cfg(feature = "pyo3")]

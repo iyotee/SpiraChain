@@ -2,7 +2,6 @@
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
 
     #[test]
     fn test_spirapi_bridge_module_exists() {
@@ -25,11 +24,11 @@ mod tests {
 }
 
 // 📚 Agent DocMaster - Test Documentation
-/// Integration tests for SpiraPi-Rust bridge
-/// 
-/// These tests verify that:
-/// - PyO3 bindings work correctly
-/// - Type conversions are accurate
-/// - Error handling is robust
-/// - Performance meets targets
+// Integration tests for SpiraPi-Rust bridge
+// 
+// These tests verify that:
+// - PyO3 bindings work correctly
+// - Type conversions are accurate
+// - Error handling is robust
+// - Performance meets targets
 

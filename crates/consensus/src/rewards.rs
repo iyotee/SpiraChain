@@ -1,14 +1,17 @@
-use spirachain_core::{Block, Amount};
+use spirachain_core::{Amount, Block};
 
 pub struct RewardCalculator;
 
 impl RewardCalculator {
-    pub fn calculate_block_reward(block: &Block, recent_spiral_types: &[spirachain_core::SpiralType]) -> Amount {
+    pub fn calculate_block_reward(
+        block: &Block,
+        recent_spiral_types: &[spirachain_core::SpiralType],
+    ) -> Amount {
         let base_reward = Self::base_reward_at_height(block.header.block_height);
 
         let complexity_multiplier = (block.header.spiral.complexity / 100.0).min(1.5);
         let coherence_multiplier = block.avg_semantic_coherence();
-        
+
         let novelty_bonus = if !recent_spiral_types.contains(&block.header.spiral.spiral_type) {
             1.2
         } else {
@@ -21,7 +24,8 @@ impl RewardCalculator {
             1.0
         };
 
-        let total_multiplier = complexity_multiplier * coherence_multiplier * novelty_bonus * full_block_bonus;
+        let total_multiplier =
+            complexity_multiplier * coherence_multiplier * novelty_bonus * full_block_bonus;
 
         let final_multiplier = total_multiplier.min(2.0);
 
@@ -32,17 +36,17 @@ impl RewardCalculator {
     fn base_reward_at_height(height: u64) -> Amount {
         let halvings = height / spirachain_core::HALVING_BLOCKS;
         let base = spirachain_core::INITIAL_BLOCK_REWARD;
-        
-        let reward = if halvings < 64 {
-            base >> halvings
-        } else {
-            0
-        };
+
+        let reward = if halvings < 64 { base >> halvings } else { 0 };
 
         Amount::new(reward)
     }
 
-    pub fn calculate_tx_fee(tx_size: usize, purpose_length: usize, semantic_coherence: f64) -> Amount {
+    pub fn calculate_tx_fee(
+        tx_size: usize,
+        purpose_length: usize,
+        semantic_coherence: f64,
+    ) -> Amount {
         let gas_per_byte = 100u128;
         let semantic_gas_per_char = 50u128;
 
@@ -58,7 +62,7 @@ impl RewardCalculator {
         };
 
         let total_fee = ((base_fee + semantic_fee) as f64 * discount) as u128;
-        
+
         Amount::new(total_fee.max(spirachain_core::MIN_TX_FEE))
     }
 
@@ -74,24 +78,25 @@ impl RewardCalculator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use spirachain_core::{Hash, SpiralType};
+    use spirachain_core::Hash;
 
     #[test]
     fn test_block_reward_calculation() {
         let mut block = Block::new(Hash::zero(), 0);
         block.header.spiral.complexity = 75.0;
-        
+
         let recent_types = vec![];
         let reward = RewardCalculator::calculate_block_reward(&block, &recent_types);
-        
+
         assert!(reward > Amount::zero());
     }
 
     #[test]
     fn test_halving() {
         let reward_0 = RewardCalculator::base_reward_at_height(0);
-        let reward_halving = RewardCalculator::base_reward_at_height(spirachain_core::HALVING_BLOCKS);
-        
+        let reward_halving =
+            RewardCalculator::base_reward_at_height(spirachain_core::HALVING_BLOCKS);
+
         assert_eq!(reward_halving.value(), reward_0.value() / 2);
     }
 
@@ -105,9 +110,8 @@ mod tests {
     fn test_fee_distribution() {
         let total = Amount::qbt(100);
         let (validator, burn, treasury) = RewardCalculator::distribute_fees(total);
-        
+
         let sum = validator.value() + burn.value() + treasury.value();
         assert!(sum <= total.value());
     }
 }
-

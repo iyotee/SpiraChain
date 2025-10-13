@@ -1,5 +1,5 @@
-use spirachain_core::{Transaction, Hash, PiCoordinate};
 use serde::{Deserialize, Serialize};
+use spirachain_core::{Hash, PiCoordinate, Transaction};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NarrativeThread {
@@ -128,4 +128,3 @@ impl Default for NarrativeTracker {
         Self::new()
     }
 }
-

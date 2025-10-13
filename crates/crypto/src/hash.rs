@@ -26,7 +26,7 @@ mod tests {
         let data = b"test data";
         let hash1 = blake3_hash(data);
         let hash2 = blake3_hash(data);
-        
+
         assert_eq!(hash1, hash2);
     }
 
@@ -36,7 +36,7 @@ mod tests {
         let data2 = b"test data 2";
         let hash1 = blake3_hash(data1);
         let hash2 = blake3_hash(data2);
-        
+
         assert_ne!(hash1, hash2);
     }
 
@@ -44,8 +44,7 @@ mod tests {
     fn test_double_hash() {
         let data = b"test data";
         let hash = double_hash(data);
-        
+
         assert_ne!(hash, Hash::zero());
     }
 }
-

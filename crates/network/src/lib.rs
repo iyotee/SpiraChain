@@ -1,16 +1,16 @@
+pub mod encryption;
+pub mod libp2p_v53;
 pub mod p2p;
 pub mod protocol;
-pub mod sync;
-pub mod encryption;
-pub mod libp2p_v53;  // LibP2P v0.53 implementation
+pub mod sync; // LibP2P v0.53 implementation
 
+pub use encryption::*;
+pub use libp2p_v53::LibP2PNetwork;
 pub use p2p::*;
 pub use protocol::*;
 pub use sync::*;
-pub use encryption::*;
-pub use libp2p_v53::LibP2PNetwork;
 
-use spirachain_core::{Block, Transaction, Result};
+use spirachain_core::{Block, Result, Transaction};
 
 pub struct NetworkNode {
     peer_id: String,
@@ -44,4 +44,3 @@ impl NetworkNode {
         vec![]
     }
 }
-

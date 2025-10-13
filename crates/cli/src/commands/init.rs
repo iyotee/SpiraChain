@@ -9,7 +9,7 @@ pub async fn handle_init(data_dir: Option<String>) -> Result<()> {
     });
 
     let path = PathBuf::from(&dir);
-    
+
     if path.exists() {
         println!("SpiraChain node already initialized at: {}", dir);
         return Ok(());
@@ -37,7 +37,6 @@ pub async fn handle_init(data_dir: Option<String>) -> Result<()> {
     println!("  1. Create a wallet:       spira wallet new");
     println!("  2. Get some QBT tokens");
     println!("  3. Register as validator: spira validator register --stake 10000");
-    
+
     Ok(())
 }
-

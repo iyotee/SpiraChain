@@ -1,16 +1,17 @@
 // LibP2P v0.53 Complete Implementation for SpiraChain
 // Simplified without NetworkBehaviour derive to avoid API conflicts
 
-use libp2p::{
-    gossipsub, mdns, noise, tcp, yamux,
-    identity::Keypair,
-    swarm::{Swarm, SwarmEvent},
-    PeerId, Multiaddr,
-};
-use spirachain_core::{Block, Transaction, Result, SpiraChainError};
-use tracing::{info, warn, error};
-use std::collections::HashSet;
 use futures::StreamExt;
+use libp2p::{
+    gossipsub,
+    identity::Keypair,
+    mdns, noise,
+    swarm::{Swarm, SwarmEvent},
+    tcp, yamux, Multiaddr, PeerId,
+};
+use spirachain_core::{Block, Result, SpiraChainError, Transaction};
+use std::collections::HashSet;
+use tracing::{error, info, warn};
 
 pub struct LibP2PNetwork {
     swarm: Swarm<gossipsub::Behaviour>,
@@ -24,25 +25,26 @@ pub struct LibP2PNetwork {
 impl LibP2PNetwork {
     pub async fn new(port: u16) -> Result<Self> {
         info!("🌐 Initializing LibP2P Network (v0.53 - Gossipsub only)");
-        
+
         // Generate keypair
         let local_key = Keypair::generate_ed25519();
         let local_peer_id = PeerId::from(local_key.public());
-        
+
         info!("   Local PeerID: {}", local_peer_id);
-        
+
         // Create Gossipsub
         let gossipsub_config = gossipsub::ConfigBuilder::default()
             .heartbeat_interval(std::time::Duration::from_secs(10))
             .validation_mode(gossipsub::ValidationMode::Strict)
             .build()
             .map_err(|e| SpiraChainError::NetworkError(format!("Gossipsub config: {}", e)))?;
-        
+
         let gossipsub = gossipsub::Behaviour::new(
             gossipsub::MessageAuthenticity::Signed(local_key.clone()),
             gossipsub_config,
-        ).map_err(|e| SpiraChainError::NetworkError(format!("Gossipsub init: {}", e)))?;
-        
+        )
+        .map_err(|e| SpiraChainError::NetworkError(format!("Gossipsub init: {}", e)))?;
+
         // Create Swarm
         let swarm = libp2p::SwarmBuilder::with_existing_identity(local_key)
             .with_tokio()
@@ -54,12 +56,14 @@ impl LibP2PNetwork {
             .map_err(|e| SpiraChainError::NetworkError(format!("TCP transport: {}", e)))?
             .with_behaviour(|_key| gossipsub)
             .map_err(|e| SpiraChainError::NetworkError(format!("Behaviour: {}", e)))?
-            .with_swarm_config(|c| c.with_idle_connection_timeout(std::time::Duration::from_secs(60)))
+            .with_swarm_config(|c| {
+                c.with_idle_connection_timeout(std::time::Duration::from_secs(60))
+            })
             .build();
-        
+
         let block_topic = gossipsub::IdentTopic::new("spirachain-blocks");
         let tx_topic = gossipsub::IdentTopic::new("spirachain-transactions");
-        
+
         Ok(Self {
             swarm,
             local_peer_id,
@@ -69,87 +73,97 @@ impl LibP2PNetwork {
             is_listening: false,
         })
     }
-    
+
     /// Initialize P2P network (call once at startup)
     pub fn initialize(&mut self) -> Result<()> {
         if self.is_listening {
             return Ok(());
         }
-        
+
         // Listen on all interfaces
         let listen_addr: Multiaddr = "/ip4/0.0.0.0/tcp/0"
             .parse()
             .map_err(|e| SpiraChainError::NetworkError(format!("Invalid addr: {}", e)))?;
-        
-        self.swarm.listen_on(listen_addr)
+
+        self.swarm
+            .listen_on(listen_addr)
             .map_err(|e| SpiraChainError::NetworkError(format!("Listen failed: {}", e)))?;
-        
+
         // Subscribe to topics
-        self.swarm.behaviour_mut().subscribe(&self.block_topic)
+        self.swarm
+            .behaviour_mut()
+            .subscribe(&self.block_topic)
             .map_err(|e| SpiraChainError::NetworkError(format!("Subscribe blocks: {}", e)))?;
-        self.swarm.behaviour_mut().subscribe(&self.tx_topic)
+        self.swarm
+            .behaviour_mut()
+            .subscribe(&self.tx_topic)
             .map_err(|e| SpiraChainError::NetworkError(format!("Subscribe tx: {}", e)))?;
-        
+
         self.is_listening = true;
         info!("✅ P2P network listening initialized");
-        
+
         Ok(())
     }
-    
+
     /// Poll network events (call in validator loop)
     pub fn poll_events(&mut self) -> Option<String> {
         // Non-blocking poll
-        match self.swarm.poll_next_unpin(&mut std::task::Context::from_waker(
-            futures::task::noop_waker_ref()
-        )) {
-            std::task::Poll::Ready(Some(event)) => {
-                match event {
-                    SwarmEvent::NewListenAddr { address, .. } => {
-                        info!("📡 Listening on: {}", address);
-                        Some(format!("Listening: {}", address))
-                    }
-                    SwarmEvent::ConnectionEstablished { peer_id, .. } => {
-                        info!("🤝 Connected to peer: {}", peer_id);
-                        self.connected_peers.insert(peer_id);
-                        Some(format!("Connected: {}", peer_id))
-                    }
-                    SwarmEvent::ConnectionClosed { peer_id, .. } => {
-                        info!("👋 Disconnected from peer: {}", peer_id);
-                        self.connected_peers.remove(&peer_id);
-                        None
-                    }
-                    SwarmEvent::Behaviour(gossip_event) => {
-                        self.handle_gossipsub_event(gossip_event);
-                        None
-                    }
-                    _ => None
+        match self
+            .swarm
+            .poll_next_unpin(&mut std::task::Context::from_waker(
+                futures::task::noop_waker_ref(),
+            )) {
+            std::task::Poll::Ready(Some(event)) => match event {
+                SwarmEvent::NewListenAddr { address, .. } => {
+                    info!("📡 Listening on: {}", address);
+                    Some(format!("Listening: {}", address))
                 }
-            }
-            _ => None
+                SwarmEvent::ConnectionEstablished { peer_id, .. } => {
+                    info!("🤝 Connected to peer: {}", peer_id);
+                    self.connected_peers.insert(peer_id);
+                    Some(format!("Connected: {}", peer_id))
+                }
+                SwarmEvent::ConnectionClosed { peer_id, .. } => {
+                    info!("👋 Disconnected from peer: {}", peer_id);
+                    self.connected_peers.remove(&peer_id);
+                    None
+                }
+                SwarmEvent::Behaviour(gossip_event) => {
+                    self.handle_gossipsub_event(gossip_event);
+                    None
+                }
+                _ => None,
+            },
+            _ => None,
         }
     }
-    
+
     pub async fn start(&mut self) -> Result<()> {
         // Listen on all interfaces with specified port
-        let listen_addr: Multiaddr = format!("/ip4/0.0.0.0/tcp/{}", 0)  // 0 = auto-assign
+        let listen_addr: Multiaddr = format!("/ip4/0.0.0.0/tcp/{}", 0) // 0 = auto-assign
             .parse()
             .map_err(|e| SpiraChainError::NetworkError(format!("Invalid addr: {}", e)))?;
-        
-        self.swarm.listen_on(listen_addr)
+
+        self.swarm
+            .listen_on(listen_addr)
             .map_err(|e| SpiraChainError::NetworkError(format!("Listen failed: {}", e)))?;
-        
+
         // Subscribe to topics
         let block_topic = gossipsub::IdentTopic::new("spirachain-blocks");
         let tx_topic = gossipsub::IdentTopic::new("spirachain-transactions");
-        
-        self.swarm.behaviour_mut().subscribe(&block_topic)
+
+        self.swarm
+            .behaviour_mut()
+            .subscribe(&block_topic)
             .map_err(|e| SpiraChainError::NetworkError(format!("Subscribe blocks: {}", e)))?;
-        self.swarm.behaviour_mut().subscribe(&tx_topic)
+        self.swarm
+            .behaviour_mut()
+            .subscribe(&tx_topic)
             .map_err(|e| SpiraChainError::NetworkError(format!("Subscribe tx: {}", e)))?;
-        
+
         info!("✅ P2P network listening");
         info!("   Topics: spirachain-blocks, spirachain-transactions");
-        
+
         // Event loop
         loop {
             if let Some(event) = self.swarm.next().await {
@@ -173,12 +187,16 @@ impl LibP2PNetwork {
             }
         }
     }
-    
+
     fn handle_gossipsub_event(&mut self, event: gossipsub::Event) {
         match event {
-            gossipsub::Event::Message { propagation_source, message_id, message } => {
+            gossipsub::Event::Message {
+                propagation_source,
+                message_id,
+                message,
+            } => {
                 info!("📩 Received gossipsub message from {}", propagation_source);
-                
+
                 // Try to decode as Block
                 if let Ok(block) = bincode::deserialize::<Block>(&message.data) {
                     info!("   📦 Received block: height {}", block.header.block_height);
@@ -205,37 +223,42 @@ impl LibP2PNetwork {
             _ => {}
         }
     }
-    
+
     pub async fn broadcast_block(&mut self, block: &Block) -> Result<()> {
         let data = bincode::serialize(block)
             .map_err(|e| SpiraChainError::NetworkError(format!("Serialize block: {}", e)))?;
-        
-        self.swarm.behaviour_mut()
+
+        self.swarm
+            .behaviour_mut()
             .publish(self.block_topic.clone(), data)
             .map_err(|e| SpiraChainError::NetworkError(format!("Broadcast block: {}", e)))?;
-        
-        info!("📡 Broadcasted block {} to {} peers", block.header.block_height, self.connected_peers.len());
+
+        info!(
+            "📡 Broadcasted block {} to {} peers",
+            block.header.block_height,
+            self.connected_peers.len()
+        );
         Ok(())
     }
-    
+
     pub async fn broadcast_transaction(&mut self, tx: &Transaction) -> Result<()> {
         let data = bincode::serialize(tx)
             .map_err(|e| SpiraChainError::NetworkError(format!("Serialize tx: {}", e)))?;
-        
-        self.swarm.behaviour_mut()
+
+        self.swarm
+            .behaviour_mut()
             .publish(self.tx_topic.clone(), data)
             .map_err(|e| SpiraChainError::NetworkError(format!("Broadcast tx: {}", e)))?;
-        
+
         info!("📡 Broadcasted transaction to network");
         Ok(())
     }
-    
+
     pub fn get_peer_count(&self) -> usize {
         self.connected_peers.len()
     }
-    
+
     pub fn get_peer_id(&self) -> PeerId {
         self.local_peer_id
     }
 }
-

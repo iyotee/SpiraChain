@@ -21,13 +21,15 @@ impl WorldState {
     }
 
     pub fn get_balance(&self, address: &Address) -> Amount {
-        self.accounts.get(address)
+        self.accounts
+            .get(address)
             .map(|acc| acc.balance)
             .unwrap_or(Amount::zero())
     }
 
     pub fn set_balance(&mut self, address: Address, balance: Amount) {
-        self.accounts.entry(address)
+        self.accounts
+            .entry(address)
             .or_insert(AccountState {
                 balance: Amount::zero(),
                 nonce: 0,
@@ -52,13 +54,12 @@ impl WorldState {
     }
 
     pub fn get_nonce(&self, address: &Address) -> u64 {
-        self.accounts.get(address)
-            .map(|acc| acc.nonce)
-            .unwrap_or(0)
+        self.accounts.get(address).map(|acc| acc.nonce).unwrap_or(0)
     }
 
     pub fn increment_nonce(&mut self, address: &Address) {
-        self.accounts.entry(*address)
+        self.accounts
+            .entry(*address)
             .or_insert(AccountState {
                 balance: Amount::zero(),
                 nonce: 0,
@@ -68,26 +69,28 @@ impl WorldState {
     }
 
     pub fn get_stake(&self, address: &Address) -> Amount {
-        self.accounts.get(address)
+        self.accounts
+            .get(address)
             .map(|acc| acc.stake)
             .unwrap_or(Amount::zero())
     }
 
     pub fn add_stake(&mut self, address: &Address, amount: Amount) -> Result<()> {
         let balance = self.get_balance(address);
-        
+
         if let Some(new_balance) = balance.checked_sub(amount) {
-            let acc = self.accounts.entry(*address)
-                .or_insert(AccountState {
-                    balance: Amount::zero(),
-                    nonce: 0,
-                    stake: Amount::zero(),
-                });
-            
+            let acc = self.accounts.entry(*address).or_insert(AccountState {
+                balance: Amount::zero(),
+                nonce: 0,
+                stake: Amount::zero(),
+            });
+
             acc.balance = new_balance;
-            acc.stake = acc.stake.checked_add(amount)
+            acc.stake = acc
+                .stake
+                .checked_add(amount)
                 .ok_or_else(|| SpiraChainError::Internal("Stake overflow".to_string()))?;
-            
+
             Ok(())
         } else {
             Err(SpiraChainError::InsufficientBalance)
@@ -95,16 +98,23 @@ impl WorldState {
     }
 
     pub fn remove_stake(&mut self, address: &Address, amount: Amount) -> Result<()> {
-        let acc = self.accounts.get_mut(address)
+        let acc = self
+            .accounts
+            .get_mut(address)
             .ok_or_else(|| SpiraChainError::ValidatorNotFound(address.to_string()))?;
 
         if let Some(new_stake) = acc.stake.checked_sub(amount) {
             acc.stake = new_stake;
-            acc.balance = acc.balance.checked_add(amount)
+            acc.balance = acc
+                .balance
+                .checked_add(amount)
                 .ok_or_else(|| SpiraChainError::Internal("Balance overflow".to_string()))?;
             Ok(())
         } else {
-            Err(SpiraChainError::InsufficientStake(acc.stake.value(), amount.value()))
+            Err(SpiraChainError::InsufficientStake(
+                acc.stake.value(),
+                amount.value(),
+            ))
         }
     }
 
@@ -121,15 +131,21 @@ impl WorldState {
     }
 
     pub fn total_supply(&self) -> Amount {
-        self.accounts.values()
+        self.accounts
+            .values()
             .map(|acc| acc.balance.checked_add(acc.stake).unwrap_or(acc.balance))
-            .fold(Amount::zero(), |sum, balance| sum.checked_add(balance).unwrap_or(sum))
+            .fold(Amount::zero(), |sum, balance| {
+                sum.checked_add(balance).unwrap_or(sum)
+            })
     }
 
     pub fn total_staked(&self) -> Amount {
-        self.accounts.values()
+        self.accounts
+            .values()
             .map(|acc| acc.stake)
-            .fold(Amount::zero(), |sum, stake| sum.checked_add(stake).unwrap_or(sum))
+            .fold(Amount::zero(), |sum, stake| {
+                sum.checked_add(stake).unwrap_or(sum)
+            })
     }
 }
 

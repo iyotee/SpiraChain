@@ -13,13 +13,13 @@ pub fn handle_calculate_command(cmd: CalculateCommand) {
     match cmd {
         CalculateCommand::Pi { precision } => {
             println!("Calculating π to {} decimal places...", precision);
-            
+
             let start = std::time::Instant::now();
-            
+
             match spirapi_bridge::calculate_pi(precision, "CHUDNOVSKY") {
                 Ok(result) => {
                     let elapsed = start.elapsed();
-                    
+
                     println!("\n✓ Calculation complete in {:?}", elapsed);
                     println!("  Algorithm: {}", result.algorithm);
                     println!("  Value: {}", result.value);

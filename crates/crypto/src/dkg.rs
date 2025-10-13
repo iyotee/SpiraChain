@@ -1,6 +1,6 @@
-use spirachain_core::{Result, SpiraChainError, Address};
-use serde::{Deserialize, Serialize};
 use rand::Rng;
+use serde::{Deserialize, Serialize};
+use spirachain_core::{Address, Result, SpiraChainError};
 use std::collections::HashMap;
 
 pub const DKG_THRESHOLD_RATIO: f64 = 0.67;
@@ -47,7 +47,7 @@ impl DKGCoordinator {
 
         for i in 0..self.total_participants {
             let mut fragment_data = vec![0u8; DKG_KEY_FRAGMENT_SIZE];
-            
+
             for j in 0..DKG_KEY_FRAGMENT_SIZE {
                 let master_byte = master_key[j];
                 let noise = rng.gen::<u8>();
@@ -74,9 +74,11 @@ impl DKGCoordinator {
 
     pub fn reconstruct_key(&self, fragments: &[DKGKeyFragment]) -> Result<Vec<u8>> {
         if fragments.len() < self.threshold {
-            return Err(SpiraChainError::CryptoError(
-                format!("Insufficient fragments: {}/{}", fragments.len(), self.threshold)
-            ));
+            return Err(SpiraChainError::CryptoError(format!(
+                "Insufficient fragments: {}/{}",
+                fragments.len(),
+                self.threshold
+            )));
         }
 
         let mut reconstructed = vec![0u8; DKG_KEY_FRAGMENT_SIZE];
@@ -91,7 +93,8 @@ impl DKGCoordinator {
             }
         }
 
-        tracing::info!("🔓 Reconstructed master key from {}/{} fragments",
+        tracing::info!(
+            "🔓 Reconstructed master key from {}/{} fragments",
             fragments.len(),
             self.threshold
         );
@@ -105,7 +108,9 @@ impl DKGCoordinator {
 
     pub fn add_fragment(&mut self, fragment: DKGKeyFragment) -> Result<()> {
         if self.key_fragments.len() >= self.total_participants {
-            return Err(SpiraChainError::CryptoError("All fragments already received".to_string()));
+            return Err(SpiraChainError::CryptoError(
+                "All fragments already received".to_string(),
+            ));
         }
 
         self.key_fragments.insert(fragment.fragment_id, fragment);
@@ -163,7 +168,8 @@ impl FractalKeyRotation {
 
         self.rotation_counter += 1;
 
-        tracing::debug!("🔄 Derived key #{} using π[{}]={}", 
+        tracing::debug!(
+            "🔄 Derived key #{} using π[{}]={}",
             self.rotation_counter,
             pi_index,
             pi_digit
@@ -261,7 +267,7 @@ mod tests {
     fn test_fractal_key_derivation_deterministic() {
         let rotation1 = FractalKeyRotation::new();
         let rotation2 = FractalKeyRotation::new();
-        
+
         let base_key = vec![123u8; 32];
 
         let key1 = rotation1.derive_key_at_index(&base_key, 42);
@@ -275,13 +281,14 @@ mod tests {
         let mut rotation = FractalKeyRotation::new();
         let base_key = vec![0u8; 32];
 
-        let keys: Vec<_> = (0..100).map(|_| rotation.derive_next_key(&base_key)).collect();
+        let keys: Vec<_> = (0..100)
+            .map(|_| rotation.derive_next_key(&base_key))
+            .collect();
 
         for i in 0..keys.len() {
-            for j in (i+1)..keys.len() {
+            for j in (i + 1)..keys.len() {
                 assert_ne!(keys[i], keys[j], "Keys {} and {} should be different", i, j);
             }
         }
     }
 }
-

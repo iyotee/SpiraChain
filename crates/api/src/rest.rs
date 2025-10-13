@@ -1,6 +1,6 @@
-use warp::{Filter, Rejection, Reply};
 use serde::{Deserialize, Serialize};
 use tracing::info;
+use warp::{Filter, Rejection, Reply};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ApiResponse<T> {
@@ -91,10 +91,7 @@ impl RestServer {
             .and(warp::get())
             .map(|| warp::reply::json(&serde_json::json!({"status": "healthy"})));
 
-        let routes = status_route
-            .or(block_route)
-            .or(tx_route)
-            .or(health_route);
+        let routes = status_route.or(block_route).or(tx_route).or(health_route);
 
         info!("✅ REST API ready");
         info!("   Endpoints:");
@@ -103,9 +100,7 @@ impl RestServer {
         info!("   - GET /tx/:hash");
         info!("   - GET /health");
 
-        warp::serve(routes)
-            .run(([0, 0, 0, 0], self.port))
-            .await;
+        warp::serve(routes).run(([0, 0, 0, 0], self.port)).await;
 
         Ok(())
     }

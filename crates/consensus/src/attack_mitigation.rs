@@ -1,7 +1,7 @@
-use spirachain_core::{Block, Hash, Result, SpiraChainError, Address, Transaction};
+use spirachain_core::{Address, Block, Hash, Result, SpiraChainError, Transaction};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use tracing::{info, warn, error};
+use tracing::{error, info, warn};
 
 pub const DOUBLE_SPEND_WINDOW: Duration = Duration::from_secs(300);
 pub const CHECKPOINT_INTERVAL: u64 = 100;
@@ -21,7 +21,9 @@ struct DoubleSpendDetector {
 
 #[derive(Debug, Clone)]
 struct TransactionInfo {
+    #[allow(dead_code)]
     transaction: Transaction,
+    #[allow(dead_code)]
     block_height: Option<u64>,
     first_seen: Instant,
     times_seen: usize,
@@ -34,8 +36,10 @@ struct ValidatorMonitor {
 
 #[derive(Debug, Clone)]
 struct SuspicionRecord {
+    #[allow(dead_code)]
     validator: Address,
     offense_count: usize,
+    #[allow(dead_code)]
     last_offense: Instant,
     total_slashed: u128,
 }
@@ -79,7 +83,11 @@ impl AttackMitigationSystem {
         for tx in &block.transactions {
             let tx_hash = tx.hash();
 
-            if let Some(existing) = self.double_spend_detector.recent_transactions.get_mut(&tx_hash) {
+            if let Some(existing) = self
+                .double_spend_detector
+                .recent_transactions
+                .get_mut(&tx_hash)
+            {
                 existing.times_seen += 1;
 
                 if existing.times_seen > 1 {
@@ -88,9 +96,10 @@ impl AttackMitigationSystem {
                     error!("   From: {}", tx.from);
                     error!("   Times seen: {}", existing.times_seen);
 
-                    return Err(SpiraChainError::ConsensusError(
-                        format!("Double-spend detected: {}", tx_hash)
-                    ));
+                    return Err(SpiraChainError::ConsensusError(format!(
+                        "Double-spend detected: {}",
+                        tx_hash
+                    )));
                 }
             } else {
                 let tx_info = TransactionInfo {
@@ -99,10 +108,13 @@ impl AttackMitigationSystem {
                     first_seen: Instant::now(),
                     times_seen: 1,
                 };
-                self.double_spend_detector.recent_transactions.insert(tx_hash, tx_info);
+                self.double_spend_detector
+                    .recent_transactions
+                    .insert(tx_hash, tx_info);
             }
 
-            self.double_spend_detector.addresses_monitored
+            self.double_spend_detector
+                .addresses_monitored
                 .entry(tx.from)
                 .or_insert_with(Vec::new)
                 .push(tx_hash);
@@ -115,12 +127,15 @@ impl AttackMitigationSystem {
         let validator_pubkey_hash = blake3::hash(&block.header.validator_pubkey);
         let validator_addr = Address::new(*validator_pubkey_hash.as_bytes());
 
-        self.validator_monitor.blocks_per_validator
+        self.validator_monitor
+            .blocks_per_validator
             .entry(validator_addr)
             .or_insert_with(Vec::new)
             .push(block.header.block_height);
 
-        let blocks_produced = self.validator_monitor.blocks_per_validator
+        let blocks_produced = self
+            .validator_monitor
+            .blocks_per_validator
             .get(&validator_addr)
             .map(|v| v.len())
             .unwrap_or(0);
@@ -132,12 +147,14 @@ impl AttackMitigationSystem {
             let actual_share = blocks_produced as f64 / block.header.block_height as f64;
 
             if actual_share > expected_share * 2.0 {
-                warn!("⚠️  Validator {} producing {}% of blocks (suspicious)", 
-                    validator_addr, 
+                warn!(
+                    "⚠️  Validator {} producing {}% of blocks (suspicious)",
+                    validator_addr,
                     actual_share * 100.0
                 );
 
-                self.validator_monitor.suspicious_validators
+                self.validator_monitor
+                    .suspicious_validators
                     .entry(validator_addr)
                     .or_insert_with(|| SuspicionRecord {
                         validator: validator_addr,
@@ -152,10 +169,14 @@ impl AttackMitigationSystem {
 
     pub fn create_checkpoint(&mut self, block: &Block) {
         let block_hash = block.hash();
-        self.checkpoints.insert(block.header.block_height, block_hash);
+        self.checkpoints
+            .insert(block.header.block_height, block_hash);
         self.last_checkpoint_height = block.header.block_height;
 
-        info!("📍 Checkpoint created at height {}", block.header.block_height);
+        info!(
+            "📍 Checkpoint created at height {}",
+            block.header.block_height
+        );
         info!("   Hash: {}", block_hash);
         info!("   Finality: Irreversible after this point");
     }
@@ -177,7 +198,8 @@ impl AttackMitigationSystem {
         error!("   Reason: {}", reason);
         error!("   Amount: {} QBT", slashing_amount as f64 / 1e18);
 
-        self.validator_monitor.suspicious_validators
+        self.validator_monitor
+            .suspicious_validators
             .entry(validator)
             .or_insert_with(|| SuspicionRecord {
                 validator,
@@ -191,7 +213,9 @@ impl AttackMitigationSystem {
     }
 
     pub fn detect_51_attack(&self) -> Option<Address> {
-        let total_blocks: usize = self.validator_monitor.blocks_per_validator
+        let total_blocks: usize = self
+            .validator_monitor
+            .blocks_per_validator
             .values()
             .map(|v| v.len())
             .sum();
@@ -213,20 +237,28 @@ impl AttackMitigationSystem {
     fn cleanup_old_data(&mut self) {
         let now = Instant::now();
 
-        self.double_spend_detector.recent_transactions.retain(|_, info| {
-            now.duration_since(info.first_seen) < DOUBLE_SPEND_WINDOW
-        });
+        self.double_spend_detector
+            .recent_transactions
+            .retain(|_, info| now.duration_since(info.first_seen) < DOUBLE_SPEND_WINDOW);
 
-        self.double_spend_detector.addresses_monitored.retain(|_, tx_hashes| {
-            tx_hashes.retain(|hash| {
-                self.double_spend_detector.recent_transactions.contains_key(hash)
+        self.double_spend_detector
+            .addresses_monitored
+            .retain(|_, tx_hashes| {
+                tx_hashes.retain(|hash| {
+                    self.double_spend_detector
+                        .recent_transactions
+                        .contains_key(hash)
+                });
+                !tx_hashes.is_empty()
             });
-            !tx_hashes.is_empty()
-        });
     }
 
     pub fn get_suspicious_validators(&self) -> Vec<Address> {
-        self.validator_monitor.suspicious_validators.keys().copied().collect()
+        self.validator_monitor
+            .suspicious_validators
+            .keys()
+            .copied()
+            .collect()
     }
 
     pub fn checkpoint_count(&self) -> usize {
@@ -327,4 +359,3 @@ mod tests {
         assert_eq!(suspicious[0], validator);
     }
 }
-

@@ -1,9 +1,9 @@
-use spirachain_core::{Result, SpiraChainError};
-use spirachain_crypto::{KyberKeyPair, KyberPublicKey, KyberCiphertext, KyberSharedSecret};
-use std::collections::HashMap;
 use parking_lot::RwLock;
+use spirachain_core::{Result, SpiraChainError};
+use spirachain_crypto::{KyberCiphertext, KyberKeyPair, KyberPublicKey, KyberSharedSecret};
+use std::collections::HashMap;
 use std::sync::Arc;
-use tracing::{info, warn, debug};
+use tracing::{debug, info, warn};
 
 const KEY_ROTATION_THRESHOLD: usize = 1000;
 
@@ -23,9 +23,12 @@ struct PeerEncryptionState {
 impl P2PEncryption {
     pub fn new() -> Result<Self> {
         let keypair = KyberKeyPair::generate()?;
-        
+
         info!("🔐 P2P Encryption initialized with Kyber-1024");
-        info!("   Public key size: {} bytes", keypair.public_key_bytes().len());
+        info!(
+            "   Public key size: {} bytes",
+            keypair.public_key_bytes().len()
+        );
 
         Ok(Self {
             local_keypair: Arc::new(RwLock::new(keypair)),
@@ -40,24 +43,28 @@ impl P2PEncryption {
 
     pub fn add_peer(&self, peer_id: String, public_key_bytes: &[u8]) -> Result<()> {
         let public_key = KyberPublicKey::from_bytes(public_key_bytes)?;
-        
+
         let mut peer_keys = self.peer_keys.write();
-        peer_keys.insert(peer_id.clone(), PeerEncryptionState {
-            public_key,
-            shared_secret: None,
-            messages_exchanged: 0,
-            established_at: std::time::Instant::now(),
-        });
+        peer_keys.insert(
+            peer_id.clone(),
+            PeerEncryptionState {
+                public_key,
+                shared_secret: None,
+                messages_exchanged: 0,
+                established_at: std::time::Instant::now(),
+            },
+        );
 
         info!("🔑 Added peer {} to encryption registry", peer_id);
-        
+
         Ok(())
     }
 
     pub fn establish_shared_secret(&self, peer_id: &str) -> Result<Vec<u8>> {
         let mut peer_keys = self.peer_keys.write();
-        
-        let peer_state = peer_keys.get_mut(peer_id)
+
+        let peer_state = peer_keys
+            .get_mut(peer_id)
             .ok_or_else(|| SpiraChainError::Internal(format!("Unknown peer: {}", peer_id)))?;
 
         let (ciphertext, shared_secret) = peer_state.public_key.encapsulate()?;
@@ -70,7 +77,10 @@ impl P2PEncryption {
         Ok(ciphertext.to_vec())
     }
 
-    pub fn derive_shared_secret_from_ciphertext(&self, ciphertext: &[u8]) -> Result<KyberSharedSecret> {
+    pub fn derive_shared_secret_from_ciphertext(
+        &self,
+        ciphertext: &[u8],
+    ) -> Result<KyberSharedSecret> {
         let ct = KyberCiphertext::from_bytes(ciphertext)?;
         let keypair = self.local_keypair.read();
         keypair.decapsulate(&ct)
@@ -78,15 +88,17 @@ impl P2PEncryption {
 
     pub fn encrypt_message(&self, peer_id: &str, plaintext: &[u8]) -> Result<Vec<u8>> {
         let mut peer_keys = self.peer_keys.write();
-        
-        let peer_state = peer_keys.get_mut(peer_id)
+
+        let peer_state = peer_keys
+            .get_mut(peer_id)
             .ok_or_else(|| SpiraChainError::Internal(format!("Unknown peer: {}", peer_id)))?;
 
-        let shared_secret = peer_state.shared_secret.as_ref()
-            .ok_or_else(|| SpiraChainError::Internal(format!("No shared secret with {}", peer_id)))?;
+        let shared_secret = peer_state.shared_secret.as_ref().ok_or_else(|| {
+            SpiraChainError::Internal(format!("No shared secret with {}", peer_id))
+        })?;
 
         let key = shared_secret.derive_key(b"spirachain-p2p-v1");
-        
+
         let encrypted = Self::aes_gcm_encrypt(&key, plaintext)?;
 
         peer_state.messages_exchanged += 1;
@@ -100,22 +112,24 @@ impl P2PEncryption {
 
     pub fn decrypt_message(&self, peer_id: &str, ciphertext: &[u8]) -> Result<Vec<u8>> {
         let peer_keys = self.peer_keys.read();
-        
-        let peer_state = peer_keys.get(peer_id)
+
+        let peer_state = peer_keys
+            .get(peer_id)
             .ok_or_else(|| SpiraChainError::Internal(format!("Unknown peer: {}", peer_id)))?;
 
-        let shared_secret = peer_state.shared_secret.as_ref()
-            .ok_or_else(|| SpiraChainError::Internal(format!("No shared secret with {}", peer_id)))?;
+        let shared_secret = peer_state.shared_secret.as_ref().ok_or_else(|| {
+            SpiraChainError::Internal(format!("No shared secret with {}", peer_id))
+        })?;
 
         let key = shared_secret.derive_key(b"spirachain-p2p-v1");
-        
+
         Self::aes_gcm_decrypt(&key, ciphertext)
     }
 
     pub fn rotate_key(&self) -> Result<Vec<u8>> {
         let new_keypair = KyberKeyPair::generate()?;
         let public_key_bytes = new_keypair.public_key_bytes();
-        
+
         *self.local_keypair.write() = new_keypair;
         *self.messages_sent.write() = 0;
 
@@ -135,15 +149,16 @@ impl P2PEncryption {
     }
 
     fn aes_gcm_encrypt(key: &[u8; 32], plaintext: &[u8]) -> Result<Vec<u8>> {
-        use aes_gcm::{Aes256Gcm, KeyInit};
         use aes_gcm::aead::Aead;
         use aes_gcm::Nonce;
+        use aes_gcm::{Aes256Gcm, KeyInit};
 
         let cipher = Aes256Gcm::new(key.into());
         let nonce_bytes = rand::random::<[u8; 12]>();
         let nonce = Nonce::from_slice(&nonce_bytes);
 
-        let ciphertext = cipher.encrypt(nonce, plaintext)
+        let ciphertext = cipher
+            .encrypt(nonce, plaintext)
             .map_err(|e| SpiraChainError::CryptoError(format!("AES-GCM encrypt failed: {}", e)))?;
 
         let mut result = Vec::with_capacity(12 + ciphertext.len());
@@ -154,20 +169,23 @@ impl P2PEncryption {
     }
 
     fn aes_gcm_decrypt(key: &[u8; 32], data: &[u8]) -> Result<Vec<u8>> {
-        use aes_gcm::{Aes256Gcm, KeyInit};
         use aes_gcm::aead::Aead;
         use aes_gcm::Nonce;
+        use aes_gcm::{Aes256Gcm, KeyInit};
 
         if data.len() < 12 {
-            return Err(SpiraChainError::CryptoError("Ciphertext too short".to_string()));
+            return Err(SpiraChainError::CryptoError(
+                "Ciphertext too short".to_string(),
+            ));
         }
 
         let nonce = Nonce::from_slice(&data[..12]);
         let ciphertext = &data[12..];
 
         let cipher = Aes256Gcm::new(key.into());
-        
-        cipher.decrypt(nonce, ciphertext)
+
+        cipher
+            .decrypt(nonce, ciphertext)
             .map_err(|e| SpiraChainError::CryptoError(format!("AES-GCM decrypt failed: {}", e)))
     }
 }
@@ -213,13 +231,23 @@ mod tests {
         bob.add_peer("alice".to_string(), &alice_public).unwrap();
 
         let ciphertext_alice = alice.establish_shared_secret("bob").unwrap();
-        let shared_secret_bob = bob.derive_shared_secret_from_ciphertext(&ciphertext_alice).unwrap();
+        let shared_secret_bob = bob
+            .derive_shared_secret_from_ciphertext(&ciphertext_alice)
+            .unwrap();
 
         let message = b"Hello from Alice!";
-        
-        let key_alice = alice.peer_keys.read().get("bob").unwrap().shared_secret.as_ref().unwrap().derive_key(b"spirachain-p2p-v1");
+
+        let key_alice = alice
+            .peer_keys
+            .read()
+            .get("bob")
+            .unwrap()
+            .shared_secret
+            .as_ref()
+            .unwrap()
+            .derive_key(b"spirachain-p2p-v1");
         let key_bob = shared_secret_bob.derive_key(b"spirachain-p2p-v1");
-        
+
         assert_eq!(key_alice, key_bob);
     }
 
@@ -227,11 +255,10 @@ mod tests {
     fn test_key_rotation() {
         let encryption = P2PEncryption::new().unwrap();
         let old_key = encryption.local_public_key();
-        
+
         let new_key = encryption.rotate_key().unwrap();
-        
+
         assert_ne!(old_key, new_key);
         assert_eq!(encryption.peer_count(), 0);
     }
 }
-

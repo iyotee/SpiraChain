@@ -1,8 +1,8 @@
-use spirachain_core::{Transaction, Hash, Result, SpiraChainError};
+use parking_lot::RwLock;
+use spirachain_core::{Hash, Result, SpiraChainError, Transaction};
 use spirachain_semantic::SemanticProcessor;
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
-use parking_lot::RwLock;
 
 #[derive(Clone)]
 pub struct Mempool {
@@ -36,56 +36,67 @@ impl Mempool {
                 }
             }
         }
-        
+
         let tx_hash = tx.hash();
-        
+
         let mut txs = self.transactions.write();
         let mut queue = self.pending_queue.write();
-        
+
         if txs.len() >= self.max_size {
             return Err(SpiraChainError::Internal("Mempool full".to_string()));
         }
 
         if txs.contains_key(&tx_hash) {
-            return Err(SpiraChainError::InvalidTransaction("Transaction already in mempool".to_string()));
+            return Err(SpiraChainError::InvalidTransaction(
+                "Transaction already in mempool".to_string(),
+            ));
         }
 
         txs.insert(tx_hash, tx);
         queue.push_back(tx_hash);
-        
-        tracing::info!("Added transaction {} to mempool", hex::encode(tx_hash.as_bytes()));
-        
+
+        tracing::info!(
+            "Added transaction {} to mempool",
+            hex::encode(tx_hash.as_bytes())
+        );
+
         Ok(())
     }
-    
+
     pub fn add_transaction_sync(&self, tx: Transaction) -> Result<()> {
         // Version synchrone sans enrichissement pour compatibilité
         let tx_hash = tx.hash();
-        
+
         let mut txs = self.transactions.write();
         let mut queue = self.pending_queue.write();
-        
+
         if txs.len() >= self.max_size {
             return Err(SpiraChainError::Internal("Mempool full".to_string()));
         }
 
         if txs.contains_key(&tx_hash) {
-            return Err(SpiraChainError::InvalidTransaction("Transaction already in mempool".to_string()));
+            return Err(SpiraChainError::InvalidTransaction(
+                "Transaction already in mempool".to_string(),
+            ));
         }
 
         txs.insert(tx_hash, tx);
         queue.push_back(tx_hash);
-        
-        tracing::info!("Added transaction {} to mempool (sync)", hex::encode(tx_hash.as_bytes()));
-        
+
+        tracing::info!(
+            "Added transaction {} to mempool (sync)",
+            hex::encode(tx_hash.as_bytes())
+        );
+
         Ok(())
     }
 
     pub fn get_pending_transactions(&self, max_count: usize) -> Vec<Transaction> {
         let txs = self.transactions.read();
         let queue = self.pending_queue.read();
-        
-        queue.iter()
+
+        queue
+            .iter()
             .take(max_count)
             .filter_map(|hash| txs.get(hash).cloned())
             .collect()
@@ -94,15 +105,15 @@ impl Mempool {
     pub fn remove_transactions(&self, tx_hashes: &[Hash]) {
         let mut txs = self.transactions.write();
         let mut queue = self.pending_queue.write();
-        
+
         for hash in tx_hashes {
             txs.remove(hash);
             queue.retain(|h| h != hash);
         }
-        
+
         tracing::info!("Removed {} transactions from mempool", tx_hashes.len());
     }
-    
+
     pub fn remove_transaction(&self, tx_hash: &Hash) {
         self.remove_transactions(&[*tx_hash]);
     }

@@ -1,5 +1,5 @@
-use warp::Reply;
 use serde_json::json;
+use warp::Reply;
 
 pub async fn handle_status() -> Result<impl Reply, warp::Rejection> {
     Ok(warp::reply::json(&json!({

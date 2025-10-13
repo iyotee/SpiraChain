@@ -1,8 +1,8 @@
-use spirachain_core::{Block, Hash, Result, SpiraChainError, Address};
-use spirachain_crypto::KeyPair;
 use crate::ValidatorSet;
-use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use spirachain_core::{Address, Block, Hash, Result, SpiraChainError};
+use spirachain_crypto::KeyPair;
+use std::collections::HashMap;
 use tracing::{info, warn};
 
 pub const BFT_QUORUM_THRESHOLD: f64 = 0.67;
@@ -10,10 +10,31 @@ pub const BFT_TIMEOUT_SECONDS: u64 = 30;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BFTMessage {
-    PrePrepare { view: u64, sequence: u64, block: Block, signature: Vec<u8> },
-    Prepare { view: u64, sequence: u64, block_hash: Hash, validator: Address, signature: Vec<u8> },
-    Commit { view: u64, sequence: u64, block_hash: Hash, validator: Address, signature: Vec<u8> },
-    ViewChange { new_view: u64, validator: Address, proof: Vec<u8> },
+    PrePrepare {
+        view: u64,
+        sequence: u64,
+        block: Block,
+        signature: Vec<u8>,
+    },
+    Prepare {
+        view: u64,
+        sequence: u64,
+        block_hash: Hash,
+        validator: Address,
+        signature: Vec<u8>,
+    },
+    Commit {
+        view: u64,
+        sequence: u64,
+        block_hash: Hash,
+        validator: Address,
+        signature: Vec<u8>,
+    },
+    ViewChange {
+        new_view: u64,
+        validator: Address,
+        proof: Vec<u8>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -54,7 +75,10 @@ impl BFTConsensus {
 
     pub fn propose_block(&mut self, block: Block, keypair: &KeyPair) -> Result<BFTMessage> {
         info!("📢 Proposing block for BFT consensus");
-        info!("   View: {}, Sequence: {}", self.view_number, self.sequence_number);
+        info!(
+            "   View: {}, Sequence: {}",
+            self.view_number, self.sequence_number
+        );
         info!("   Block height: {}", block.header.block_height);
 
         let block_hash = block.hash();
@@ -72,9 +96,18 @@ impl BFTConsensus {
         Ok(message)
     }
 
-    pub fn handle_pre_prepare(&mut self, view: u64, sequence: u64, block: Block, signature: Vec<u8>) -> Result<Option<BFTMessage>> {
+    pub fn handle_pre_prepare(
+        &mut self,
+        view: u64,
+        sequence: u64,
+        block: Block,
+        signature: Vec<u8>,
+    ) -> Result<Option<BFTMessage>> {
         if view != self.view_number {
-            warn!("⚠️  Received PrePrepare for wrong view: {} (expected {})", view, self.view_number);
+            warn!(
+                "⚠️  Received PrePrepare for wrong view: {} (expected {})",
+                view, self.view_number
+            );
             return Ok(None);
         }
 
@@ -89,9 +122,13 @@ impl BFTConsensus {
                 .as_secs(),
         };
 
-        self.pre_prepare_received.insert(block_hash, (block.clone(), vote));
+        self.pre_prepare_received
+            .insert(block_hash, (block.clone(), vote));
 
-        info!("✅ PrePrepare received for block {}", block.header.block_height);
+        info!(
+            "✅ PrePrepare received for block {}",
+            block.header.block_height
+        );
 
         let prepare_msg = BFTMessage::Prepare {
             view,
@@ -104,7 +141,14 @@ impl BFTConsensus {
         Ok(Some(prepare_msg))
     }
 
-    pub fn handle_prepare(&mut self, view: u64, sequence: u64, block_hash: Hash, validator: Address, signature: Vec<u8>) -> Result<Option<BFTMessage>> {
+    pub fn handle_prepare(
+        &mut self,
+        view: u64,
+        sequence: u64,
+        block_hash: Hash,
+        validator: Address,
+        signature: Vec<u8>,
+    ) -> Result<Option<BFTMessage>> {
         if view != self.view_number {
             return Ok(None);
         }
@@ -118,13 +162,23 @@ impl BFTConsensus {
                 .as_secs(),
         };
 
-        self.prepare_votes.entry(block_hash).or_insert_with(Vec::new).push(vote);
+        self.prepare_votes
+            .entry(block_hash)
+            .or_insert_with(Vec::new)
+            .push(vote);
 
-        let vote_count = self.prepare_votes.get(&block_hash).map(|v| v.len()).unwrap_or(0);
+        let vote_count = self
+            .prepare_votes
+            .get(&block_hash)
+            .map(|v| v.len())
+            .unwrap_or(0);
         let quorum = self.calculate_quorum();
 
         if vote_count >= quorum {
-            info!("✅ Prepare quorum reached for block: {}/{}", vote_count, quorum);
+            info!(
+                "✅ Prepare quorum reached for block: {}/{}",
+                vote_count, quorum
+            );
 
             let commit_msg = BFTMessage::Commit {
                 view,
@@ -140,7 +194,14 @@ impl BFTConsensus {
         Ok(None)
     }
 
-    pub fn handle_commit(&mut self, view: u64, _sequence: u64, block_hash: Hash, validator: Address, signature: Vec<u8>) -> Result<bool> {
+    pub fn handle_commit(
+        &mut self,
+        view: u64,
+        _sequence: u64,
+        block_hash: Hash,
+        validator: Address,
+        signature: Vec<u8>,
+    ) -> Result<bool> {
         if view != self.view_number {
             return Ok(false);
         }
@@ -154,13 +215,23 @@ impl BFTConsensus {
                 .as_secs(),
         };
 
-        self.commit_votes.entry(block_hash).or_insert_with(Vec::new).push(vote);
+        self.commit_votes
+            .entry(block_hash)
+            .or_insert_with(Vec::new)
+            .push(vote);
 
-        let vote_count = self.commit_votes.get(&block_hash).map(|v| v.len()).unwrap_or(0);
+        let vote_count = self
+            .commit_votes
+            .get(&block_hash)
+            .map(|v| v.len())
+            .unwrap_or(0);
         let quorum = self.calculate_quorum();
 
         if vote_count >= quorum {
-            info!("🎉 Commit quorum reached! Block is FINAL: {}/{}", vote_count, quorum);
+            info!(
+                "🎉 Commit quorum reached! Block is FINAL: {}/{}",
+                vote_count, quorum
+            );
 
             if let Some((block, _)) = self.pre_prepare_received.get(&block_hash) {
                 self.committed_blocks.insert(block_hash, block.clone());
@@ -186,9 +257,10 @@ impl BFTConsensus {
 
     pub fn handle_view_change(&mut self, new_view: u64) -> Result<()> {
         if new_view <= self.view_number {
-            return Err(SpiraChainError::ConsensusError(
-                format!("Invalid view change: {} -> {}", self.view_number, new_view)
-            ));
+            return Err(SpiraChainError::ConsensusError(format!(
+                "Invalid view change: {} -> {}",
+                self.view_number, new_view
+            )));
         }
 
         warn!("🔄 View change: {} → {}", self.view_number, new_view);
@@ -218,23 +290,30 @@ impl BFTConsensus {
     }
 
     pub fn get_prepare_votes(&self, block_hash: &Hash) -> usize {
-        self.prepare_votes.get(block_hash).map(|v| v.len()).unwrap_or(0)
+        self.prepare_votes
+            .get(block_hash)
+            .map(|v| v.len())
+            .unwrap_or(0)
     }
 
     pub fn get_commit_votes(&self, block_hash: &Hash) -> usize {
-        self.commit_votes.get(block_hash).map(|v| v.len()).unwrap_or(0)
+        self.commit_votes
+            .get(block_hash)
+            .map(|v| v.len())
+            .unwrap_or(0)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Validator;
     use spirachain_core::Amount;
 
     fn create_test_validator_set() -> ValidatorSet {
         let mut validators = ValidatorSet::new();
-        
-        for i in 0..4 {
+
+        for _i in 0..4 {
             let keypair = KeyPair::generate();
             let validator = Validator {
                 address: keypair.to_address(),
@@ -310,4 +389,3 @@ mod tests {
         assert!(result.is_err());
     }
 }
-

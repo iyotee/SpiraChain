@@ -1,21 +1,45 @@
-use spirachain_core::{Block, Transaction, BlockHeader};
 use serde::{Deserialize, Serialize};
+use spirachain_core::{Block, BlockHeader, Transaction};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum NetworkMessage {
     NewBlock(Block),
     NewTransaction(Transaction),
-    BlockRequest { start_height: u64, count: u64 },
-    BlockResponse { blocks: Vec<Block> },
-    HeaderRequest { start_height: u64, count: u64 },
-    HeaderResponse { headers: Vec<BlockHeader> },
-    SyncRequest { from_height: u64 },
-    SyncResponse { blocks: Vec<Block>, has_more: bool },
-    PeerInfo { peer_count: usize, chain_height: u64 },
+    BlockRequest {
+        start_height: u64,
+        count: u64,
+    },
+    BlockResponse {
+        blocks: Vec<Block>,
+    },
+    HeaderRequest {
+        start_height: u64,
+        count: u64,
+    },
+    HeaderResponse {
+        headers: Vec<BlockHeader>,
+    },
+    SyncRequest {
+        from_height: u64,
+    },
+    SyncResponse {
+        blocks: Vec<Block>,
+        has_more: bool,
+    },
+    PeerInfo {
+        peer_count: usize,
+        chain_height: u64,
+    },
     Ping,
     Pong,
-    KeyExchange { public_key: Vec<u8>, ciphertext: Vec<u8> },
-    EncryptedMessage { peer_id: String, data: Vec<u8> },
+    KeyExchange {
+        public_key: Vec<u8>,
+        ciphertext: Vec<u8>,
+    },
+    EncryptedMessage {
+        peer_id: String,
+        data: Vec<u8>,
+    },
 }
 
 impl NetworkMessage {
@@ -28,7 +52,10 @@ impl NetworkMessage {
     }
 
     pub fn block_request(start_height: u64, count: u64) -> Self {
-        NetworkMessage::BlockRequest { start_height, count }
+        NetworkMessage::BlockRequest {
+            start_height,
+            count,
+        }
     }
 
     pub fn sync_request(from_height: u64) -> Self {
@@ -36,7 +63,10 @@ impl NetworkMessage {
     }
 
     pub fn peer_info(peer_count: usize, chain_height: u64) -> Self {
-        NetworkMessage::PeerInfo { peer_count, chain_height }
+        NetworkMessage::PeerInfo {
+            peer_count,
+            chain_height,
+        }
     }
 }
 

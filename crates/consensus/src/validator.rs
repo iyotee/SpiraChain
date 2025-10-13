@@ -1,5 +1,5 @@
-use spirachain_core::{Address, Amount, Result, SpiraChainError};
 use serde::{Deserialize, Serialize};
+use spirachain_core::{Address, Amount, Result, SpiraChainError};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Validator {
@@ -33,11 +33,16 @@ pub enum SlashingReason {
 }
 
 impl Validator {
-    pub fn new(address: Address, pubkey: Vec<u8>, stake: Amount, current_block: u64) -> Result<Self> {
+    pub fn new(
+        address: Address,
+        pubkey: Vec<u8>,
+        stake: Amount,
+        current_block: u64,
+    ) -> Result<Self> {
         if stake < Amount::new(spirachain_core::MIN_VALIDATOR_STAKE) {
             return Err(SpiraChainError::InsufficientStake(
                 stake.value(),
-                spirachain_core::MIN_VALIDATOR_STAKE
+                spirachain_core::MIN_VALIDATOR_STAKE,
             ));
         }
 
@@ -69,7 +74,7 @@ impl Validator {
         };
 
         let slash_amount = Amount::new((self.stake.value() as f64 * percentage) as u128);
-        
+
         if let Some(new_stake) = self.stake.checked_sub(slash_amount) {
             self.stake = new_stake;
         } else {
@@ -94,18 +99,20 @@ impl Validator {
         }
     }
 
-    pub fn update_reputation(&mut self, spiral_quality: f64, semantic_coherence: f64, timeliness: f64) {
+    pub fn update_reputation(
+        &mut self,
+        spiral_quality: f64,
+        semantic_coherence: f64,
+        timeliness: f64,
+    ) {
         let uptime = if self.expected_blocks > 0 {
             self.blocks_proposed as f64 / self.expected_blocks as f64
         } else {
             1.0
         };
 
-        let new_score = 
-            0.3 * spiral_quality +
-            0.3 * semantic_coherence +
-            0.2 * timeliness +
-            0.2 * uptime;
+        let new_score =
+            0.3 * spiral_quality + 0.3 * semantic_coherence + 0.2 * timeliness + 0.2 * uptime;
 
         self.reputation_score = 0.9 * self.reputation_score + 0.1 * new_score;
     }
@@ -120,9 +127,9 @@ impl Validator {
     }
 
     pub fn is_active(&self) -> bool {
-        self.stake >= Amount::new(spirachain_core::MIN_VALIDATOR_STAKE) &&
-        self.reputation_score > 0.3 &&
-        self.slashing_events.is_empty()
+        self.stake >= Amount::new(spirachain_core::MIN_VALIDATOR_STAKE)
+            && self.reputation_score > 0.3
+            && self.slashing_events.is_empty()
     }
 }
 
@@ -143,14 +150,14 @@ impl ValidatorSet {
     pub fn add_validator(&mut self, validator: Validator) -> Result<()> {
         if self.validators.len() >= spirachain_core::MAX_VALIDATORS {
             return Err(SpiraChainError::ConsensusError(
-                "Maximum validator count reached".to_string()
+                "Maximum validator count reached".to_string(),
             ));
         }
 
         if let Some(total) = self.total_stake.checked_add(validator.stake) {
             self.total_stake = total;
         }
-        
+
         self.validators.push(validator);
         Ok(())
     }
@@ -203,7 +210,7 @@ mod tests {
         let address = Address::new([1u8; 32]);
         let pubkey = vec![0u8; 32];
         let stake = Amount::qbt(10_000);
-        
+
         let validator = Validator::new(address, pubkey, stake, 0).unwrap();
         assert_eq!(validator.stake, stake);
         assert!(validator.is_active());
@@ -214,12 +221,12 @@ mod tests {
         let address = Address::new([1u8; 32]);
         let pubkey = vec![0u8; 32];
         let stake = Amount::qbt(10_000);
-        
+
         let mut validator = Validator::new(address, pubkey, stake, 0).unwrap();
         let original_stake = validator.stake;
-        
+
         validator.slash(SlashingReason::InvalidSpiral, 100, 1000);
-        
+
         assert!(validator.stake < original_stake);
         assert_eq!(validator.slashing_events.len(), 1);
     }
@@ -227,18 +234,17 @@ mod tests {
     #[test]
     fn test_validator_set() {
         let mut set = ValidatorSet::new();
-        
+
         let address1 = Address::new([1u8; 32]);
         let validator1 = Validator::new(address1, vec![0u8; 32], Amount::qbt(10_000), 0).unwrap();
-        
+
         let address2 = Address::new([2u8; 32]);
         let validator2 = Validator::new(address2, vec![1u8; 32], Amount::qbt(20_000), 0).unwrap();
-        
+
         set.add_validator(validator1).unwrap();
         set.add_validator(validator2).unwrap();
-        
+
         assert_eq!(set.len(), 2);
         assert_eq!(set.total_stake, Amount::qbt(30_000));
     }
 }
-

@@ -15,7 +15,7 @@ impl SpiraVM {
 
     pub fn execute(&mut self, bytecode: &[u8]) -> Result<Vec<u8>> {
         tracing::info!("Executing contract with {} bytes", bytecode.len());
-        
+
         self.gas_used = bytecode.len() as u64 * 10;
 
         Ok(vec![])
@@ -35,4 +35,3 @@ impl Default for SpiraVM {
         Self::new(10_000_000)
     }
 }
-

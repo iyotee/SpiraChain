@@ -1,5 +1,5 @@
-use spirachain_core::Transaction;
 use serde::{Deserialize, Serialize};
+use spirachain_core::Transaction;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Pattern {
@@ -25,7 +25,7 @@ impl PatternDetector {
 
     pub fn detect_patterns(&self, transactions: &[Transaction]) -> Vec<Pattern> {
         let patterns = Vec::new();
-        
+
         patterns
     }
 
@@ -59,7 +59,8 @@ impl PatternDetector {
             return 0.0;
         }
 
-        let similarities: Vec<f64> = cluster.iter()
+        let similarities: Vec<f64> = cluster
+            .iter()
             .map(|tx| self.cosine_similarity(&tx.semantic_vector, centroid))
             .collect();
 
@@ -88,4 +89,3 @@ impl Default for PatternDetector {
         Self::new(5, 0.7)
     }
 }
-

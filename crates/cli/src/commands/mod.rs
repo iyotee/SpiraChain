@@ -1,10 +1,8 @@
+pub mod calculate;
+pub mod genesis;
 pub mod init;
-pub mod wallet;
-pub mod validator;
+pub mod node;
 pub mod query;
 pub mod tx;
-pub mod genesis;
-pub mod calculate;
-pub mod node;
-
-
+pub mod validator;
+pub mod wallet;

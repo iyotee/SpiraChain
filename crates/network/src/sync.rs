@@ -16,7 +16,7 @@ impl SyncManager {
     pub async fn fast_sync(&mut self, target_height: u64) -> Result<()> {
         self.target_height = target_height;
         tracing::info!("Starting fast sync to height {}", target_height);
-        
+
         Ok(())
     }
 
@@ -43,4 +43,3 @@ impl Default for SyncManager {
         Self::new()
     }
 }
-

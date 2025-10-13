@@ -1,7 +1,7 @@
-use spirachain_core::{Result, SpiraChainError};
-use serde::{Deserialize, Serialize};
-use sha2::{Sha256, Digest};
 use rand::Rng;
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use spirachain_core::{Result, SpiraChainError};
 
 pub const XMSS_TREE_HEIGHT: usize = 20;
 pub const XMSS_SIGNATURE_SIZE: usize = 2500;
@@ -37,18 +37,18 @@ pub struct XmssSignature {
 impl XmssKeyPair {
     pub fn generate() -> Result<Self> {
         let mut rng = rand::thread_rng();
-        
+
         let mut seed = [0u8; 32];
         let mut prf_seed = [0u8; 32];
         let mut pub_seed = [0u8; 32];
-        
+
         rng.fill(&mut seed);
         rng.fill(&mut prf_seed);
         rng.fill(&mut pub_seed);
-        
+
         let leaf_nodes = Self::generate_leaf_nodes(&prf_seed, &pub_seed);
         let root = Self::merkle_root(&leaf_nodes);
-        
+
         let secret_key = XmssSecretKey {
             index: 0,
             seed,
@@ -56,12 +56,9 @@ impl XmssKeyPair {
             pub_seed,
             root,
         };
-        
-        let public_key = XmssPublicKey {
-            root,
-            pub_seed,
-        };
-        
+
+        let public_key = XmssPublicKey { root, pub_seed };
+
         Ok(Self {
             public_key,
             secret_key,
@@ -71,20 +68,21 @@ impl XmssKeyPair {
     pub fn sign(&mut self, message: &[u8]) -> Result<XmssSignature> {
         if self.secret_key.index >= (1u64 << XMSS_TREE_HEIGHT) {
             return Err(SpiraChainError::CryptoError(
-                "XMSS key exhausted - no more signatures available".to_string()
+                "XMSS key exhausted - no more signatures available".to_string(),
             ));
         }
 
         let index = self.secret_key.index;
-        
+
         let wots_key = self.generate_wots_key(index);
         let wots_signature = self.wots_sign(&wots_key, message);
-        
-        let leaf_nodes = Self::generate_leaf_nodes(&self.secret_key.prf_seed, &self.secret_key.pub_seed);
+
+        let leaf_nodes =
+            Self::generate_leaf_nodes(&self.secret_key.prf_seed, &self.secret_key.pub_seed);
         let auth_path = self.generate_auth_path(&leaf_nodes, index as usize);
-        
+
         self.secret_key.index += 1;
-        
+
         Ok(XmssSignature {
             index,
             wots_signature,
@@ -98,9 +96,10 @@ impl XmssKeyPair {
         }
 
         let leaf = self.wots_verify(&signature.wots_signature, message);
-        
-        let computed_root = self.verify_auth_path(&leaf, &signature.auth_path, signature.index as usize);
-        
+
+        let computed_root =
+            self.verify_auth_path(&leaf, &signature.auth_path, signature.index as usize);
+
         computed_root == self.public_key.root
     }
 
@@ -115,19 +114,19 @@ impl XmssKeyPair {
     fn generate_leaf_nodes(prf_seed: &[u8; 32], pub_seed: &[u8; 32]) -> Vec<[u8; 32]> {
         let num_leaves = 1 << XMSS_TREE_HEIGHT;
         let mut leaves = Vec::with_capacity(num_leaves);
-        
+
         for i in 0..num_leaves {
             let mut hasher = Sha256::new();
             hasher.update(prf_seed);
             hasher.update(pub_seed);
             hasher.update(&(i as u64).to_be_bytes());
             let hash = hasher.finalize();
-            
+
             let mut leaf = [0u8; 32];
             leaf.copy_from_slice(&hash);
             leaves.push(leaf);
         }
-        
+
         leaves
     }
 
@@ -137,10 +136,10 @@ impl XmssKeyPair {
         }
 
         let mut current_level = leaves.to_vec();
-        
+
         while current_level.len() > 1 {
             let mut next_level = Vec::new();
-            
+
             for chunk in current_level.chunks(2) {
                 let mut hasher = Sha256::new();
                 hasher.update(&chunk[0]);
@@ -150,15 +149,15 @@ impl XmssKeyPair {
                     hasher.update(&chunk[0]);
                 }
                 let hash = hasher.finalize();
-                
+
                 let mut node = [0u8; 32];
                 node.copy_from_slice(&hash);
                 next_level.push(node);
             }
-            
+
             current_level = next_level;
         }
-        
+
         current_level[0]
     }
 
@@ -173,16 +172,16 @@ impl XmssKeyPair {
         let mut hasher = Sha256::new();
         hasher.update(message);
         let msg_hash = hasher.finalize();
-        
+
         let mut signature = Vec::new();
         for i in 0..32 {
             let mut hasher = Sha256::new();
             hasher.update(key);
-            hasher.update(&msg_hash[i..i+1]);
+            hasher.update(&msg_hash[i..i + 1]);
             hasher.update(&(i as u32).to_be_bytes());
             signature.extend_from_slice(&hasher.finalize());
         }
-        
+
         signature
     }
 
@@ -191,7 +190,7 @@ impl XmssKeyPair {
         hasher.update(signature);
         hasher.update(message);
         let hash = hasher.finalize();
-        
+
         let mut result = [0u8; 32];
         result.copy_from_slice(&hash);
         result
@@ -201,20 +200,20 @@ impl XmssKeyPair {
         let mut auth_path = Vec::new();
         let mut current_index = index;
         let mut current_level = leaves.to_vec();
-        
+
         for _ in 0..XMSS_TREE_HEIGHT {
             let sibling_index = if current_index % 2 == 0 {
                 current_index + 1
             } else {
                 current_index - 1
             };
-            
+
             if sibling_index < current_level.len() {
                 auth_path.push(current_level[sibling_index]);
             } else {
                 auth_path.push(current_level[current_index]);
             }
-            
+
             let mut next_level = Vec::new();
             for chunk in current_level.chunks(2) {
                 let mut hasher = Sha256::new();
@@ -225,23 +224,23 @@ impl XmssKeyPair {
                     hasher.update(&chunk[0]);
                 }
                 let hash = hasher.finalize();
-                
+
                 let mut node = [0u8; 32];
                 node.copy_from_slice(&hash);
                 next_level.push(node);
             }
-            
+
             current_level = next_level;
             current_index /= 2;
         }
-        
+
         auth_path
     }
 
     fn verify_auth_path(&self, leaf: &[u8; 32], auth_path: &[[u8; 32]], index: usize) -> [u8; 32] {
         let mut current_node = *leaf;
         let mut current_index = index;
-        
+
         for sibling in auth_path {
             let mut hasher = Sha256::new();
             if current_index % 2 == 0 {
@@ -252,11 +251,11 @@ impl XmssKeyPair {
                 hasher.update(&current_node);
             }
             let hash = hasher.finalize();
-            
+
             current_node.copy_from_slice(&hash);
             current_index /= 2;
         }
-        
+
         current_node
     }
 }
@@ -272,7 +271,7 @@ impl XmssPublicKey {
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() != 64 {
             return Err(SpiraChainError::CryptoError(
-                "Invalid XMSS public key length".to_string()
+                "Invalid XMSS public key length".to_string(),
             ));
         }
 
@@ -308,7 +307,7 @@ mod tests {
     fn test_xmss_sign_verify() {
         let mut keypair = XmssKeyPair::generate().unwrap();
         let message = b"test message";
-        
+
         let signature = keypair.sign(message).unwrap();
         assert!(keypair.verify(message, &signature));
     }
@@ -318,13 +317,16 @@ mod tests {
         let mut keypair = XmssKeyPair::generate().unwrap();
         let message1 = b"message 1";
         let message2 = b"message 2";
-        
+
         let sig1 = keypair.sign(message1).unwrap();
         let sig2 = keypair.sign(message2).unwrap();
-        
+
         assert!(keypair.verify(message1, &sig1));
         assert!(keypair.verify(message2, &sig2));
-        assert_eq!(keypair.remaining_signatures(), (1u64 << XMSS_TREE_HEIGHT) - 2);
+        assert_eq!(
+            keypair.remaining_signatures(),
+            (1u64 << XMSS_TREE_HEIGHT) - 2
+        );
     }
 
     #[test]
@@ -332,9 +334,8 @@ mod tests {
         let mut keypair = XmssKeyPair::generate().unwrap();
         let message = b"correct message";
         let wrong = b"wrong message";
-        
+
         let signature = keypair.sign(message).unwrap();
         assert!(!keypair.verify(wrong, &signature));
     }
 }
-

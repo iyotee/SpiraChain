@@ -1,6 +1,6 @@
+use parking_lot::RwLock;
 use spirachain_core::Result;
 use std::sync::Arc;
-use parking_lot::RwLock;
 
 pub struct SpiraChainMetrics {
     pub blocks_produced: Arc<RwLock<u64>>,
@@ -79,15 +79,12 @@ pub async fn start_metrics_server(metrics: Arc<SpiraChainMetrics>, port: u16) ->
     tracing::info!("📊 Starting metrics server on port {}", port);
 
     let metrics_clone = metrics.clone();
-    let metrics_route = warp::path("metrics")
-        .map(move || {
-            let output = metrics_clone.export_prometheus();
-            warp::reply::with_header(output, "Content-Type", "text/plain")
-        });
+    let metrics_route = warp::path("metrics").map(move || {
+        let output = metrics_clone.export_prometheus();
+        warp::reply::with_header(output, "Content-Type", "text/plain")
+    });
 
-    warp::serve(metrics_route)
-        .run(([0, 0, 0, 0], port))
-        .await;
+    warp::serve(metrics_route).run(([0, 0, 0, 0], port)).await;
 
     Ok(())
 }

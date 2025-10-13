@@ -31,4 +31,3 @@ impl Default for EntityExtractor {
         Self::new()
     }
 }
-

@@ -1,12 +1,12 @@
-use spirachain_core::{Transaction, Result, Amount, Address};
-use spirachain_crypto::KeyPair;
-use spirachain_consensus::{ProofOfSpiral, Validator};
-use spirachain_network::LibP2PNetwork;
-use crate::{NodeConfig, Mempool, WorldState, BlockStorage};
-use std::sync::Arc;
+use crate::{BlockStorage, Mempool, NodeConfig, WorldState};
 use parking_lot::RwLock;
+use spirachain_consensus::{ProofOfSpiral, Validator};
+use spirachain_core::{Address, Amount, Result, Transaction};
+use spirachain_crypto::KeyPair;
+use spirachain_network::LibP2PNetwork;
+use std::sync::Arc;
 use tokio::time::{interval, Duration};
-use tracing::{info, error, warn};
+use tracing::{error, info, warn};
 
 pub struct ValidatorNode {
     config: NodeConfig,
@@ -25,7 +25,7 @@ impl ValidatorNode {
     pub fn new(config: NodeConfig, keypair: KeyPair) -> Result<Self> {
         let storage = BlockStorage::new(&config.data_dir)?;
         let address = keypair.to_address();
-        
+
         let validator = Validator {
             address,
             pubkey: keypair.public_key().as_bytes().to_vec(),
@@ -41,9 +41,9 @@ impl ValidatorNode {
 
         let mut consensus = ProofOfSpiral::new(
             spirachain_core::MIN_SPIRAL_COMPLEXITY,
-            spirachain_core::MAX_SPIRAL_JUMP
+            spirachain_core::MAX_SPIRAL_JUMP,
         );
-        
+
         // Enregistrer ce validator dans le consensus
         consensus.add_validator(validator.clone())?;
 
@@ -51,12 +51,15 @@ impl ValidatorNode {
         let spirapi_path = std::env::current_dir()
             .unwrap_or_else(|_| std::path::PathBuf::from("."))
             .join("crates/spirapi");
-        
+
         if spirapi_path.exists() {
             info!("🤖 Initializing SpiraPi AI engine...");
             match spirapi_bridge::SpiraPiEngine::initialize(spirapi_path) {
                 Ok(_) => info!("✅ SpiraPi AI engine initialized successfully"),
-                Err(e) => warn!("⚠️ SpiraPi not available: {}. Using fallback embeddings.", e),
+                Err(e) => warn!(
+                    "⚠️ SpiraPi not available: {}. Using fallback embeddings.",
+                    e
+                ),
             }
         } else {
             warn!("⚠️ SpiraPi directory not found. AI semantic layer will use fallback mode.");
@@ -70,7 +73,7 @@ impl ValidatorNode {
             state: Arc::new(RwLock::new(WorldState::default())),
             storage,
             consensus,
-            network: None,  // Initialized in start()
+            network: None, // Initialized in start()
             is_running: Arc::new(RwLock::new(false)),
             blocks_produced: 0,
         })
@@ -79,31 +82,42 @@ impl ValidatorNode {
     pub async fn start(&mut self) -> Result<()> {
         info!("🚀 Starting SpiraChain Validator Node");
         info!("   Address: {}", self.validator.address);
-        info!("   Stake: {} QBT", self.validator.stake.value() as f64 / 1e18);
+        info!(
+            "   Stake: {} QBT",
+            self.validator.stake.value() as f64 / 1e18
+        );
         info!("   Data dir: {}", self.config.data_dir.display());
 
         // Initialize P2P network
         info!("🌐 Starting LibP2P network...");
-        let port = self.config.network_addr
+        let port = self
+            .config
+            .network_addr
             .split(':')
             .last()
             .and_then(|p| p.parse::<u16>().ok())
             .unwrap_or(30333);
-        
+
         match LibP2PNetwork::new(port).await {
             Ok(mut network) => {
                 info!("✅ P2P network created");
-                
+
                 // Initialize listening
                 if let Err(e) = network.initialize() {
-                    warn!("⚠️ P2P initialization failed: {}. Running without network.", e);
+                    warn!(
+                        "⚠️ P2P initialization failed: {}. Running without network.",
+                        e
+                    );
                 } else {
                     self.network = Some(Arc::new(RwLock::new(network)));
                     info!("📡 P2P network ready - will poll in validator loop");
                 }
             }
             Err(e) => {
-                warn!("⚠️ P2P network failed to create: {}. Running without network.", e);
+                warn!(
+                    "⚠️ P2P network failed to create: {}. Running without network.",
+                    e
+                );
             }
         }
 
@@ -148,7 +162,7 @@ impl ValidatorNode {
                 _ = mempool_check.tick() => {
                     self.check_mempool();
                 }
-                
+
                 _ = network_tick.tick() => {
                     // Poll P2P events (non-blocking)
                     if let Some(ref network) = self.network {
@@ -170,7 +184,9 @@ impl ValidatorNode {
     async fn produce_block(&mut self) -> Result<()> {
         info!("🏗️  Producing new block...");
 
-        let pending_txs = self.mempool.get_all_transactions()
+        let pending_txs = self
+            .mempool
+            .get_all_transactions()
             .into_iter()
             .take(1000)
             .collect::<Vec<_>>();
@@ -233,7 +249,10 @@ impl ValidatorNode {
         self.validator.blocks_proposed += 1;
         self.validator.last_block_height = block.header.block_height;
 
-        info!("✅ Block {} produced successfully!", block.header.block_height);
+        info!(
+            "✅ Block {} produced successfully!",
+            block.header.block_height
+        );
         info!("   Hash: {}", block.hash());
         info!("   Transactions: {}", block.header.tx_count);
 
@@ -249,7 +268,8 @@ impl ValidatorNode {
     }
 
     pub async fn submit_transaction(&mut self, tx: Transaction) -> Result<()> {
-        info!("📥 Received transaction: {} → {} ({} QBT)",
+        info!(
+            "📥 Received transaction: {} → {} ({} QBT)",
             tx.from.to_string()[..16].to_string(),
             tx.to.to_string()[..16].to_string(),
             tx.amount.value() as f64 / 1e18
@@ -307,7 +327,7 @@ impl ValidatorNode {
     pub fn reputation_score(&self) -> f64 {
         self.validator.reputation_score
     }
-    
+
     pub fn last_block_height(&self) -> u64 {
         self.validator.last_block_height
     }

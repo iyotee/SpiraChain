@@ -19,7 +19,7 @@ impl DifficultyAdjuster {
         }
 
         let blocks = &recent_blocks[recent_blocks.len() - self.adjustment_window..];
-        
+
         let actual_time = self.calculate_time_span(blocks);
         let target_time = self.target_block_time * (self.adjustment_window as u64);
 
@@ -49,7 +49,7 @@ impl DifficultyAdjuster {
 
         let first_timestamp = blocks[0].header.timestamp;
         let last_timestamp = blocks[blocks.len() - 1].header.timestamp;
-        
+
         ((last_timestamp - first_timestamp) / 1000) as f64
     }
 
@@ -58,10 +58,11 @@ impl DifficultyAdjuster {
             return 0.0;
         }
 
-        let sum: f64 = blocks.iter()
+        let sum: f64 = blocks
+            .iter()
             .map(|b| b.header.spiral.semantic_coherence)
             .sum();
-        
+
         sum / (blocks.len() as f64)
     }
 }
@@ -75,12 +76,12 @@ impl Default for DifficultyAdjuster {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use spirachain_core::{Hash, PiCoordinate};
+    use spirachain_core::Hash;
 
     #[test]
     fn test_difficulty_adjustment() {
         let adjuster = DifficultyAdjuster::new();
-        
+
         let mut blocks = Vec::new();
         for i in 0..2016 {
             let mut block = Block::new(Hash::zero(), i as u64);
@@ -89,7 +90,7 @@ mod tests {
         }
 
         let (complexity, difficulty) = adjuster.adjust_difficulty(&blocks);
-        
+
         assert!(complexity > 0.0);
         assert!(difficulty > 0);
     }
@@ -97,7 +98,7 @@ mod tests {
     #[test]
     fn test_fast_blocks_increase_difficulty() {
         let adjuster = DifficultyAdjuster::new();
-        
+
         let mut blocks = Vec::new();
         for i in 0..2016 {
             let mut block = Block::new(Hash::zero(), i as u64);
@@ -106,8 +107,7 @@ mod tests {
         }
 
         let (complexity, _) = adjuster.adjust_difficulty(&blocks);
-        
+
         assert!(complexity > spirachain_core::MIN_SPIRAL_COMPLEXITY);
     }
 }
-

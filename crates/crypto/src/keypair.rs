@@ -1,7 +1,7 @@
-use spirachain_core::{Address, Result};
-use serde::{Deserialize, Serialize};
 use ed25519_dalek::{Signer, Verifier};
 use rand::rngs::OsRng;
+use serde::{Deserialize, Serialize};
+use spirachain_core::{Address, Result};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct KeyPair {
@@ -19,10 +19,10 @@ impl KeyPair {
     pub fn generate() -> Self {
         let mut csprng = OsRng;
         let signing_key = ed25519_dalek::SigningKey::generate(&mut csprng);
-        
+
         let secret = signing_key.to_bytes();
         let public = signing_key.verifying_key().to_bytes();
-        
+
         Self {
             public_key: PublicKey(public),
             secret_key: SecretKey(secret),
@@ -32,7 +32,7 @@ impl KeyPair {
     pub fn from_secret(secret: [u8; 32]) -> Result<Self> {
         let signing_key = ed25519_dalek::SigningKey::from_bytes(&secret);
         let public = signing_key.verifying_key().to_bytes();
-        
+
         Ok(Self {
             public_key: PublicKey(public),
             secret_key: SecretKey(secret),
@@ -131,7 +131,7 @@ mod tests {
     fn test_sign_and_verify() {
         let keypair = KeyPair::generate();
         let message = b"test message";
-        
+
         let signature = keypair.sign(message);
         assert!(keypair.verify(message, &signature));
     }
@@ -141,7 +141,7 @@ mod tests {
         let keypair = KeyPair::generate();
         let message = b"test message";
         let wrong_message = b"wrong message";
-        
+
         let signature = keypair.sign(message);
         assert!(!keypair.verify(wrong_message, &signature));
     }
@@ -150,8 +150,7 @@ mod tests {
     fn test_to_address() {
         let keypair = KeyPair::generate();
         let address = keypair.to_address();
-        
+
         assert_ne!(address, Address::zero());
     }
 }
-

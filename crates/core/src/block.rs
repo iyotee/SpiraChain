@@ -1,4 +1,4 @@
-use crate::{Hash, PiCoordinate, SpiralMetadata, Transaction, Result, SpiraChainError};
+use crate::{Hash, PiCoordinate, Result, SpiraChainError, SpiralMetadata, Transaction};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -62,8 +62,7 @@ impl BlockHeader {
     }
 
     pub fn deserialize(data: &[u8]) -> Result<Self> {
-        bincode::deserialize(data)
-            .map_err(|e| SpiraChainError::SerializationError(e.to_string()))
+        bincode::deserialize(data).map_err(|e| SpiraChainError::SerializationError(e.to_string()))
     }
 }
 
@@ -108,13 +107,11 @@ impl Block {
             return;
         }
 
-        let mut hashes: Vec<Hash> = self.transactions.iter()
-            .map(|tx| tx.tx_hash)
-            .collect();
+        let mut hashes: Vec<Hash> = self.transactions.iter().map(|tx| tx.tx_hash).collect();
 
         while hashes.len() > 1 {
             let mut next_level = Vec::new();
-            
+
             for chunk in hashes.chunks(2) {
                 let mut hasher = blake3::Hasher::new();
                 hasher.update(chunk[0].as_bytes());
@@ -125,7 +122,7 @@ impl Block {
                 }
                 next_level.push(hasher.finalize().into());
             }
-            
+
             hashes = next_level;
         }
 
@@ -146,8 +143,7 @@ impl Block {
     }
 
     pub fn deserialize(data: &[u8]) -> Result<Self> {
-        bincode::deserialize(data)
-            .map_err(|e| SpiraChainError::SerializationError(e.to_string()))
+        bincode::deserialize(data).map_err(|e| SpiraChainError::SerializationError(e.to_string()))
     }
 
     pub fn validate(&self) -> Result<()> {
@@ -156,19 +152,23 @@ impl Block {
         }
 
         if self.header.previous_block_hash == Hash::zero() && self.header.block_height != 0 {
-            return Err(SpiraChainError::InvalidBlock("Invalid previous block hash".to_string()));
+            return Err(SpiraChainError::InvalidBlock(
+                "Invalid previous block hash".to_string(),
+            ));
         }
 
         if self.transactions.len() > crate::MAX_TX_PER_BLOCK {
-            return Err(SpiraChainError::InvalidBlock(
-                format!("Too many transactions: {} > {}", self.transactions.len(), crate::MAX_TX_PER_BLOCK)
-            ));
+            return Err(SpiraChainError::InvalidBlock(format!(
+                "Too many transactions: {} > {}",
+                self.transactions.len(),
+                crate::MAX_TX_PER_BLOCK
+            )));
         }
 
         if self.header.spiral.complexity < crate::MIN_SPIRAL_COMPLEXITY {
             return Err(SpiraChainError::SpiralComplexityTooLow(
                 self.header.spiral.complexity,
-                crate::MIN_SPIRAL_COMPLEXITY
+                crate::MIN_SPIRAL_COMPLEXITY,
             ));
         }
 
@@ -183,7 +183,9 @@ impl Block {
         let mut block_clone = self.clone();
         block_clone.compute_merkle_root();
         if block_clone.header.merkle_root != self.header.merkle_root {
-            return Err(SpiraChainError::InvalidBlock("Invalid merkle root".to_string()));
+            return Err(SpiraChainError::InvalidBlock(
+                "Invalid merkle root".to_string(),
+            ));
         }
 
         Ok(())
@@ -194,10 +196,12 @@ impl Block {
             return 0.0;
         }
 
-        let sum: f64 = self.transactions.iter()
+        let sum: f64 = self
+            .transactions
+            .iter()
             .map(|tx| tx.semantic_coherence())
             .sum();
-        
+
         sum / (self.transactions.len() as f64)
     }
 
@@ -219,7 +223,7 @@ mod tests {
     fn test_block_creation() {
         let prev_hash = Hash::new([0u8; 32]);
         let block = Block::new(prev_hash, 1);
-        
+
         assert_eq!(block.header.block_height, 1);
         assert_eq!(block.header.previous_block_hash, prev_hash);
     }
@@ -228,20 +232,20 @@ mod tests {
     fn test_merkle_root_computation() {
         let prev_hash = Hash::new([0u8; 32]);
         let mut block = Block::new(prev_hash, 1);
-        
+
         let from = Address::new([1u8; 32]);
         let to = Address::new([2u8; 32]);
         let amount = Amount::qbt(100);
         let fee = Amount::from_millis(1);
-        
+
         let mut tx1 = Transaction::new(from, to, amount, fee);
         tx1.compute_hash();
         let mut tx2 = Transaction::new(to, from, amount, fee);
         tx2.compute_hash();
-        
+
         block = block.with_transactions(vec![tx1, tx2]);
         block.compute_merkle_root();
-        
+
         assert_ne!(block.header.merkle_root, Hash::zero());
     }
 
@@ -249,8 +253,7 @@ mod tests {
     fn test_genesis_block() {
         let prev_hash = Hash::zero();
         let block = Block::new(prev_hash, 0);
-        
+
         assert!(block.is_genesis());
     }
 }
-

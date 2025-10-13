@@ -1,10 +1,10 @@
-use spirachain_core::{Block, Transaction, Hash, Result, Amount, Address};
-use spirachain_consensus::ProofOfSpiral;
-use crate::{NodeConfig, Mempool, WorldState, BlockStorage};
-use std::sync::Arc;
+use crate::{BlockStorage, Mempool, NodeConfig, WorldState};
 use parking_lot::RwLock;
+use spirachain_consensus::ProofOfSpiral;
+use spirachain_core::{Address, Amount, Block, Hash, Result, Transaction};
+use std::sync::Arc;
 use tokio::time::{interval, Duration};
-use tracing::{info, error};
+use tracing::{error, info};
 
 pub struct FullNode {
     config: NodeConfig,
@@ -20,7 +20,7 @@ impl FullNode {
         let storage = BlockStorage::new(&config.data_dir)?;
         let consensus = ProofOfSpiral::new(
             spirachain_core::MIN_SPIRAL_COMPLEXITY,
-            spirachain_core::MAX_SPIRAL_JUMP
+            spirachain_core::MAX_SPIRAL_JUMP,
         );
 
         Ok(Self {
@@ -65,7 +65,7 @@ impl FullNode {
                         error!("Failed to check for new blocks: {}", e);
                     }
                 }
-                
+
                 _ = stats_interval.tick() => {
                     self.print_stats();
                 }
@@ -87,9 +87,9 @@ impl FullNode {
 
     pub async fn process_block(&mut self, block: Block) -> Result<()> {
         info!("Processing block at height {}", block.header.block_height);
-        
+
         let latest_block = self.storage.get_latest_block()?;
-        
+
         if let Some(prev_block) = latest_block {
             self.consensus.validate_block(&block, &prev_block)?;
         }
@@ -105,13 +105,17 @@ impl FullNode {
             state.set_height(block.header.block_height);
         }
 
-        info!("✅ Block {} validated and stored", block.header.block_height);
+        info!(
+            "✅ Block {} validated and stored",
+            block.header.block_height
+        );
 
         Ok(())
     }
 
     pub async fn submit_transaction(&mut self, tx: Transaction) -> Result<()> {
-        info!("Received transaction: {} → {} ({} QBT)", 
+        info!(
+            "Received transaction: {} → {} ({} QBT)",
             tx.from.to_string()[..16].to_string(),
             tx.to.to_string()[..16].to_string(),
             tx.amount
@@ -119,7 +123,7 @@ impl FullNode {
 
         tx.validate()?;
         self.mempool.add_transaction_sync(tx)?;
-        
+
         Ok(())
     }
 
@@ -144,9 +148,10 @@ impl FullNode {
         let height = self.storage.get_chain_height().unwrap_or(0);
         let mempool_size = self.mempool.size();
         let state = self.state.read();
-        
-        info!("📊 Full Node Stats: Height={} Mempool={} Accounts={}", 
-            height, 
+
+        info!(
+            "📊 Full Node Stats: Height={} Mempool={} Accounts={}",
+            height,
             mempool_size,
             state.account_count()
         );

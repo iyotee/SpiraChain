@@ -1,16 +1,15 @@
-pub mod xmss;
-pub mod signature;
-pub mod keypair;
+pub mod dkg;
 pub mod hash;
+pub mod keypair;
 pub mod kyber;
 pub mod mceliece;
-pub mod dkg;
+pub mod signature;
+pub mod xmss;
 
-pub use xmss::*;
-pub use signature::*;
-pub use keypair::*;
+pub use dkg::*;
 pub use hash::*;
+pub use keypair::*;
 pub use kyber::*;
 pub use mceliece::*;
-pub use dkg::*;
-
+pub use signature::*;
+pub use xmss::*;

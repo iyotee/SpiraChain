@@ -1,7 +1,10 @@
-use spirachain_core::{Result, SpiraChainError};
 use pqcrypto_kyber::kyber1024;
-use pqcrypto_traits::kem::{PublicKey as PQPublicKey, SecretKey as PQSecretKey, SharedSecret as PQSharedSecret, Ciphertext as PQCiphertext};
+use pqcrypto_traits::kem::{
+    Ciphertext as PQCiphertext, PublicKey as PQPublicKey, SecretKey as PQSecretKey,
+    SharedSecret as PQSharedSecret,
+};
 use serde::{Deserialize, Serialize};
+use spirachain_core::{Result, SpiraChainError};
 
 pub const KYBER_PUBLIC_KEY_SIZE: usize = kyber1024::public_key_bytes();
 pub const KYBER_SECRET_KEY_SIZE: usize = kyber1024::secret_key_bytes();
@@ -37,7 +40,7 @@ pub struct KyberSharedSecret {
 impl KyberKeyPair {
     pub fn generate() -> Result<Self> {
         let (public_key, secret_key) = kyber1024::keypair();
-        
+
         Ok(Self {
             public_key,
             secret_key,
@@ -46,24 +49,28 @@ impl KyberKeyPair {
 
     pub fn from_bytes(public_key_bytes: &[u8], secret_key_bytes: &[u8]) -> Result<Self> {
         if public_key_bytes.len() != KYBER_PUBLIC_KEY_SIZE {
-            return Err(SpiraChainError::CryptoError(
-                format!("Invalid Kyber public key size: {} (expected {})", 
-                    public_key_bytes.len(), KYBER_PUBLIC_KEY_SIZE)
-            ));
+            return Err(SpiraChainError::CryptoError(format!(
+                "Invalid Kyber public key size: {} (expected {})",
+                public_key_bytes.len(),
+                KYBER_PUBLIC_KEY_SIZE
+            )));
         }
 
         if secret_key_bytes.len() != KYBER_SECRET_KEY_SIZE {
-            return Err(SpiraChainError::CryptoError(
-                format!("Invalid Kyber secret key size: {} (expected {})",
-                    secret_key_bytes.len(), KYBER_SECRET_KEY_SIZE)
-            ));
+            return Err(SpiraChainError::CryptoError(format!(
+                "Invalid Kyber secret key size: {} (expected {})",
+                secret_key_bytes.len(),
+                KYBER_SECRET_KEY_SIZE
+            )));
         }
 
-        let public_key = kyber1024::PublicKey::from_bytes(public_key_bytes)
-            .map_err(|_| SpiraChainError::CryptoError("Failed to parse Kyber public key".to_string()))?;
+        let public_key = kyber1024::PublicKey::from_bytes(public_key_bytes).map_err(|_| {
+            SpiraChainError::CryptoError("Failed to parse Kyber public key".to_string())
+        })?;
 
-        let secret_key = kyber1024::SecretKey::from_bytes(secret_key_bytes)
-            .map_err(|_| SpiraChainError::CryptoError("Failed to parse Kyber secret key".to_string()))?;
+        let secret_key = kyber1024::SecretKey::from_bytes(secret_key_bytes).map_err(|_| {
+            SpiraChainError::CryptoError("Failed to parse Kyber secret key".to_string())
+        })?;
 
         Ok(Self {
             public_key,
@@ -79,28 +86,36 @@ impl KyberKeyPair {
         shared_secret_bytes.copy_from_slice(shared_secret.as_bytes());
 
         Ok((
-            KyberCiphertext { bytes: ciphertext_bytes },
-            KyberSharedSecret { bytes: shared_secret_bytes },
+            KyberCiphertext {
+                bytes: ciphertext_bytes,
+            },
+            KyberSharedSecret {
+                bytes: shared_secret_bytes,
+            },
         ))
     }
 
     pub fn decapsulate(&self, ciphertext: &KyberCiphertext) -> Result<KyberSharedSecret> {
         if ciphertext.bytes.len() != KYBER_CIPHERTEXT_SIZE {
-            return Err(SpiraChainError::CryptoError(
-                format!("Invalid ciphertext size: {} (expected {})",
-                    ciphertext.bytes.len(), KYBER_CIPHERTEXT_SIZE)
-            ));
+            return Err(SpiraChainError::CryptoError(format!(
+                "Invalid ciphertext size: {} (expected {})",
+                ciphertext.bytes.len(),
+                KYBER_CIPHERTEXT_SIZE
+            )));
         }
 
-        let ct = kyber1024::Ciphertext::from_bytes(&ciphertext.bytes)
-            .map_err(|_| SpiraChainError::CryptoError("Failed to parse Kyber ciphertext".to_string()))?;
+        let ct = kyber1024::Ciphertext::from_bytes(&ciphertext.bytes).map_err(|_| {
+            SpiraChainError::CryptoError("Failed to parse Kyber ciphertext".to_string())
+        })?;
 
         let shared_secret = kyber1024::decapsulate(&ct, &self.secret_key);
 
         let mut shared_secret_bytes = [0u8; KYBER_SHARED_SECRET_SIZE];
         shared_secret_bytes.copy_from_slice(shared_secret.as_bytes());
 
-        Ok(KyberSharedSecret { bytes: shared_secret_bytes })
+        Ok(KyberSharedSecret {
+            bytes: shared_secret_bytes,
+        })
     }
 
     pub fn public_key(&self) -> KyberPublicKey {
@@ -121,10 +136,11 @@ impl KyberKeyPair {
 impl KyberPublicKey {
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() != KYBER_PUBLIC_KEY_SIZE {
-            return Err(SpiraChainError::CryptoError(
-                format!("Invalid Kyber public key size: {} (expected {})",
-                    bytes.len(), KYBER_PUBLIC_KEY_SIZE)
-            ));
+            return Err(SpiraChainError::CryptoError(format!(
+                "Invalid Kyber public key size: {} (expected {})",
+                bytes.len(),
+                KYBER_PUBLIC_KEY_SIZE
+            )));
         }
 
         Ok(Self {
@@ -151,8 +167,12 @@ impl KyberPublicKey {
         shared_secret_bytes.copy_from_slice(shared_secret.as_bytes());
 
         Ok((
-            KyberCiphertext { bytes: ciphertext_bytes },
-            KyberSharedSecret { bytes: shared_secret_bytes },
+            KyberCiphertext {
+                bytes: ciphertext_bytes,
+            },
+            KyberSharedSecret {
+                bytes: shared_secret_bytes,
+            },
         ))
     }
 }
@@ -160,10 +180,11 @@ impl KyberPublicKey {
 impl KyberCiphertext {
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() != KYBER_CIPHERTEXT_SIZE {
-            return Err(SpiraChainError::CryptoError(
-                format!("Invalid ciphertext size: {} (expected {})",
-                    bytes.len(), KYBER_CIPHERTEXT_SIZE)
-            ));
+            return Err(SpiraChainError::CryptoError(format!(
+                "Invalid ciphertext size: {} (expected {})",
+                bytes.len(),
+                KYBER_CIPHERTEXT_SIZE
+            )));
         }
 
         Ok(Self {
@@ -194,7 +215,7 @@ impl KyberSharedSecret {
         hasher.update(&self.bytes);
         hasher.update(context);
         let hash = hasher.finalize();
-        
+
         let mut key = [0u8; 32];
         key.copy_from_slice(&hash.as_bytes()[..32]);
         key
@@ -246,17 +267,26 @@ mod tests {
 
         let alice_public = alice.public_key();
         let (ciphertext, shared_secret_sender) = alice_public.encapsulate().unwrap();
-        
+
         assert_eq!(ciphertext.as_bytes().len(), KYBER_CIPHERTEXT_SIZE);
-        assert_eq!(shared_secret_sender.as_bytes().len(), KYBER_SHARED_SECRET_SIZE);
+        assert_eq!(
+            shared_secret_sender.as_bytes().len(),
+            KYBER_SHARED_SECRET_SIZE
+        );
 
         let shared_secret_receiver = alice.decapsulate(&ciphertext).unwrap();
-        
-        assert_eq!(shared_secret_sender.as_bytes(), shared_secret_receiver.as_bytes());
+
+        assert_eq!(
+            shared_secret_sender.as_bytes(),
+            shared_secret_receiver.as_bytes()
+        );
 
         let shared_secret_bob = bob.decapsulate(&ciphertext);
         assert!(shared_secret_bob.is_ok());
-        assert_ne!(shared_secret_sender.as_bytes(), shared_secret_bob.unwrap().as_bytes());
+        assert_ne!(
+            shared_secret_sender.as_bytes(),
+            shared_secret_bob.unwrap().as_bytes()
+        );
     }
 
     #[test]
@@ -266,7 +296,10 @@ mod tests {
         let (ciphertext, shared_secret_sender) = keypair.encapsulate().unwrap();
         let shared_secret_receiver = keypair.decapsulate(&ciphertext).unwrap();
 
-        assert_eq!(shared_secret_sender.as_bytes(), shared_secret_receiver.as_bytes());
+        assert_eq!(
+            shared_secret_sender.as_bytes(),
+            shared_secret_receiver.as_bytes()
+        );
     }
 
     #[test]
@@ -277,7 +310,10 @@ mod tests {
         let (ciphertext, shared_secret_sender) = public_key.encapsulate().unwrap();
         let shared_secret_receiver = keypair.decapsulate(&ciphertext).unwrap();
 
-        assert_eq!(shared_secret_sender.as_bytes(), shared_secret_receiver.as_bytes());
+        assert_eq!(
+            shared_secret_sender.as_bytes(),
+            shared_secret_receiver.as_bytes()
+        );
     }
 
     #[test]
@@ -296,7 +332,7 @@ mod tests {
     #[test]
     fn test_kyber_serialization() {
         let keypair = KyberKeyPair::generate().unwrap();
-        
+
         let pub_bytes = keypair.public_key_bytes();
         let sec_bytes = keypair.secret_key_bytes();
 
@@ -308,4 +344,3 @@ mod tests {
         assert_eq!(ss1.as_bytes(), ss2.as_bytes());
     }
 }
-

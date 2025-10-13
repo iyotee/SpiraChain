@@ -1,16 +1,16 @@
-pub mod storage;
-pub mod mempool;
-pub mod state;
-pub mod validator_node;
 pub mod full_node;
 pub mod light_node;
+pub mod mempool;
+pub mod state;
+pub mod storage;
+pub mod validator_node;
 
-pub use storage::*;
-pub use mempool::*;
-pub use state::*;
-pub use validator_node::*;
 pub use full_node::*;
 pub use light_node::*;
+pub use mempool::*;
+pub use state::*;
+pub use storage::*;
+pub use validator_node::*;
 
 use std::path::PathBuf;
 
@@ -39,4 +39,3 @@ impl Default for NodeConfig {
         }
     }
 }
-

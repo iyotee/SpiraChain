@@ -40,9 +40,7 @@ impl Signature {
                 let pk = PublicKey(pk_bytes);
                 PublicKey::verify(&pk, message, &self.data)
             }
-            SignatureScheme::Xmss => {
-                false
-            }
+            SignatureScheme::Xmss => false,
         }
     }
 
@@ -72,7 +70,7 @@ mod tests {
     fn test_ed25519_signature() {
         let keypair = KeyPair::generate();
         let message = b"test message";
-        
+
         let signature = sign_ed25519(&keypair, message);
         assert!(signature.verify(keypair.public_key().as_bytes(), message));
     }
@@ -82,9 +80,8 @@ mod tests {
         let keypair = KeyPair::generate();
         let message = b"test message";
         let wrong = b"wrong message";
-        
+
         let signature = sign_ed25519(&keypair, message);
         assert!(!signature.verify(keypair.public_key().as_bytes(), wrong));
     }
 }
-
