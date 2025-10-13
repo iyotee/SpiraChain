@@ -71,8 +71,12 @@ impl McElieceKeyPair {
         let key_hash = blake3::hash(&self.secret_key.bytes);
 
         // XOR plaintext part with key stream (simplified code-based encryption)
-        for i in 0..MCELIECE_PLAINTEXT_SIZE {
-            ciphertext[i] ^= key_hash.as_bytes()[i % 32];
+        for (i, item) in ciphertext
+            .iter_mut()
+            .enumerate()
+            .take(MCELIECE_PLAINTEXT_SIZE)
+        {
+            *item ^= key_hash.as_bytes()[i % 32];
         }
 
         Ok(ciphertext)
@@ -135,12 +139,15 @@ impl McEliecePublicKey {
         let mut rng = rand::thread_rng();
         let mut ciphertext = vec![0u8; MCELIECE_CIPHERTEXT_SIZE];
 
-        for i in 0..MCELIECE_PLAINTEXT_SIZE {
-            ciphertext[i] = plaintext[i];
-        }
+        ciphertext[..MCELIECE_PLAINTEXT_SIZE]
+            .copy_from_slice(&plaintext[..MCELIECE_PLAINTEXT_SIZE]);
 
-        for i in MCELIECE_PLAINTEXT_SIZE..MCELIECE_CIPHERTEXT_SIZE {
-            ciphertext[i] = rng.gen();
+        for item in ciphertext
+            .iter_mut()
+            .take(MCELIECE_CIPHERTEXT_SIZE)
+            .skip(MCELIECE_PLAINTEXT_SIZE)
+        {
+            *item = rng.gen();
         }
 
         let mut key_stream = self.bytes.clone();

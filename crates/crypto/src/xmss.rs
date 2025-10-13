@@ -282,7 +282,7 @@ impl XmssKeyPair {
         let mut current_level = leaves.to_vec();
 
         for _ in 0..XMSS_TREE_HEIGHT {
-            let sibling_index = if current_index % 2 == 0 {
+            let sibling_index = if current_index.is_multiple_of(2) {
                 current_index + 1
             } else {
                 current_index - 1
@@ -323,7 +323,7 @@ impl XmssKeyPair {
 
         for sibling in auth_path {
             let mut hasher = Sha256::new();
-            if current_index % 2 == 0 {
+            if current_index.is_multiple_of(2) {
                 hasher.update(current_node);
                 hasher.update(sibling);
             } else {
