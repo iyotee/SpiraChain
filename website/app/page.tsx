@@ -1,8 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { Shield, Brain, Infinity, Zap, TrendingUp, Users, Github, Rocket, Copy, Check } from 'lucide-react';
-import { useState } from 'react';
+// import { motion } from 'framer-motion';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import Features from '@/components/Features';

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { CheckCircle2, Circle, Rocket, Shield, Globe, Code } from 'lucide-react';
+import { CheckCircle2, Circle, Rocket, Shield } from 'lucide-react';
 
 export default function Roadmap() {
   const phases = [

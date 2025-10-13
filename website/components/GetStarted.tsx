@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Terminal, Copy, Check, Download } from 'lucide-react';
+import { Terminal, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 
 export default function GetStarted() {

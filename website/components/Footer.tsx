@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+// import { motion } from 'framer-motion';
 import { Infinity, Github, MessageCircle, Twitter, FileText, Heart } from 'lucide-react';
 
 export default function Footer() {
