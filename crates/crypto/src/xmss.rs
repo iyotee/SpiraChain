@@ -135,14 +135,14 @@ impl XmssKeyPair {
             for j in 0..32 {
                 // Start with seed derived from key and position
                 let mut chain_hasher = Sha256::new();
-                chain_hasher.update(&wots_key);
+                chain_hasher.update(wots_key);
                 chain_hasher.update((j as u32).to_be_bytes());
                 let mut chain_value = chain_hasher.finalize();
 
                 // Chain hash 255 times (maximum for w=256 Winternitz)
                 for _ in 0..255 {
                     let mut next_hasher = Sha256::new();
-                    next_hasher.update(&chain_value);
+                    next_hasher.update(chain_value);
                     chain_value = next_hasher.finalize();
                 }
 
@@ -175,11 +175,11 @@ impl XmssKeyPair {
 
             for chunk in current_level.chunks(2) {
                 let mut hasher = Sha256::new();
-                hasher.update(&chunk[0]);
+                hasher.update(chunk[0]);
                 if chunk.len() > 1 {
-                    hasher.update(&chunk[1]);
+                    hasher.update(chunk[1]);
                 } else {
-                    hasher.update(&chunk[0]);
+                    hasher.update(chunk[0]);
                 }
                 let hash = hasher.finalize();
 
@@ -220,7 +220,7 @@ impl XmssKeyPair {
             // Chain hash 'byte' times (Winternitz parameter)
             for _ in 0..byte {
                 let mut next_hasher = Sha256::new();
-                next_hasher.update(&chain_value);
+                next_hasher.update(chain_value);
                 chain_value = next_hasher.finalize();
             }
 
@@ -256,7 +256,7 @@ impl XmssKeyPair {
             let remaining_iterations = 255 - byte;
             for _ in 0..remaining_iterations {
                 let mut next_hasher = Sha256::new();
-                next_hasher.update(&chain_value);
+                next_hasher.update(chain_value);
                 let hash_result = next_hasher.finalize();
                 chain_value.copy_from_slice(&hash_result);
             }
@@ -268,7 +268,7 @@ impl XmssKeyPair {
         // Hash all public key parts + pub_seed to get the leaf (must match generate_leaf_nodes)
         let mut final_hasher = Sha256::new();
         final_hasher.update(&public_key_parts);
-        final_hasher.update(&self.public_key.pub_seed);
+        final_hasher.update(self.public_key.pub_seed);
         let result = final_hasher.finalize();
 
         let mut leaf = [0u8; 32];
@@ -297,11 +297,11 @@ impl XmssKeyPair {
             let mut next_level = Vec::new();
             for chunk in current_level.chunks(2) {
                 let mut hasher = Sha256::new();
-                hasher.update(&chunk[0]);
+                hasher.update(chunk[0]);
                 if chunk.len() > 1 {
-                    hasher.update(&chunk[1]);
+                    hasher.update(chunk[1]);
                 } else {
-                    hasher.update(&chunk[0]);
+                    hasher.update(chunk[0]);
                 }
                 let hash = hasher.finalize();
 
@@ -324,11 +324,11 @@ impl XmssKeyPair {
         for sibling in auth_path {
             let mut hasher = Sha256::new();
             if current_index % 2 == 0 {
-                hasher.update(&current_node);
+                hasher.update(current_node);
                 hasher.update(sibling);
             } else {
                 hasher.update(sibling);
-                hasher.update(&current_node);
+                hasher.update(current_node);
             }
             let hash = hasher.finalize();
 

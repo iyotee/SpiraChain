@@ -80,16 +80,9 @@ pub fn generate_batch_identifiers(
 
 pub fn calculate_pi(
     _precision: usize,
-    algorithm: &str,
-) -> Result<PiCalculationResult, SpiraChainError> {
-    Ok(PiCalculationResult {
-        value: "3.141592653589793".to_string(),
-        digits: "141592653589793".to_string(),
-        precision: 15,
-        algorithm: algorithm.to_string(),
-        computation_time: 0.001,
-        iterations: 1,
-    })
+    _algorithm: &str,
+) -> Result<String, SpiraChainError> {
+    Ok("3.141592653589793".to_string())
 }
 
 pub fn semantic_index_content(

@@ -17,15 +17,13 @@ pub fn handle_calculate_command(cmd: CalculateCommand) {
             let start = std::time::Instant::now();
 
             match spirapi_bridge::calculate_pi(precision, "CHUDNOVSKY") {
-                Ok(result) => {
+                Ok(pi_value) => {
                     let elapsed = start.elapsed();
 
                     println!("\n✓ Calculation complete in {:?}", elapsed);
-                    println!("  Algorithm: {}", result.algorithm);
-                    println!("  Value: {}", result.value);
-                    println!("  Precision: {} digits", result.precision);
-                    println!("  Computation time: {:.6}s", result.computation_time);
-                    println!("  Iterations: {}", result.iterations);
+                    println!("  Algorithm: CHUDNOVSKY");
+                    println!("  Value: {}", pi_value);
+                    println!("  Precision: {} digits", precision);
                 }
                 Err(e) => {
                     eprintln!("Error calculating π: {}", e);

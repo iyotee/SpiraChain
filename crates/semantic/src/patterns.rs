@@ -24,9 +24,7 @@ impl PatternDetector {
     }
 
     pub fn detect_patterns(&self, _transactions: &[Transaction]) -> Vec<Pattern> {
-        let patterns = Vec::new();
-
-        patterns
+        Vec::new()
     }
 
     fn cluster_transactions(&self, _transactions: &[Transaction]) -> Vec<Vec<usize>> {

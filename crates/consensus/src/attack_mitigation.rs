@@ -116,7 +116,7 @@ impl AttackMitigationSystem {
             self.double_spend_detector
                 .addresses_monitored
                 .entry(tx.from)
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(tx_hash);
         }
 
@@ -130,7 +130,7 @@ impl AttackMitigationSystem {
         self.validator_monitor
             .blocks_per_validator
             .entry(validator_addr)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(block.header.block_height);
 
         let blocks_produced = self

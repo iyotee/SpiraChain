@@ -162,10 +162,7 @@ impl BFTConsensus {
                 .as_secs(),
         };
 
-        self.prepare_votes
-            .entry(block_hash)
-            .or_insert_with(Vec::new)
-            .push(vote);
+        self.prepare_votes.entry(block_hash).or_default().push(vote);
 
         let vote_count = self
             .prepare_votes
@@ -215,10 +212,7 @@ impl BFTConsensus {
                 .as_secs(),
         };
 
-        self.commit_votes
-            .entry(block_hash)
-            .or_insert_with(Vec::new)
-            .push(vote);
+        self.commit_votes.entry(block_hash).or_default().push(vote);
 
         let vote_count = self
             .commit_votes

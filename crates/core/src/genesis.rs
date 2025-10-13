@@ -247,11 +247,7 @@ mod tests {
             .sum();
 
         // Allow for small precision differences due to floating point arithmetic
-        let difference = if total > crate::INITIAL_SUPPLY {
-            total - crate::INITIAL_SUPPLY
-        } else {
-            crate::INITIAL_SUPPLY - total
-        };
+        let difference = total.abs_diff(crate::INITIAL_SUPPLY);
 
         // Allow up to 0.01% difference (due to floating point precision)
         let tolerance = crate::INITIAL_SUPPLY / 10000;

@@ -204,7 +204,7 @@ mod tests {
     fn test_p2p_encryption_init() {
         let encryption = P2PEncryption::new().unwrap();
         let public_key = encryption.local_public_key();
-        assert!(public_key.len() > 0);
+        assert!(!public_key.is_empty());
     }
 
     #[test]
@@ -216,7 +216,7 @@ mod tests {
         alice.add_peer("bob".to_string(), &bob_public_key).unwrap();
 
         let ciphertext = alice.establish_shared_secret("bob").unwrap();
-        assert!(ciphertext.len() > 0);
+        assert!(!ciphertext.is_empty());
     }
 
     #[test]

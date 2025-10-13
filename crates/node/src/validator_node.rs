@@ -94,7 +94,7 @@ impl ValidatorNode {
             .config
             .network_addr
             .split(':')
-            .last()
+            .next_back()
             .and_then(|p| p.parse::<u16>().ok())
             .unwrap_or(30333);
 
@@ -215,8 +215,8 @@ impl ValidatorNode {
             // Only create genesis if no blocks exist
             info!("   Creating genesis block");
             let config = spirachain_core::GenesisConfig::default();
-            let genesis = spirachain_core::create_genesis_block(&config);
-            genesis
+
+            spirachain_core::create_genesis_block(&config)
         };
 
         // Only validate non-genesis blocks

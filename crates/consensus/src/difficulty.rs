@@ -84,7 +84,7 @@ mod tests {
 
         let mut blocks = Vec::new();
         for i in 0..2016 {
-            let mut block = Block::new(Hash::zero(), i as u64);
+            let mut block = Block::new(Hash::zero(), i);
             block.header.timestamp = i * 30 * 1000;
             blocks.push(block);
         }
@@ -101,7 +101,7 @@ mod tests {
 
         let mut blocks = Vec::new();
         for i in 0..2016 {
-            let mut block = Block::new(Hash::zero(), i as u64);
+            let mut block = Block::new(Hash::zero(), i);
             block.header.timestamp = i * 20 * 1000;
             blocks.push(block);
         }

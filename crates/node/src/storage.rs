@@ -53,7 +53,7 @@ impl NodeStorage {
 
         let height_key = block.header.block_height.to_be_bytes();
         self.block_by_height
-            .insert(&height_key, block_hash.as_bytes())
+            .insert(height_key, block_hash.as_bytes())
             .map_err(|e| {
                 SpiraChainError::StorageError(format!("Failed to index block by height: {}", e))
             })?;
@@ -84,7 +84,7 @@ impl NodeStorage {
     pub fn get_block_by_height(&self, height: u64) -> Result<Option<Block>> {
         let height_key = height.to_be_bytes();
 
-        match self.block_by_height.get(&height_key).map_err(|e| {
+        match self.block_by_height.get(height_key).map_err(|e| {
             SpiraChainError::StorageError(format!("Failed to get block hash by height: {}", e))
         })? {
             Some(hash_bytes) => {
@@ -157,7 +157,7 @@ impl NodeStorage {
     }
 
     pub fn store_balance(&self, address: &Address, balance: Amount) -> Result<()> {
-        let key = format!("balance:{}", address.to_string());
+        let key = format!("balance:{}", address);
         let value = bincode::serialize(&balance)
             .map_err(|e| SpiraChainError::SerializationError(e.to_string()))?;
 
@@ -169,7 +169,7 @@ impl NodeStorage {
     }
 
     pub fn get_balance(&self, address: &Address) -> Result<Amount> {
-        let key = format!("balance:{}", address.to_string());
+        let key = format!("balance:{}", address);
 
         match self
             .state

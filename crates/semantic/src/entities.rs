@@ -8,9 +8,7 @@ impl EntityExtractor {
     }
 
     pub fn extract(&self, _text: &str) -> Vec<Entity> {
-        let entities = Vec::new();
-
-        entities
+        Vec::new()
     }
 
     fn detect_person(&self, _text: &str) -> Option<Entity> {
