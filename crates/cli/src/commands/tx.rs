@@ -75,7 +75,37 @@ pub async fn handle_send(
     println!("✅ Transaction created:");
     println!("{}", tx_json);
     println!("\n📝 Transaction hash: {}", tx.tx_hash);
-    println!("\n⚠️  Note: Connect to a running node to broadcast this transaction");
+
+    // Try to submit to local RPC server
+    println!("\n🔄 Attempting to submit to local node...");
+
+    let rpc_client = spirachain_rpc::RpcClient::new("127.0.0.1", 9933);
+
+    match rpc_client.health_check().await {
+        Ok(true) => {
+            info!("✅ Connected to local node");
+
+            match rpc_client.submit_transaction(&tx).await {
+                Ok(response) => {
+                    if response.success {
+                        println!("✅ Transaction submitted to network!");
+                        println!("   Status: {}", response.message);
+                        println!("   Hash: {}", response.tx_hash);
+                    } else {
+                        println!("❌ Transaction rejected: {}", response.message);
+                    }
+                }
+                Err(e) => {
+                    println!("⚠️  Failed to submit transaction: {}", e);
+                }
+            }
+        }
+        Ok(false) | Err(_) => {
+            println!("⚠️  No local node running on port 9933");
+            println!("   Start a node with: spira node --validator --wallet <wallet.json>");
+            println!("   Transaction created but not broadcasted");
+        }
+    }
 
     Ok(())
 }

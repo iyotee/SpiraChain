@@ -227,4 +227,18 @@ impl BlockStorage {
     pub fn get_transaction(&self, hash: &Hash) -> Result<Option<Transaction>> {
         self.storage.get_transaction(hash)
     }
+
+    pub fn get_balance(&self, address: &Address) -> Result<Amount> {
+        self.storage.get_balance(address)
+    }
+}
+
+impl spirachain_rpc::server::BlockchainStorage for BlockStorage {
+    fn get_block_by_height(&self, height: u64) -> Result<Option<Block>> {
+        BlockStorage::get_block_by_height(self, height)
+    }
+
+    fn get_balance(&self, address: &Address) -> Result<Amount> {
+        BlockStorage::get_balance(self, address)
+    }
 }

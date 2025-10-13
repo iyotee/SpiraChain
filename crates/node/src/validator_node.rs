@@ -1,4 +1,4 @@
-use crate::{BlockStorage, Mempool, NodeConfig, WorldState};
+use crate::{BlockStorage, NodeConfig, WorldState};
 use spirachain_consensus::{ProofOfSpiral, Validator};
 use spirachain_core::{Address, Amount, Result, Transaction};
 use spirachain_crypto::KeyPair;
@@ -12,13 +12,14 @@ pub struct ValidatorNode {
     config: NodeConfig,
     keypair: KeyPair,
     validator: Validator,
-    mempool: Mempool,
+    mempool: Arc<RwLock<Vec<Transaction>>>,
     state: Arc<RwLock<WorldState>>,
-    storage: BlockStorage,
+    storage: Arc<BlockStorage>,
     consensus: ProofOfSpiral,
     network: Option<Arc<RwLock<LibP2PNetwork>>>,
     is_running: Arc<RwLock<bool>>,
     blocks_produced: u64,
+    connected_peers: Arc<RwLock<usize>>,
 }
 
 impl ValidatorNode {
@@ -69,13 +70,14 @@ impl ValidatorNode {
             config,
             keypair,
             validator,
-            mempool: Mempool::default(),
+            mempool: Arc::new(RwLock::new(Vec::new())),
             state: Arc::new(RwLock::new(WorldState::default())),
-            storage,
+            storage: Arc::new(storage),
             consensus,
             network: None, // Initialized in start()
             is_running: Arc::new(RwLock::new(false)),
             blocks_produced: 0,
+            connected_peers: Arc::new(RwLock::new(0)),
         })
     }
 
@@ -124,11 +126,39 @@ impl ValidatorNode {
             }
         }
 
+        // Start RPC server
+        let rpc_port = 9933;
+        info!("🌐 Starting RPC server on port {}...", rpc_port);
+
+        let mempool_clone = Arc::clone(&self.mempool);
+        let storage_clone = Arc::clone(&self.storage);
+        let chain_height = Arc::new(RwLock::new(0u64));
+        let chain_height_clone = Arc::clone(&chain_height);
+        let connected_peers_clone = Arc::clone(&self.connected_peers);
+
+        tokio::spawn(async move {
+            let rpc_server = spirachain_rpc::RpcServer::new(
+                mempool_clone,
+                storage_clone,
+                chain_height_clone,
+                connected_peers_clone,
+                true,
+                rpc_port,
+            );
+
+            if let Err(e) = rpc_server.start().await {
+                error!("RPC server error: {}", e);
+            }
+        });
+
+        info!("✅ RPC server started on port {}", rpc_port);
+
         *self.is_running.write().await = true;
 
         let latest_block = self.storage.get_latest_block()?;
         if let Some(block) = latest_block {
             info!("   Latest block: {}", block.header.block_height);
+            *chain_height.write().await = block.header.block_height;
             self.state
                 .write()
                 .await
@@ -166,7 +196,7 @@ impl ValidatorNode {
                 }
 
                 _ = mempool_check.tick() => {
-                    self.check_mempool();
+                    self.check_mempool().await;
                 }
 
                 _ = network_tick.tick() => {
@@ -190,12 +220,9 @@ impl ValidatorNode {
     async fn produce_block(&mut self) -> Result<()> {
         info!("🏗️  Producing new block...");
 
-        let pending_txs = self
-            .mempool
-            .get_all_transactions()
-            .into_iter()
-            .take(1000)
-            .collect::<Vec<_>>();
+        let mempool_guard = self.mempool.read().await;
+        let pending_txs = mempool_guard.iter().take(1000).cloned().collect::<Vec<_>>();
+        drop(mempool_guard);
 
         // Get latest block from storage (not state height!)
         let previous_block = self.storage.get_latest_block()?;
@@ -246,10 +273,9 @@ impl ValidatorNode {
             state.set_height(block.header.block_height);
         }
 
-        for tx in &pending_txs {
-            let hash = tx.hash();
-            self.mempool.remove_transaction(&hash);
-        }
+        let mut mempool_guard = self.mempool.write().await;
+        mempool_guard.retain(|tx| !pending_txs.iter().any(|ptx| ptx.tx_hash == tx.tx_hash));
+        drop(mempool_guard);
 
         self.blocks_produced += 1;
         self.validator.blocks_proposed += 1;
@@ -292,13 +318,18 @@ impl ValidatorNode {
             return Err(spirachain_core::SpiraChainError::InsufficientBalance);
         }
 
-        self.mempool.add_transaction_sync(tx)?;
+        let mut mempool_guard = self.mempool.write().await;
+        mempool_guard.push(tx);
+        drop(mempool_guard);
 
         Ok(())
     }
 
-    fn check_mempool(&self) {
-        let size = self.mempool.size();
+    async fn check_mempool(&self) {
+        let mempool_guard = self.mempool.read().await;
+        let size = mempool_guard.len();
+        drop(mempool_guard);
+
         if size > 0 {
             info!("💾 Mempool: {} pending transactions", size);
         }
@@ -306,7 +337,11 @@ impl ValidatorNode {
 
     async fn print_stats(&self) {
         let height = self.storage.get_chain_height().unwrap_or(0);
-        let mempool_size = self.mempool.size();
+
+        let mempool_guard = self.mempool.read().await;
+        let mempool_size = mempool_guard.len();
+        drop(mempool_guard);
+
         let state = self.state.read().await;
 
         info!("📊 Validator Stats:");

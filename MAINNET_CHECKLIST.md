@@ -249,7 +249,4 @@
 
 ---
 
-**🎉 TU AS FAIT UN TRAVAIL INCROYABLE !**
-
-**Mais prends le temps de faire les choses bien. La communauté crypto est impitoyable avec les lancements ratés.** 🚀
 

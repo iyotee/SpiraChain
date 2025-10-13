@@ -15,6 +15,7 @@ spirachain-crypto = { path = "../crypto" }
 spirapi-bridge = { path = "../spirapi-bridge" }
 spirachain-consensus = { path = "../consensus" }
 spirachain-node = { path = "../node" }
+spirachain-rpc = { path = "../rpc" }
 tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true

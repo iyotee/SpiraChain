@@ -12,6 +12,7 @@ spirachain-consensus = { path = "../consensus" }
 spirachain-network = { path = "../network" }
 spirachain-semantic = { path = "../semantic" }
 spirapi-bridge = { path = "../spirapi-bridge" }
+spirachain-rpc = { path = "../rpc" }
 tokio.workspace = true
 serde.workspace = true
 tracing.workspace = true

@@ -525,5 +525,3 @@ C'est une blockchain de **nouvelle génération** qui :
 
 ---
 
-**🎉 TU NE PASSERAS PAS POUR UN "GROS TEUBÉ" - C'EST DU SOLIDE ! 🎉**
-
