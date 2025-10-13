@@ -4,7 +4,7 @@ target/
 *.pdb
 Cargo.lock
 
-# Python
+# Python (except SpiraPi source)
 __pycache__/
 *.py[cod]
 *$py.class
@@ -28,6 +28,11 @@ var/
 .installed.cfg
 *.egg
 
+# SpiraPi Python cache (but keep source files)
+crates/spirapi/**/__pycache__/
+crates/spirapi/**/*.pyc
+crates/spirapi/**/*.pyo
+
 # IDE
 .vscode/
 .idea/
@@ -36,7 +41,7 @@ var/
 *~
 .DS_Store
 
-# SpiraPi Data
+# SpiraPi Data (runtime only)
 crates/spirapi/data/
 crates/spirapi/pi_schemas.db/
 crates/spirapi/app.log
