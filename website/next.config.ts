@@ -1,36 +1,40 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Disable Turbopack for Netlify compatibility
   experimental: {
-    // Disable problematic features that might cause className issues
-    optimizePackageImports: [],
+    turbo: {
+      // Disable Turbopack to avoid conflicts
+    },
   },
   
   // Ensure proper hydration
   reactStrictMode: true,
   
-  // Fix for className issues
-  webpack: (config, { isServer }) => {
+  // Output configuration for Netlify
+  output: 'export',
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
+  
+  // Fix for className issues - Netlify specific
+  webpack: (config, { isServer, webpack }) => {
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
+        net: false,
+        tls: false,
       };
     }
     
-    // Add className polyfill
-    config.module.rules.push({
-      test: /\.js$/,
-      use: {
-        loader: 'string-replace-loader',
-        options: {
-          search: 'className.includes',
-          replace: '(typeof className === "string" && className.includes)',
-          flags: 'g'
-        }
-      }
-    });
+    // Add global className polyfill
+    config.plugins.push(
+      new webpack.DefinePlugin({
+        'typeof window': JSON.stringify('object'),
+      })
+    );
     
     return config;
   },

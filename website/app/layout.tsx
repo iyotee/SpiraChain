@@ -34,17 +34,35 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              // Fix className issues
+              // Netlify className fix
               (function() {
+                // Ensure className is always a string
                 if (typeof window !== 'undefined') {
                   const originalCreateElement = document.createElement;
                   document.createElement = function(tagName) {
                     const element = originalCreateElement.call(this, tagName);
-                    if (!element.className) {
+                    if (!element.className || typeof element.className !== 'string') {
                       element.className = '';
                     }
                     return element;
                   };
+                  
+                  // Fix existing elements
+                  const fixClassName = function(node) {
+                    if (node.className && typeof node.className !== 'string') {
+                      node.className = '';
+                    }
+                    for (let child of node.children) {
+                      fixClassName(child);
+                    }
+                  };
+                  
+                  // Run on DOM ready
+                  if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => fixClassName(document.body));
+                  } else {
+                    fixClassName(document.body);
+                  }
                 }
               })();
             `,
