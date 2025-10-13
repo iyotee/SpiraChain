@@ -110,9 +110,12 @@ impl SpiraPiEngine {
                 kwargs.set_item("length", 20)?;
                 kwargs.set_item("include_spiral_component", true)?;
 
-                let result = engine
-                    .pi_engine
-                    .call_method(py, "generate_unique_identifier", (), Some(kwargs))?;
+                let result = engine.pi_engine.call_method(
+                    py,
+                    "generate_unique_identifier",
+                    (),
+                    Some(kwargs),
+                )?;
 
                 let result_ref = result.as_ref(py);
                 let result_dict = result_ref.downcast::<PyDict>()?;
@@ -122,7 +125,8 @@ impl SpiraPiEngine {
                     .ok_or_else(|| pyo3::exceptions::PyKeyError::new_err("identifier is None"))?;
 
                 identifier.extract()
-            })().map_err(|e| SpiraChainError::Internal(format!("Python call failed: {}", e)))?;
+            })()
+            .map_err(|e| SpiraChainError::Internal(format!("Python call failed: {}", e)))?;
 
             let id_str = result;
 
@@ -192,12 +196,15 @@ impl SpiraPiEngine {
                 let semantic_analysis = result_dict.get_item("semantic_analysis")?;
 
                 let semantic_vector = if let Some(analysis) = semantic_analysis {
-                if let Ok(analysis_dict) = analysis.downcast::<PyDict>() {
-                    if let Ok(Some(embedding)) = analysis_dict.get_item("embedding") {
-                        if let Ok(list) = embedding.downcast::<PyList>() {
-                            list.iter()
-                                .filter_map(|item| item.extract::<f32>().ok())
-                                .collect()
+                    if let Ok(analysis_dict) = analysis.downcast::<PyDict>() {
+                        if let Ok(Some(embedding)) = analysis_dict.get_item("embedding") {
+                            if let Ok(list) = embedding.downcast::<PyList>() {
+                                list.iter()
+                                    .filter_map(|item| item.extract::<f32>().ok())
+                                    .collect()
+                            } else {
+                                vec![0.0; 384]
+                            }
                         } else {
                             vec![0.0; 384]
                         }
@@ -206,24 +213,21 @@ impl SpiraPiEngine {
                     }
                 } else {
                     vec![0.0; 384]
-                }
-            } else {
-                vec![0.0; 384]
-            };
+                };
 
-            let semantic_score = if let Some(analysis) = semantic_analysis {
-                if let Ok(analysis_dict) = analysis.downcast::<PyDict>() {
-                    if let Ok(Some(score)) = analysis_dict.get_item("semantic_score") {
-                        score.extract::<f64>().unwrap_or(0.85)
+                let semantic_score = if let Some(analysis) = semantic_analysis {
+                    if let Ok(analysis_dict) = analysis.downcast::<PyDict>() {
+                        if let Ok(Some(score)) = analysis_dict.get_item("semantic_score") {
+                            score.extract::<f64>().unwrap_or(0.85)
+                        } else {
+                            0.85
+                        }
                     } else {
                         0.85
                     }
                 } else {
                     0.85
-                }
-            } else {
-                0.85
-            };
+                };
 
                 let implicit_relations = vec![];
 
@@ -234,7 +238,8 @@ impl SpiraPiEngine {
                     semantic_score,
                     implicit_relations,
                 })
-            })().map_err(|e| {
+            })()
+            .map_err(|e| {
                 error!("Semantic indexing error: {}", e);
                 SpiraChainError::Internal(format!("Python semantic indexing failed: {}", e))
             })
@@ -250,9 +255,10 @@ impl SpiraPiEngine {
 
         Python::with_gil(|py| -> Result<String, SpiraChainError> {
             (|| -> PyResult<String> {
-                let result = engine
-                    .pi_engine
-                    .call_method1(py, "calculate_pi", (precision, algorithm))?;
+                let result =
+                    engine
+                        .pi_engine
+                        .call_method1(py, "calculate_pi", (precision, algorithm))?;
 
                 let result_dict = result.downcast::<PyDict>()?;
 
@@ -262,7 +268,8 @@ impl SpiraPiEngine {
                     .extract::<String>()?;
 
                 Ok(value)
-            })().map_err(|e| {
+            })()
+            .map_err(|e| {
                 error!("π calculation error: {}", e);
                 SpiraChainError::Internal(format!("Python π calculation failed: {}", e))
             })
