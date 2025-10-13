@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  validator1:
+    build: .
+    container_name: spirachain-validator-1
+    ports:
+      - "30333:30333"
+      - "9615:9615"
+    volumes:
+      - validator1-data:/app/data
+    environment:
+      - RUST_LOG=info
+    command: node --validator --wallet /app/data/validator.json
+
+  validator2:
+    build: .
+    container_name: spirachain-validator-2
+    ports:
+      - "30334:30333"
+      - "9616:9615"
+    volumes:
+      - validator2-data:/app/data
+    environment:
+      - RUST_LOG=info
+    command: node --validator --wallet /app/data/validator.json
+
+  validator3:
+    build: .
+    container_name: spirachain-validator-3
+    ports:
+      - "30335:30333"
+      - "9617:9615"
+    volumes:
+      - validator3-data:/app/data
+    environment:
+      - RUST_LOG=info
+    command: node --validator --wallet /app/data/validator.json
+
+volumes:
+  validator1-data:
+  validator2-data:
+  validator3-data:
+

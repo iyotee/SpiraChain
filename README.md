@@ -6,6 +6,7 @@
 
 **The World's First Post-Quantum Semantic Blockchain**
 
+[![CI/CD](https://github.com/iyotee/SpiraChain/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/iyotee/SpiraChain/actions)
 [![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-CC--BY--SA--4.0-green.svg)](LICENSE)
@@ -653,6 +654,41 @@ SpiraChain/
 ├── whitepaper.md       # Technical specification
 ├── manifest.md         # Vision and philosophy
 └── README.md           # This file
+```
+
+---
+
+## 🔧 CI/CD & Quality Assurance
+
+SpiraChain uses comprehensive CI/CD pipelines to ensure code quality:
+
+- **GitHub Actions:** Automated testing on Linux, Windows, macOS
+- **GitLab CI:** Additional cross-platform validation
+- **Docker Hub:** Automatic image builds on main branch
+- **Security:** Cargo audit + dependency checks
+- **Performance:** Automated benchmarks on every commit
+- **Testnet:** 30-minute multi-node simulation before merge
+
+### Running CI Locally
+
+```bash
+# Format check
+cargo fmt --all -- --check
+
+# Linting
+cargo clippy --all-targets --all-features -- -D warnings
+
+# Tests
+cargo test --all --release
+
+# Benchmarks
+cargo bench --bench blockchain_bench
+
+# Full testnet simulation
+bash scripts/deploy_testnet.sh deploy
+sleep 120
+python3 scripts/benchmark_complete.py
+bash scripts/deploy_testnet.sh stop
 ```
 
 ---

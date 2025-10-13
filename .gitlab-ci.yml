@@ -1,0 +1,78 @@
+stages:
+  - lint
+  - build
+  - test
+  - benchmark
+  - deploy
+
+variables:
+  CARGO_HOME: $CI_PROJECT_DIR/.cargo
+  RUST_BACKTRACE: "1"
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .cargo/
+    - target/
+
+lint:
+  stage: lint
+  image: rust:latest
+  script:
+    - rustup component add rustfmt clippy
+    - cargo fmt --all -- --check
+    - cargo clippy --all-targets --all-features -- -D warnings
+
+build:
+  stage: build
+  image: rust:latest
+  script:
+    - cargo build --release
+  artifacts:
+    paths:
+      - target/release/spira
+    expire_in: 1 week
+
+test:
+  stage: test
+  image: rust:latest
+  script:
+    - cargo test --all --release
+
+benchmark:
+  stage: benchmark
+  image: rust:latest
+  script:
+    - cargo bench --bench blockchain_bench
+  artifacts:
+    reports:
+      metrics: benchmark_results.txt
+
+testnet:
+  stage: test
+  image: rust:latest
+  services:
+    - docker:dind
+  script:
+    - apt-get update && apt-get install -y python3
+    - bash scripts/deploy_testnet.sh deploy
+    - sleep 120
+    - python3 scripts/benchmark_complete.py
+    - bash scripts/deploy_testnet.sh stop
+  artifacts:
+    paths:
+      - benchmark_complete.json
+    expire_in: 1 month
+
+docker:
+  stage: deploy
+  image: docker:latest
+  services:
+    - docker:dind
+  only:
+    - main
+  script:
+    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+    - docker build -t $DOCKER_USERNAME/spirachain:latest .
+    - docker push $DOCKER_USERNAME/spirachain:latest
+
