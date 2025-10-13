@@ -78,10 +78,7 @@ pub fn generate_batch_identifiers(
     Ok(identifiers)
 }
 
-pub fn calculate_pi(
-    _precision: usize,
-    _algorithm: &str,
-) -> Result<String, SpiraChainError> {
+pub fn calculate_pi(_precision: usize, _algorithm: &str) -> Result<String, SpiraChainError> {
     Ok("3.141592653589793".to_string())
 }
 
