@@ -152,6 +152,48 @@ test: Add tests for XMSS signatures
 - Open a discussion issue
 - Email: hello@spirachain.network
 
+---
+
+## CI/CD Requirements
+
+All pull requests must pass:
+
+1. **Formatting:** `cargo fmt --all -- --check`
+2. **Linting:** `cargo clippy` with zero warnings
+3. **Tests:** All unit and integration tests
+4. **Security:** `cargo audit` with no vulnerabilities
+5. **Benchmarks:** No performance regressions > 10%
+6. **Testnet:** 3-node simulation producing blocks
+
+### Pre-commit Checks
+
+Install pre-commit hook:
+
+```bash
+cat > .git/hooks/pre-commit << 'EOF'
+#!/bin/bash
+cargo fmt --all -- --check
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test --all
+EOF
+chmod +x .git/hooks/pre-commit
+```
+
+On Windows (PowerShell):
+
+```powershell
+@'
+cargo fmt --all -- --check
+if ($LASTEXITCODE -ne 0) { exit 1 }
+cargo clippy --all-targets --all-features -- -D warnings
+if ($LASTEXITCODE -ne 0) { exit 1 }
+cargo test --all
+exit $LASTEXITCODE
+'@ | Out-File -FilePath .git\hooks\pre-commit -Encoding ASCII
+```
+
+---
+
 ## License
 
 By contributing, you agree that your contributions will be licensed under the GNU General Public License v3.0.
