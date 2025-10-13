@@ -16,6 +16,9 @@ pub struct LibP2PNetwork {
     swarm: Swarm<gossipsub::Behaviour>,
     local_peer_id: PeerId,
     connected_peers: HashSet<PeerId>,
+    block_topic: gossipsub::IdentTopic,
+    tx_topic: gossipsub::IdentTopic,
+    is_listening: bool,
 }
 
 impl LibP2PNetwork {
@@ -54,11 +57,76 @@ impl LibP2PNetwork {
             .with_swarm_config(|c| c.with_idle_connection_timeout(std::time::Duration::from_secs(60)))
             .build();
         
+        let block_topic = gossipsub::IdentTopic::new("spirachain-blocks");
+        let tx_topic = gossipsub::IdentTopic::new("spirachain-transactions");
+        
         Ok(Self {
             swarm,
             local_peer_id,
             connected_peers: HashSet::new(),
+            block_topic,
+            tx_topic,
+            is_listening: false,
         })
+    }
+    
+    /// Initialize P2P network (call once at startup)
+    pub fn initialize(&mut self) -> Result<()> {
+        if self.is_listening {
+            return Ok(());
+        }
+        
+        // Listen on all interfaces
+        let listen_addr: Multiaddr = "/ip4/0.0.0.0/tcp/0"
+            .parse()
+            .map_err(|e| SpiraChainError::NetworkError(format!("Invalid addr: {}", e)))?;
+        
+        self.swarm.listen_on(listen_addr)
+            .map_err(|e| SpiraChainError::NetworkError(format!("Listen failed: {}", e)))?;
+        
+        // Subscribe to topics
+        self.swarm.behaviour_mut().subscribe(&self.block_topic)
+            .map_err(|e| SpiraChainError::NetworkError(format!("Subscribe blocks: {}", e)))?;
+        self.swarm.behaviour_mut().subscribe(&self.tx_topic)
+            .map_err(|e| SpiraChainError::NetworkError(format!("Subscribe tx: {}", e)))?;
+        
+        self.is_listening = true;
+        info!("✅ P2P network listening initialized");
+        
+        Ok(())
+    }
+    
+    /// Poll network events (call in validator loop)
+    pub fn poll_events(&mut self) -> Option<String> {
+        // Non-blocking poll
+        match self.swarm.poll_next_unpin(&mut std::task::Context::from_waker(
+            futures::task::noop_waker_ref()
+        )) {
+            std::task::Poll::Ready(Some(event)) => {
+                match event {
+                    SwarmEvent::NewListenAddr { address, .. } => {
+                        info!("📡 Listening on: {}", address);
+                        Some(format!("Listening: {}", address))
+                    }
+                    SwarmEvent::ConnectionEstablished { peer_id, .. } => {
+                        info!("🤝 Connected to peer: {}", peer_id);
+                        self.connected_peers.insert(peer_id);
+                        Some(format!("Connected: {}", peer_id))
+                    }
+                    SwarmEvent::ConnectionClosed { peer_id, .. } => {
+                        info!("👋 Disconnected from peer: {}", peer_id);
+                        self.connected_peers.remove(&peer_id);
+                        None
+                    }
+                    SwarmEvent::Behaviour(gossip_event) => {
+                        self.handle_gossipsub_event(gossip_event);
+                        None
+                    }
+                    _ => None
+                }
+            }
+            _ => None
+        }
     }
     
     pub async fn start(&mut self) -> Result<()> {
@@ -139,25 +207,23 @@ impl LibP2PNetwork {
     }
     
     pub async fn broadcast_block(&mut self, block: &Block) -> Result<()> {
-        let topic = gossipsub::IdentTopic::new("spirachain-blocks");
         let data = bincode::serialize(block)
             .map_err(|e| SpiraChainError::NetworkError(format!("Serialize block: {}", e)))?;
         
         self.swarm.behaviour_mut()
-            .publish(topic, data)
+            .publish(self.block_topic.clone(), data)
             .map_err(|e| SpiraChainError::NetworkError(format!("Broadcast block: {}", e)))?;
         
-        info!("📡 Broadcasted block {} to network", block.header.block_height);
+        info!("📡 Broadcasted block {} to {} peers", block.header.block_height, self.connected_peers.len());
         Ok(())
     }
     
     pub async fn broadcast_transaction(&mut self, tx: &Transaction) -> Result<()> {
-        let topic = gossipsub::IdentTopic::new("spirachain-transactions");
         let data = bincode::serialize(tx)
             .map_err(|e| SpiraChainError::NetworkError(format!("Serialize tx: {}", e)))?;
         
         self.swarm.behaviour_mut()
-            .publish(topic, data)
+            .publish(self.tx_topic.clone(), data)
             .map_err(|e| SpiraChainError::NetworkError(format!("Broadcast tx: {}", e)))?;
         
         info!("📡 Broadcasted transaction to network");

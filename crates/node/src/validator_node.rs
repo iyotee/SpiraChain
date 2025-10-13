@@ -91,13 +91,19 @@ impl ValidatorNode {
             .unwrap_or(30333);
         
         match LibP2PNetwork::new(port).await {
-            Ok(network) => {
-                info!("✅ P2P network initialized on port {}", port);
-                self.network = Some(Arc::new(RwLock::new(network)));
-                info!("📡 P2P network ready - will run in validator loop");
+            Ok(mut network) => {
+                info!("✅ P2P network created");
+                
+                // Initialize listening
+                if let Err(e) = network.initialize() {
+                    warn!("⚠️ P2P initialization failed: {}. Running without network.", e);
+                } else {
+                    self.network = Some(Arc::new(RwLock::new(network)));
+                    info!("📡 P2P network ready - will poll in validator loop");
+                }
             }
             Err(e) => {
-                warn!("⚠️ P2P network failed to start: {}. Running without network.", e);
+                warn!("⚠️ P2P network failed to create: {}. Running without network.", e);
             }
         }
 
@@ -144,12 +150,10 @@ impl ValidatorNode {
                 }
                 
                 _ = network_tick.tick() => {
-                    // P2P network ticking handled internally
+                    // Poll P2P events (non-blocking)
                     if let Some(ref network) = self.network {
-                        let peer_count = network.read().get_peer_count();
-                        if peer_count > 0 {
-                            // Connection active
-                        }
+                        let mut net = network.write();
+                        net.poll_events();
                     }
                 }
             }
