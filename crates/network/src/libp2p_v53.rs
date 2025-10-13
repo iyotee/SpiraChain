@@ -13,6 +13,8 @@ use spirachain_core::{Block, Result, SpiraChainError, Transaction};
 use std::collections::HashSet;
 use tracing::{info, warn};
 
+use crate::bootstrap::{discover_bootstrap_peers, BootstrapConfig};
+
 pub struct LibP2PNetwork {
     swarm: Swarm<gossipsub::Behaviour>,
     local_peer_id: PeerId,
@@ -74,7 +76,60 @@ impl LibP2PNetwork {
         })
     }
 
-    /// Initialize P2P network (call once at startup)
+    /// Initialize P2P network with bootstrap discovery
+    pub async fn initialize_with_bootstrap(&mut self) -> Result<()> {
+        if self.is_listening {
+            return Ok(());
+        }
+
+        // Listen on all interfaces
+        let listen_addr: Multiaddr = "/ip4/0.0.0.0/tcp/9000"
+            .parse()
+            .map_err(|e| SpiraChainError::NetworkError(format!("Invalid addr: {}", e)))?;
+
+        self.swarm
+            .listen_on(listen_addr)
+            .map_err(|e| SpiraChainError::NetworkError(format!("Listen failed: {}", e)))?;
+
+        // Subscribe to topics
+        self.swarm
+            .behaviour_mut()
+            .subscribe(&self.block_topic)
+            .map_err(|e| SpiraChainError::NetworkError(format!("Subscribe blocks: {}", e)))?;
+        self.swarm
+            .behaviour_mut()
+            .subscribe(&self.tx_topic)
+            .map_err(|e| SpiraChainError::NetworkError(format!("Subscribe tx: {}", e)))?;
+
+        self.is_listening = true;
+        info!("✅ P2P network listening on port 9000");
+
+        // Discover and connect to bootstrap peers
+        info!("🔍 Discovering bootstrap peers...");
+        let config = BootstrapConfig::default();
+
+        match discover_bootstrap_peers(&config).await {
+            Ok(peers) => {
+                info!("📡 Found {} bootstrap peers", peers.len());
+                for peer_addr in peers {
+                    if let Ok(addr) = peer_addr.parse::<Multiaddr>() {
+                        info!("   Connecting to: {}", addr);
+                        if let Err(e) = self.swarm.dial(addr.clone()) {
+                            warn!("   Failed to dial {}: {}", addr, e);
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("⚠️  Bootstrap discovery failed: {}", e);
+                warn!("   Node will rely on mDNS/DHT for peer discovery");
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Initialize P2P network (call once at startup) - legacy method
     pub fn initialize(&mut self) -> Result<()> {
         if self.is_listening {
             return Ok(());

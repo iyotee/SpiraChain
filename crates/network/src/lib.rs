@@ -1,9 +1,11 @@
+pub mod bootstrap;
 pub mod encryption;
 pub mod libp2p_v53;
 pub mod p2p;
 pub mod protocol;
-pub mod sync; // LibP2P v0.53 implementation
+pub mod sync;
 
+pub use bootstrap::*;
 pub use encryption::*;
 pub use libp2p_v53::LibP2PNetwork;
 pub use p2p::*;
