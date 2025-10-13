@@ -7,21 +7,21 @@ impl EntityExtractor {
         Self
     }
 
-    pub fn extract(&self, text: &str) -> Vec<Entity> {
+    pub fn extract(&self, _text: &str) -> Vec<Entity> {
         let entities = Vec::new();
 
         entities
     }
 
-    fn detect_person(&self, text: &str) -> Option<Entity> {
+    fn detect_person(&self, _text: &str) -> Option<Entity> {
         None
     }
 
-    fn detect_organization(&self, text: &str) -> Option<Entity> {
+    fn detect_organization(&self, _text: &str) -> Option<Entity> {
         None
     }
 
-    fn detect_location(&self, text: &str) -> Option<Entity> {
+    fn detect_location(&self, _text: &str) -> Option<Entity> {
         None
     }
 }

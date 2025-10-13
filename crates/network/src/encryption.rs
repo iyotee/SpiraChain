@@ -235,7 +235,7 @@ mod tests {
             .derive_shared_secret_from_ciphertext(&ciphertext_alice)
             .unwrap();
 
-        let message = b"Hello from Alice!";
+        let _message = b"Hello from Alice!";
 
         let key_alice = alice
             .peer_keys

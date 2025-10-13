@@ -22,7 +22,7 @@ pub struct LibP2PNetwork {
 }
 
 impl LibP2PNetwork {
-    pub async fn new(port: u16) -> Result<Self> {
+    pub async fn new(_port: u16) -> Result<Self> {
         info!("🌐 Initializing LibP2P Network (v0.53 - Gossipsub only)");
 
         // Generate keypair
@@ -191,7 +191,7 @@ impl LibP2PNetwork {
         match event {
             gossipsub::Event::Message {
                 propagation_source,
-                message_id,
+                message_id: _,
                 message,
             } => {
                 info!("📩 Received gossipsub message from {}", propagation_source);
@@ -219,7 +219,9 @@ impl LibP2PNetwork {
             gossipsub::Event::GossipsubNotSupported { peer_id } => {
                 warn!("⚠️ Peer {} doesn't support Gossipsub", peer_id);
             }
-            _ => {}
+            _ => {
+                // Handle any other gossipsub events
+            }
         }
     }
 

@@ -84,11 +84,29 @@ mod tests {
     fn test_block_reward_calculation() {
         let mut block = Block::new(Hash::zero(), 0);
         block.header.spiral.complexity = 75.0;
+        block.header.spiral.semantic_coherence = 1.0; // Ensure coherence is set
+        
+        // Add a transaction to ensure semantic coherence is not 0
+        let from = spirachain_core::Address::new([1u8; 32]);
+        let to = spirachain_core::Address::new([2u8; 32]);
+        let amount = spirachain_core::Amount::qbt(100);
+        let fee = spirachain_core::Amount::from_millis(1);
+        
+        let mut tx = spirachain_core::Transaction::new(from, to, amount, fee);
+        tx.semantic_vector = vec![0.5; 100]; // Set semantic vector for coherence
+        tx.compute_hash();
+        
+        block = block.with_transactions(vec![tx]);
 
         let recent_types = vec![];
         let reward = RewardCalculator::calculate_block_reward(&block, &recent_types);
 
-        assert!(reward > Amount::zero());
+        // Debug output to see what's happening
+        println!("Base reward: {}", RewardCalculator::base_reward_at_height(0).value());
+        println!("Block coherence: {}", block.avg_semantic_coherence());
+        println!("Calculated reward: {}", reward.value());
+        
+        assert!(reward > Amount::zero(), "Reward should be positive, got: {}", reward.value());
     }
 
     #[test]

@@ -27,6 +27,12 @@ pub async fn handle_send(
     let keypair = KeyPair::from_secret(secret_key)?;
 
     let to_address_hex = to.trim_start_matches("0x");
+    
+    // Ensure the address is exactly 64 characters (32 bytes)
+    if to_address_hex.len() != 64 {
+        return Err(anyhow::anyhow!("Address must be exactly 64 hex characters (32 bytes)"));
+    }
+    
     let to_bytes = hex::decode(to_address_hex)?;
     let mut to_address_array = [0u8; 32];
     to_address_array.copy_from_slice(&to_bytes[..32]);
