@@ -11,7 +11,9 @@ pub struct Pattern {
 }
 
 pub struct PatternDetector {
+    #[allow(dead_code)]
     min_cluster_size: usize,
+    #[allow(dead_code)]
     coherence_threshold: f64,
 }
 
@@ -27,10 +29,12 @@ impl PatternDetector {
         Vec::new()
     }
 
+    #[allow(dead_code)]
     fn cluster_transactions(&self, _transactions: &[Transaction]) -> Vec<Vec<usize>> {
         vec![]
     }
 
+    #[allow(dead_code)]
     fn calculate_centroid(&self, cluster: &[&Transaction]) -> Vec<f32> {
         if cluster.is_empty() {
             return vec![];
@@ -52,6 +56,7 @@ impl PatternDetector {
         centroid
     }
 
+    #[allow(dead_code)]
     fn calculate_cluster_coherence(&self, cluster: &[&Transaction], centroid: &[f32]) -> f64 {
         if cluster.is_empty() {
             return 0.0;
@@ -65,6 +70,7 @@ impl PatternDetector {
         similarities.iter().sum::<f64>() / similarities.len() as f64
     }
 
+    #[allow(dead_code)]
     fn cosine_similarity(&self, a: &[f32], b: &[f32]) -> f64 {
         if a.len() != b.len() || a.is_empty() {
             return 0.0;

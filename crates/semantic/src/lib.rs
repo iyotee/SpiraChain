@@ -13,6 +13,7 @@ use spirapi_bridge::SpiraPiEngine;
 use tracing::warn;
 
 pub struct SemanticProcessor {
+    #[allow(dead_code)]
     embedding_service_url: String,
 }
 

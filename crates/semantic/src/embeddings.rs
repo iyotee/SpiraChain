@@ -1,6 +1,7 @@
 use spirachain_core::Result;
 
 pub struct EmbeddingGenerator {
+    #[allow(dead_code)]
     model_name: String,
     dimensions: usize,
 }

@@ -11,14 +11,17 @@ impl EntityExtractor {
         Vec::new()
     }
 
+    #[allow(dead_code)]
     fn detect_person(&self, _text: &str) -> Option<Entity> {
         None
     }
 
+    #[allow(dead_code)]
     fn detect_organization(&self, _text: &str) -> Option<Entity> {
         None
     }
 
+    #[allow(dead_code)]
     fn detect_location(&self, _text: &str) -> Option<Entity> {
         None
     }
