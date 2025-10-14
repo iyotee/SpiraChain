@@ -20,9 +20,10 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
   skipMiddlewareUrlNormalize: true,
   
-  // Disable automatic metadata generation
+  // Disable automatic metadata generation completely
   experimental: {
     optimizePackageImports: [],
+    metadataFileGeneration: false,
   },
   
   // Disable automatic static optimization for problematic routes
@@ -59,11 +60,25 @@ const nextConfig: NextConfig = {
       use: 'null-loader',
     });
     
+    config.module.rules.push({
+      test: /__next_metadata__/,
+      use: 'null-loader',
+    });
+    
     // Ignore all favicon-related modules
     config.resolve.alias = {
       ...config.resolve.alias,
       'favicon.ico': false,
+      './favicon.ico': false,
+      '../favicon.ico': false,
     };
+    
+    // Add ignore plugin for favicon
+    config.plugins.push(
+      new webpack.IgnorePlugin({
+        resourceRegExp: /favicon\.ico$/,
+      })
+    );
     
     return config;
   },
