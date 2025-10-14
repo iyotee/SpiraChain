@@ -84,10 +84,10 @@ export default function Roadmap() {
   ];
 
   return (
-    <section id="roadmap" className="py-24 md:py-32 relative overflow-hidden bg-white dark:bg-slate-950">
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/10 rounded-full blur-3xl" />
+    <section id="roadmap" className="py-24 md:py-32 relative overflow-hidden bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
+      <div className="absolute inset-0 opacity-40 dark:opacity-30">
+        <div className="absolute top-20 right-20 w-96 h-96 bg-purple-500/20 dark:bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-pink-500/20 dark:bg-pink-500/10 rounded-full blur-3xl" />
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">

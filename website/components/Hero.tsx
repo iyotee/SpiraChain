@@ -14,8 +14,8 @@ export default function Hero() {
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 bg-white dark:bg-slate-950">
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-slate-950 dark:via-purple-950 dark:to-slate-950">
         <div className="absolute inset-0">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/30 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-blue-600/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
@@ -58,10 +58,10 @@ export default function Hero() {
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-blue-600/20 border border-purple-500/30 rounded-full backdrop-blur-sm mb-8"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-blue-600/10 dark:from-purple-600/20 dark:via-pink-600/20 dark:to-blue-600/20 border border-purple-500/30 rounded-full backdrop-blur-sm mb-8"
             >
-              <Sparkles className="w-5 h-5 text-purple-400 animate-pulse" />
-              <span className="text-purple-300 font-bold">Testnet Live - Join the Revolution</span>
+              <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400 animate-pulse" />
+              <span className="text-purple-700 dark:text-purple-300 font-bold">Testnet Live - Join the Revolution</span>
             </motion.div>
 
             <motion.h1
@@ -70,7 +70,7 @@ export default function Hero() {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-6 leading-tight"
             >
-              <span className="block text-white mb-2">
+              <span className="block text-slate-900 dark:text-white mb-2">
                 The World&apos;s First
               </span>
               <span className="block gradient-text-hero mb-2">
@@ -85,11 +85,11 @@ export default function Hero() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.5 }}
-              className="text-xl sm:text-2xl md:text-3xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed"
+              className="text-xl sm:text-2xl md:text-3xl text-slate-700 dark:text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed"
             >
-              <span className="text-white font-bold">Powered by AI</span>, secured by mathematics, accessible to everyone.
+              <span className="text-slate-900 dark:text-white font-bold">Powered by AI</span>, secured by mathematics, accessible to everyone.
               <br className="hidden sm:block" />
-              <span className="block mt-4 text-purple-400 font-black text-2xl sm:text-3xl md:text-4xl">
+              <span className="block mt-4 text-purple-600 dark:text-purple-400 font-black text-2xl sm:text-3xl md:text-4xl">
                 Validate with a Raspberry Pi. Earn rewards for quality.
               </span>
             </motion.p>
@@ -144,11 +144,11 @@ export default function Hero() {
                     />
                   </div>
                   
-                  <div className="text-sm font-semibold text-gray-300">
+                  <div className="text-sm font-semibold text-slate-600 dark:text-gray-300">
                     {indicator.label}
                   </div>
 
-                  <div className={`absolute inset-0 bg-gradient-to-r ${indicator.gradient} opacity-0 group-hover:opacity-5 rounded-3xl transition-opacity duration-300 pointer-events-none`} />
+                  <div className={`absolute inset-0 bg-gradient-to-r ${indicator.gradient} opacity-0 group-hover:opacity-10 dark:group-hover:opacity-5 rounded-3xl transition-opacity duration-300 pointer-events-none`} />
                 </div>
               );
             })}
@@ -165,12 +165,12 @@ export default function Hero() {
         <motion.div
           animate={{ y: [0, 12, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="w-8 h-14 border-2 border-white/40 rounded-full flex justify-center cursor-pointer hover:border-white/60 transition-colors"
+          className="w-8 h-14 border-2 border-slate-400/40 dark:border-white/40 rounded-full flex justify-center cursor-pointer hover:border-slate-600/60 dark:hover:border-white/60 transition-colors"
         >
           <motion.div
             animate={{ y: [0, 16, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
-            className="w-1.5 h-4 bg-gradient-to-b from-purple-400 to-blue-400 rounded-full mt-3"
+            className="w-1.5 h-4 bg-gradient-to-b from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400 rounded-full mt-3"
           />
         </motion.div>
       </motion.div>

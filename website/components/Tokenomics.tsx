@@ -102,9 +102,9 @@ export default function Tokenomics() {
 
   return (
     <section id="tokenomics" className="py-24 md:py-32 relative overflow-hidden section-gradient-light">
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-20 left-20 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl" />
+      <div className="absolute inset-0 opacity-40 dark:opacity-30">
+        <div className="absolute top-20 left-20 w-96 h-96 bg-emerald-500/20 dark:bg-emerald-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-teal-500/20 dark:bg-teal-500/10 rounded-full blur-3xl" />
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">

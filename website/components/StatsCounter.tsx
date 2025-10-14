@@ -77,7 +77,7 @@ export default function StatsCounter({
           </div>
         )}
 
-        <div className={`absolute inset-0 bg-gradient-to-r ${gradient} opacity-0 group-hover:opacity-5 rounded-3xl transition-opacity duration-300 pointer-events-none`} />
+        <div className={`absolute inset-0 bg-gradient-to-r ${gradient} opacity-0 group-hover:opacity-10 dark:group-hover:opacity-5 rounded-3xl transition-opacity duration-300 pointer-events-none`} />
       </div>
     </motion.div>
   );
