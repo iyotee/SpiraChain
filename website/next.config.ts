@@ -4,9 +4,11 @@ const nextConfig: NextConfig = {
   // Ensure proper hydration
   reactStrictMode: true,
   
-  // Output configuration for Netlify
+  // Output configuration for Netlify - DISABLE SSR COMPLETELY
   output: 'export',
   trailingSlash: true,
+  distDir: '.next',
+  
   images: {
     unoptimized: true,
   },
