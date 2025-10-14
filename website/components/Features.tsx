@@ -104,7 +104,7 @@ export default function Features() {
             whileInView={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.2 }}
             viewport={{ once: true }}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-blue-600/10 border border-purple-500/20 rounded-full backdrop-blur-sm mb-8"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-100 via-pink-100 to-blue-100 dark:from-purple-600/10 dark:via-pink-600/10 dark:to-blue-600/10 border border-purple-300 dark:border-purple-500/20 rounded-full backdrop-blur-sm mb-8"
           >
             <span className="text-sm font-bold text-purple-600 dark:text-purple-400">Why SpiraChain?</span>
           </motion.div>

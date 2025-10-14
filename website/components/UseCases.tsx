@@ -132,7 +132,7 @@ export default function UseCases() {
                       whileInView={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.4, delay: index * 0.1 + idx * 0.1 }}
                       viewport={{ once: true }}
-                      className="flex items-center gap-2 text-sm text-gray-400"
+                      className="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400"
                     >
                       <div className={`w-1.5 h-1.5 rounded-full bg-gradient-to-r ${useCase.gradient}`} />
                       {feature}

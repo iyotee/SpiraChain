@@ -167,7 +167,7 @@ fn generate_spiral_proof(
                         viewport={{ once: true }}
                         className="p-4 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors"
                       >
-                        <div className="text-sm font-semibold text-gray-400 mb-1">
+                        <div className="text-sm font-semibold text-slate-600 dark:text-gray-400 mb-1">
                           {spec.label}
                         </div>
                         <div className="text-base font-bold text-white">
@@ -179,7 +179,7 @@ fn generate_spiral_proof(
                 </div>
 
                 <div>
-                  <div className="text-sm font-semibold text-gray-400 mb-3">
+                  <div className="text-sm font-semibold text-slate-600 dark:text-gray-400 mb-3">
                     Implementation Example
                   </div>
                   <motion.div

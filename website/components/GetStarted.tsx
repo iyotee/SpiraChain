@@ -116,8 +116,8 @@ export default function GetStarted() {
                 <div className="w-12 h-12 md:w-16 md:h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl flex items-center justify-center text-white font-black text-xl md:text-2xl mx-auto mb-3 shadow-lg">
                   {item.step}
                 </div>
-                <div className="text-white font-bold text-sm md:text-base mb-1">{item.title}</div>
-                <div className="text-gray-400 text-xs md:text-sm">{item.time}</div>
+                <div className="text-slate-900 dark:text-white font-bold text-sm md:text-base mb-1">{item.title}</div>
+                <div className="text-slate-600 dark:text-gray-400 text-xs md:text-sm">{item.time}</div>
               </motion.div>
             ))}
           </div>
