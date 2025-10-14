@@ -20,6 +20,11 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
   skipMiddlewareUrlNormalize: true,
   
+  // Disable automatic metadata generation
+  experimental: {
+    optimizePackageImports: [],
+  },
+  
   // Disable automatic static optimization for problematic routes
   // experimental: {
   //   missingSuspenseWithCSRBailout: false,
@@ -43,17 +48,22 @@ const nextConfig: NextConfig = {
       })
     );
     
-    // Ignore favicon routes to prevent build errors
+    // Completely ignore favicon-related imports
     config.module.rules.push({
       test: /favicon\.ico$/,
       use: 'null-loader',
     });
     
-    // Disable favicon metadata generation
     config.module.rules.push({
-      test: /next-metadata-image-loader.*favicon/,
+      test: /next-metadata-image-loader/,
       use: 'null-loader',
     });
+    
+    // Ignore all favicon-related modules
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'favicon.ico': false,
+    };
     
     return config;
   },
