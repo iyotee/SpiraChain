@@ -19,7 +19,7 @@ export default function Footer() {
 
   const links = {
     resources: [
-      { name: 'Whitepaper', href: 'https://github.com/iyotee/SpiraChain/blob/main/WHITEPAPER_VALIDATION.md' },
+      { name: 'Whitepaper', href: 'https://github.com/iyotee/SpiraChain/blob/main/whitepaper.md' },
       { name: 'Roadmap', href: 'https://github.com/iyotee/SpiraChain/blob/main/ROADMAP.md' },
       { name: 'Documentation', href: 'https://github.com/iyotee/SpiraChain' },
       { name: 'GitHub', href: 'https://github.com/iyotee/SpiraChain' },

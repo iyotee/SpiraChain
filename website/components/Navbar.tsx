@@ -155,6 +155,7 @@ export default function Navbar() {
                 <button
                   onClick={closeMobileMenu}
                   className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  aria-label="Close menu"
                 >
                   <X className="w-6 h-6 text-slate-700 dark:text-slate-300" />
                 </button>
