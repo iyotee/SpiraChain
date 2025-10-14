@@ -1,13 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Disable Turbopack for Netlify compatibility
-  experimental: {
-    turbo: {
-      // Disable Turbopack to avoid conflicts
-    },
-  },
-  
   // Ensure proper hydration
   reactStrictMode: true,
   
@@ -16,6 +9,11 @@ const nextConfig: NextConfig = {
   trailingSlash: true,
   images: {
     unoptimized: true,
+  },
+  
+  // Disable automatic favicon generation
+  generateBuildId: async () => {
+    return 'build-' + Date.now();
   },
   
   // Fix for className issues - Netlify specific
