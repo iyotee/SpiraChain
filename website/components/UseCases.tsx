@@ -164,7 +164,7 @@ export default function UseCases() {
               href="#get-started"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="block px-8 md:px-12 py-4 md:py-6 bg-slate-900 text-white font-black text-lg md:text-xl rounded-xl hover:bg-slate-800 transition-colors duration-300"
+              className="block px-8 md:px-12 py-4 md:py-6 bg-slate-900 dark:bg-slate-900 text-white font-black text-lg md:text-xl rounded-xl hover:bg-slate-800 dark:hover:bg-slate-800 transition-colors duration-300"
             >
               Start Building Now
             </motion.a>

@@ -189,9 +189,9 @@ fn generate_spiral_proof(
                     viewport={{ once: true }}
                     className="relative"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl blur-sm" />
-                    <div className="relative bg-slate-900/90 backdrop-blur-sm rounded-2xl p-4 md:p-6 border border-slate-700 overflow-x-auto">
-                      <pre className="text-xs md:text-sm text-gray-300 font-mono leading-relaxed">
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-200 to-slate-300 dark:from-slate-900 dark:to-slate-800 rounded-2xl blur-sm" />
+                    <div className="relative bg-slate-100 dark:bg-slate-900/90 backdrop-blur-sm rounded-2xl p-4 md:p-6 border border-slate-300 dark:border-slate-700 overflow-x-auto">
+                      <pre className="text-xs md:text-sm text-slate-700 dark:text-gray-300 font-mono leading-relaxed">
                         <code>{tech.code}</code>
                       </pre>
                     </div>
@@ -215,7 +215,7 @@ fn generate_spiral_proof(
               href="#get-started"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="block px-8 md:px-12 py-4 md:py-6 bg-slate-900 text-white font-black text-lg md:text-xl rounded-xl hover:bg-slate-800 transition-colors duration-300"
+              className="block px-8 md:px-12 py-4 md:py-6 bg-slate-900 dark:bg-slate-900 text-white font-black text-lg md:text-xl rounded-xl hover:bg-slate-800 dark:hover:bg-slate-800 transition-colors duration-300"
             >
               Experience the Technology
             </motion.a>

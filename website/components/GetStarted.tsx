@@ -130,7 +130,7 @@ export default function GetStarted() {
               className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 ${
                 activeTab === 'quickstart'
                   ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg'
-                  : 'bg-white/10 text-gray-400 hover:bg-white/20'
+                  : 'bg-white/10 dark:bg-white/10 text-slate-600 dark:text-gray-400 hover:bg-white/20 dark:hover:bg-white/20'
               }`}
             >
               Quick Start
@@ -140,7 +140,7 @@ export default function GetStarted() {
               className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 ${
                 activeTab === 'manual'
                   ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg'
-                  : 'bg-white/10 text-gray-400 hover:bg-white/20'
+                  : 'bg-white/10 dark:bg-white/10 text-slate-600 dark:text-gray-400 hover:bg-white/20 dark:hover:bg-white/20'
               }`}
             >
               Manual Install
@@ -162,10 +162,10 @@ export default function GetStarted() {
                 className="glass-card p-6 md:p-8 rounded-3xl shadow-2xl"
               >
                 <div className="flex items-center gap-3 mb-6">
-                  <Terminal className="text-green-400 w-8 h-8" />
-                  <h3 className="text-xl md:text-2xl font-bold text-white">Linux / macOS</h3>
+                  <Terminal className="text-green-600 dark:text-green-400 w-8 h-8" />
+                  <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Linux / macOS</h3>
                 </div>
-                <div className="bg-slate-900/90 p-4 rounded-xl mb-4 font-mono text-xs md:text-sm text-green-400 overflow-x-auto border border-green-500/30">
+                <div className="bg-slate-100 dark:bg-slate-900/90 p-4 rounded-xl mb-4 font-mono text-xs md:text-sm text-green-600 dark:text-green-400 overflow-x-auto border border-green-300 dark:border-green-500/30">
                   {linuxCommand}
                 </div>
                 <motion.button
@@ -187,10 +187,10 @@ export default function GetStarted() {
                 className="glass-card p-6 md:p-8 rounded-3xl shadow-2xl"
               >
                 <div className="flex items-center gap-3 mb-6">
-                  <Terminal className="text-blue-400 w-8 h-8" />
-                  <h3 className="text-xl md:text-2xl font-bold text-white">Windows</h3>
+                  <Terminal className="text-blue-600 dark:text-blue-400 w-8 h-8" />
+                  <h3 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">Windows</h3>
                 </div>
-                <div className="bg-slate-900/90 p-4 rounded-xl mb-4 font-mono text-xs md:text-sm text-blue-400 overflow-x-auto border border-blue-500/30">
+                <div className="bg-slate-100 dark:bg-slate-900/90 p-4 rounded-xl mb-4 font-mono text-xs md:text-sm text-blue-600 dark:text-blue-400 overflow-x-auto border border-blue-300 dark:border-blue-500/30">
                   {windowsCommand}
                 </div>
                 <motion.button
@@ -213,7 +213,7 @@ export default function GetStarted() {
               transition={{ duration: 0.5 }}
               className="glass-card p-6 md:p-10 rounded-3xl shadow-2xl"
             >
-              <h3 className="text-2xl md:text-3xl font-bold text-white mb-8 flex items-center gap-3">
+              <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-8 flex items-center gap-3">
                 <BookOpen className="w-8 h-8" />
                 Manual Installation
               </h3>
@@ -233,11 +233,11 @@ export default function GetStarted() {
                         {step.number}
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-bold text-lg md:text-xl text-white mb-1">{step.title}</h4>
-                        <p className="text-sm text-gray-400">{step.description}</p>
+                        <h4 className="font-bold text-lg md:text-xl text-slate-900 dark:text-white mb-1">{step.title}</h4>
+                        <p className="text-sm text-slate-600 dark:text-gray-400">{step.description}</p>
                       </div>
                     </div>
-                    <div className="bg-slate-900/90 p-4 rounded-xl ml-14 md:ml-16 font-mono text-xs md:text-sm text-gray-300 overflow-x-auto border border-gray-700">
+                    <div className="bg-slate-100 dark:bg-slate-900/90 p-4 rounded-xl ml-14 md:ml-16 font-mono text-xs md:text-sm text-slate-700 dark:text-gray-300 overflow-x-auto border border-slate-300 dark:border-gray-700">
                       {step.command}
                     </div>
                   </motion.div>
