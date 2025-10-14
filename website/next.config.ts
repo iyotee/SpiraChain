@@ -23,7 +23,6 @@ const nextConfig: NextConfig = {
   // Disable automatic metadata generation completely
   experimental: {
     optimizePackageImports: [],
-    metadataFileGeneration: false,
   },
   
   // Disable automatic static optimization for problematic routes
@@ -46,37 +45,6 @@ const nextConfig: NextConfig = {
     config.plugins.push(
       new webpack.DefinePlugin({
         'typeof window': JSON.stringify('object'),
-      })
-    );
-    
-    // Completely ignore favicon-related imports
-    config.module.rules.push({
-      test: /favicon\.ico$/,
-      use: 'null-loader',
-    });
-    
-    config.module.rules.push({
-      test: /next-metadata-image-loader/,
-      use: 'null-loader',
-    });
-    
-    config.module.rules.push({
-      test: /__next_metadata__/,
-      use: 'null-loader',
-    });
-    
-    // Ignore all favicon-related modules
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      'favicon.ico': false,
-      './favicon.ico': false,
-      '../favicon.ico': false,
-    };
-    
-    // Add ignore plugin for favicon
-    config.plugins.push(
-      new webpack.IgnorePlugin({
-        resourceRegExp: /favicon\.ico$/,
       })
     );
     
