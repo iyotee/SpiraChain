@@ -49,6 +49,12 @@ const nextConfig: NextConfig = {
       use: 'null-loader',
     });
     
+    // Disable favicon metadata generation
+    config.module.rules.push({
+      test: /next-metadata-image-loader.*favicon/,
+      use: 'null-loader',
+    });
+    
     return config;
   },
 };
