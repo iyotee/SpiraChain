@@ -1,26 +1,29 @@
 'use client';
 
-// IMPORT CSS FIRST to ensure it's included in the build
-import './globals.css';
+import Navbar from '@/components/Navbar';
+import Hero from '@/components/Hero';
+import Features from '@/components/Features';
+import Performance from '@/components/Performance';
+import Tokenomics from '@/components/Tokenomics';
+import Roadmap from '@/components/Roadmap';
+import GetStarted from '@/components/GetStarted';
+import Footer from '@/components/Footer';
 
-import dynamic from 'next/dynamic';
-
-const HomeClient = dynamic(() => import('./page.client'), {
-  ssr: false,
-  loading: () => (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-8xl font-black text-white mb-8">
-          <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-red-400 bg-clip-text text-transparent">
-            SpiraChain
-          </span>
-        </h1>
-        <p className="text-2xl text-gray-300 animate-pulse">Loading...</p>
-      </div>
-    </div>
-  ),
-});
+// Force dynamic rendering - disable static optimization
+export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
 
 export default function Home() {
-  return <HomeClient />;
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-white to-slate-50 dark:from-slate-950 dark:to-slate-900">
+      <Navbar />
+      <Hero />
+      <Features />
+      <Performance />
+      <Tokenomics />
+      <Roadmap />
+      <GetStarted />
+      <Footer />
+    </main>
+  );
 }
