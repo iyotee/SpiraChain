@@ -2,40 +2,32 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Github, Shield, Brain, Sparkles, Infinity } from 'lucide-react';
+import { ArrowRight, Github, Sparkles, TrendingUp, Users, Zap } from 'lucide-react';
+import GradientButton from './GradientButton';
+import StatsCounter from './StatsCounter';
 
 export default function Hero() {
-  const FeatureIcon = ({ icon, className }: { icon: React.ComponentType<{className?: string}>, className: string }) => {
-    const IconComponent = icon;
-    return <IconComponent className={className} />;
-  };
-
-  const features = [
-    { name: 'Post-Quantum Security', icon: Shield, color: 'from-red-500 to-pink-500', description: 'XMSS & McEliece' },
-    { name: 'AI Semantic Layer', icon: Brain, color: 'from-blue-500 to-cyan-500', description: 'Smart Transactions' },
-    { name: 'Proof-of-Spiral', icon: Infinity, color: 'from-purple-500 to-indigo-500', description: 'Energy Efficient' }
-  ];
-
-  const stats = [
-    { value: '21M', label: 'Total Supply', color: 'from-yellow-400 to-orange-500' },
-    { value: '99.9%', label: 'Less Energy', color: 'from-green-400 to-emerald-500' },
-    { value: '30s', label: 'Block Time', color: 'from-blue-400 to-cyan-500' },
-    { value: '$80', label: 'RPi Validator', color: 'from-purple-400 to-pink-500' }
+  const trustIndicators = [
+    { icon: Users, value: 150, suffix: '+', label: 'Validators', gradient: 'from-blue-500 to-cyan-400' },
+    { icon: Zap, value: 2.5, suffix: 'M', decimals: 1, label: 'Transactions', gradient: 'from-purple-500 to-pink-500' },
+    { icon: TrendingUp, value: 99.9, suffix: '%', decimals: 1, label: 'Uptime', gradient: 'from-green-500 to-emerald-400' },
   ];
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      {/* Animated background elements */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-blue-500/30 rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-full blur-3xl animate-spin" style={{animationDuration: '40s'}} />
-        
-        {/* Floating particles */}
-        {[...Array(30)].map((_, i) => (
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950">
+        <div className="absolute inset-0">
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/30 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-blue-600/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-pink-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        </div>
+
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgyNTUsMjU1LDI1NSwwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-40" />
+
+        {[...Array(50)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-1 h-1 bg-white/30 rounded-full"
+            className="absolute w-1 h-1 bg-white rounded-full"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
@@ -43,178 +35,142 @@ export default function Hero() {
             animate={{
               y: [0, -30, 0],
               opacity: [0.1, 0.8, 0.1],
+              scale: [1, 1.5, 1],
             }}
             transition={{
-              duration: 4 + Math.random() * 3,
-              repeat: -1,
-              delay: Math.random() * 3,
+              duration: 3 + Math.random() * 4,
+              repeat: Infinity,
+              delay: Math.random() * 5,
             }}
           />
         ))}
       </div>
 
-      <div className="relative z-10 text-center px-6 max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          className="mb-12"
-        >
+      <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+        <div className="text-center max-w-6xl mx-auto">
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/30 rounded-full text-purple-300 text-lg font-medium mb-8 backdrop-blur-sm"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="mb-8"
           >
-            <Sparkles className="inline w-5 h-5 mr-2" />
-            Testnet Live - Join the Revolution
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600/20 via-pink-600/20 to-blue-600/20 border border-purple-500/30 rounded-full backdrop-blur-sm mb-8"
+            >
+              <Sparkles className="w-5 h-5 text-purple-400 animate-pulse" />
+              <span className="text-purple-300 font-bold">Testnet Live - Join the Revolution</span>
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-6 leading-tight"
+            >
+              <span className="block text-white mb-2">
+                The World&apos;s First
+              </span>
+              <span className="block gradient-text-hero mb-2">
+                Post-Quantum
+              </span>
+              <span className="block gradient-text-blue">
+                Semantic Blockchain
+              </span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.5 }}
+              className="text-xl sm:text-2xl md:text-3xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed"
+            >
+              <span className="text-white font-bold">Powered by AI</span>, secured by mathematics, accessible to everyone.
+              <br className="hidden sm:block" />
+              <span className="block mt-4 text-purple-400 font-black text-2xl sm:text-3xl md:text-4xl">
+                Validate with a Raspberry Pi. Earn rewards for quality.
+              </span>
+            </motion.p>
           </motion.div>
 
-          <h1 className="text-7xl md:text-9xl lg:text-[12rem] font-black mb-8 leading-[0.8]">
-            <motion.span 
-              className="block text-white mb-4"
-              initial={{ opacity: 0, x: -100 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 1, delay: 0.4 }}
-            >
-              The World&apos;s First
-            </motion.span>
-            <motion.span 
-              className="block bg-gradient-to-r from-purple-400 via-pink-500 to-red-400 bg-clip-text text-transparent mb-4"
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 1, delay: 0.6 }}
-            >
-              Post-Quantum
-            </motion.span>
-            <motion.span 
-              className="block bg-gradient-to-r from-blue-400 via-cyan-500 to-green-400 bg-clip-text text-transparent"
-              initial={{ opacity: 0, x: -100 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 1, delay: 0.8 }}
-            >
-              Semantic Blockchain
-            </motion.span>
-          </h1>
-          
-          <motion.p 
-            className="text-2xl md:text-4xl text-gray-300 mb-12 max-w-6xl mx-auto leading-relaxed"
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1 }}
+            transition={{ duration: 0.8, delay: 0.7 }}
+            className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mb-16"
           >
-            <span className="text-white font-bold">Powered by AI</span>, secured by mathematics, accessible to everyone.
-            <br />
-            <span className="text-purple-400 font-black text-4xl md:text-5xl">Validate with a Raspberry Pi.</span>
-            <br />
-            <span className="text-blue-400 font-black text-4xl md:text-5xl">Earn rewards for quality, not quantity.</span>
-          </motion.p>
-        </motion.div>
+            <GradientButton href="#get-started" size="xl" icon={Sparkles} iconPosition="left">
+              Get Started Now
+            </GradientButton>
 
-        {/* Feature highlights with icons */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.2 }}
-          className="flex flex-wrap justify-center gap-8 mb-20"
-        >
-          {features.map((feature, index) => (
-            <motion.div
-              key={feature.name}
-              initial={{ opacity: 0, scale: 0.8, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.4 + index * 0.2 }}
-              whileHover={{ scale: 1.05, y: -10 }}
-              className="group relative"
+            <GradientButton 
+              href="https://github.com/iyotee/SpiraChain" 
+              variant="outline" 
+              size="xl"
+              icon={Github}
+              iconPosition="left"
             >
-              <div className="px-10 py-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl text-white font-bold hover:bg-white/20 transition-all duration-300 shadow-2xl hover:shadow-3xl flex flex-col items-center gap-4 min-w-[320px]">
-                <div className={`p-4 rounded-2xl bg-gradient-to-r ${feature.color} shadow-lg`}>
-                  <FeatureIcon icon={feature.icon} className="w-8 h-8 text-white" />
-                </div>
-                <div className="text-xl">{feature.name}</div>
-                <div className="text-sm text-gray-300 font-normal">{feature.description}</div>
-              </div>
-              <div className={`absolute inset-0 bg-gradient-to-r ${feature.color} opacity-0 group-hover:opacity-20 rounded-3xl blur-xl transition-opacity duration-300 -z-10`} />
-            </motion.div>
-          ))}
-        </motion.div>
+              View on GitHub
+            </GradientButton>
+          </motion.div>
 
-        {/* CTA Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.8 }}
-          className="flex flex-col sm:flex-row gap-8 justify-center items-center mb-24"
-        >
-          <motion.a
-            href="#get-started"
-            whileHover={{ scale: 1.05, y: -3 }}
-            whileTap={{ scale: 0.95 }}
-            className="group relative flex items-center gap-4 px-16 py-8 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 text-white font-black text-2xl rounded-3xl hover:from-purple-700 hover:via-pink-700 hover:to-blue-700 transition-all duration-300 shadow-2xl hover:shadow-purple-500/25"
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.9 }}
+            className="grid grid-cols-1 sm:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto"
           >
-            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-3xl blur opacity-0 group-hover:opacity-50 transition-opacity duration-300 -z-10" />
-            <Sparkles className="w-8 h-8" />
-            Get Started
-            <ArrowRight className="w-8 h-8 group-hover:translate-x-2 transition-transform duration-300" />
-          </motion.a>
-          
-          <motion.a
-            href="https://github.com/iyotee/SpiraChain"
-            target="_blank"
-            rel="noopener noreferrer"
-            whileHover={{ scale: 1.05, y: -3 }}
-            whileTap={{ scale: 0.95 }}
-            className="group flex items-center gap-4 px-16 py-8 bg-white/10 backdrop-blur-md border-2 border-white/30 text-white font-black text-2xl rounded-3xl hover:bg-white/20 hover:border-white/50 transition-all duration-300 shadow-2xl"
-          >
-            <Github className="w-8 h-8" />
-            View on GitHub
-          </motion.a>
-        </motion.div>
+            {trustIndicators.map((indicator, index) => {
+              const IconComponent = indicator.icon;
+              return (
+                <div
+                  key={indicator.label}
+                  className="relative p-6 md:p-8 glass-card rounded-3xl shadow-2xl group hover:scale-105 transition-transform duration-300"
+                >
+                  <div className={`inline-flex p-3 rounded-2xl bg-gradient-to-r ${indicator.gradient} shadow-lg mb-4`}>
+                    <IconComponent className="w-6 h-6 text-white" />
+                  </div>
+                  
+                  <div className={`text-4xl md:text-5xl font-black bg-gradient-to-r ${indicator.gradient} bg-clip-text text-transparent mb-2`}>
+                    <StatsCounter
+                      end={indicator.value}
+                      suffix={indicator.suffix}
+                      decimals={indicator.decimals || 0}
+                      gradient={indicator.gradient}
+                      label=""
+                      delay={1.1 + index * 0.2}
+                    />
+                  </div>
+                  
+                  <div className="text-sm font-semibold text-gray-300">
+                    {indicator.label}
+                  </div>
 
-        {/* Enhanced Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 2 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-6xl mx-auto"
-        >
-          {stats.map((stat, index) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 2.2 + index * 0.1 }}
-              whileHover={{ scale: 1.05, y: -8 }}
-              className="text-center group cursor-pointer"
-            >
-              <div className="relative p-8 bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl hover:bg-white/10 transition-all duration-300 shadow-xl hover:shadow-2xl">
-                <div className={`text-5xl md:text-7xl font-black bg-gradient-to-r ${stat.color} bg-clip-text text-transparent mb-3 group-hover:scale-110 transition-transform duration-300`}>
-                  {stat.value}
+                  <div className={`absolute inset-0 bg-gradient-to-r ${indicator.gradient} opacity-0 group-hover:opacity-5 rounded-3xl transition-opacity duration-300 pointer-events-none`} />
                 </div>
-                <div className="text-gray-400 font-semibold text-xl">{stat.label}</div>
-                <div className={`absolute inset-0 bg-gradient-to-r ${stat.color} opacity-0 group-hover:opacity-10 rounded-3xl transition-opacity duration-300`} />
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+              );
+            })}
+          </motion.div>
+        </div>
       </div>
 
-      {/* Enhanced scroll indicator */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 1, delay: 2.5 }}
-        className="absolute bottom-12 left-1/2 transform -translate-x-1/2"
+        transition={{ duration: 1, delay: 1.5 }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20"
       >
         <motion.div
           animate={{ y: [0, 12, 0] }}
-          transition={{ duration: 2, repeat: -1 }}
-          className="w-10 h-16 border-2 border-white/40 rounded-full flex justify-center cursor-pointer hover:border-white/60 transition-colors duration-300"
+          transition={{ duration: 2, repeat: Infinity }}
+          className="w-8 h-14 border-2 border-white/40 rounded-full flex justify-center cursor-pointer hover:border-white/60 transition-colors"
         >
           <motion.div
-            animate={{ y: [0, 20, 0] }}
-            transition={{ duration: 2, repeat: -1 }}
-            className="w-2 h-6 bg-gradient-to-b from-purple-400 to-blue-400 rounded-full mt-4"
+            animate={{ y: [0, 16, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="w-1.5 h-4 bg-gradient-to-b from-purple-400 to-blue-400 rounded-full mt-3"
           />
         </motion.div>
       </motion.div>
