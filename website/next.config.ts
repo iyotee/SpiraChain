@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
     return 'build-' + Date.now();
   },
   
+  // Skip static optimization for favicon
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
+  
   // Disable automatic static optimization for problematic routes
   // experimental: {
   //   missingSuspenseWithCSRBailout: false,
@@ -38,6 +42,12 @@ const nextConfig: NextConfig = {
         'typeof window': JSON.stringify('object'),
       })
     );
+    
+    // Ignore favicon routes to prevent build errors
+    config.module.rules.push({
+      test: /favicon\.ico$/,
+      use: 'null-loader',
+    });
     
     return config;
   },
