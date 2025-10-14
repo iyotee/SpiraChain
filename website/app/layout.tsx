@@ -37,6 +37,25 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Protect against browser extensions that break className
+              (function() {
+                const originalQuerySelectorAll = document.querySelectorAll;
+                document.querySelectorAll = function(selector) {
+                  const elements = originalQuerySelectorAll.call(this, selector);
+                  elements.forEach(function(el) {
+                    if (el.className && typeof el.className.includes !== 'function') {
+                      el.className = String(el.className || '');
+                    }
+                  });
+                  return elements;
+                };
+              })();
+            `,
+          }}
+        />
       </head>
       <body className={inter.className}>
         <ThemeProvider>
