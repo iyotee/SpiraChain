@@ -1,14 +1,16 @@
 'use client';
 
-// import { motion } from 'framer-motion';
-import Navbar from '@/components/Navbar';
-import Hero from '@/components/Hero';
-import Features from '@/components/Features';
-import Performance from '@/components/Performance';
-import Tokenomics from '@/components/Tokenomics';
-import Roadmap from '@/components/Roadmap';
-import GetStarted from '@/components/GetStarted';
-import Footer from '@/components/Footer';
+import dynamic from 'next/dynamic';
+
+// Load all components with SSR disabled to avoid window/Framer Motion issues
+const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false });
+const Hero = dynamic(() => import('@/components/Hero'), { ssr: false });
+const Features = dynamic(() => import('@/components/Features'), { ssr: false });
+const Performance = dynamic(() => import('@/components/Performance'), { ssr: false });
+const Tokenomics = dynamic(() => import('@/components/Tokenomics'), { ssr: false });
+const Roadmap = dynamic(() => import('@/components/Roadmap'), { ssr: false });
+const GetStarted = dynamic(() => import('@/components/GetStarted'), { ssr: false });
+const Footer = dynamic(() => import('@/components/Footer'), { ssr: false });
 
 export default function Home() {
   return (
