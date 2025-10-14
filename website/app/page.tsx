@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 
-// Load all components with SSR disabled to avoid window/Framer Motion issues
+// Load ALL components dynamically to avoid Framer Motion SSR issues
 const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false });
 const Hero = dynamic(() => import('@/components/Hero'), { ssr: false });
 const Features = dynamic(() => import('@/components/Features'), { ssr: false });
