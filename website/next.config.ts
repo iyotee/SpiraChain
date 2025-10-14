@@ -17,9 +17,9 @@ const nextConfig: NextConfig = {
   },
   
   // Disable automatic static optimization for problematic routes
-  experimental: {
-    missingSuspenseWithCSRBailout: false,
-  },
+  // experimental: {
+  //   missingSuspenseWithCSRBailout: false,
+  // },
   
   // Fix for className issues - Netlify specific
   webpack: (config, { isServer, webpack }) => {
