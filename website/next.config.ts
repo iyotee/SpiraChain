@@ -16,6 +16,11 @@ const nextConfig: NextConfig = {
     return 'build-' + Date.now();
   },
   
+  // Disable automatic static optimization for problematic routes
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
+  
   // Fix for className issues - Netlify specific
   webpack: (config, { isServer, webpack }) => {
     if (!isServer) {
