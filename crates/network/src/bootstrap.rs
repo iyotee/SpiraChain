@@ -2,14 +2,31 @@ use spirachain_core::Result;
 use std::net::{IpAddr, ToSocketAddrs};
 use tracing::{info, warn};
 
-/// DNS seeds for bootstrap node discovery
-/// These should point to reliable nodes that help new nodes join the network
-pub const DNS_SEEDS: &[&str] = &[
-    "bootstrap.spirachain.org",
+/// DNS seeds for bootstrap node discovery (Testnet)
+/// These DNS records should return A records with IPs of active seed nodes
+/// Each organization/user can run their own seed node for true decentralization
+pub const DNS_SEEDS_TESTNET: &[&str] = &[
+    "seed1-testnet.spirachain.org",
+    "seed2-testnet.spirachain.org",
+    "seed3-testnet.spirachain.org",
+];
+
+/// DNS seeds for bootstrap node discovery (Mainnet)
+pub const DNS_SEEDS_MAINNET: &[&str] = &[
     "seed1.spirachain.org",
     "seed2.spirachain.org",
     "seed3.spirachain.org",
+    "seed4.spirachain.org",
+    "seed5.spirachain.org",
 ];
+
+/// Get DNS seeds based on network
+pub fn get_dns_seeds(network: &str) -> &'static [&'static str] {
+    match network {
+        "mainnet" => DNS_SEEDS_MAINNET,
+        "testnet" | _ => DNS_SEEDS_TESTNET,
+    }
+}
 
 /// Default P2P port
 pub const DEFAULT_P2P_PORT: u16 = 9000;
@@ -25,12 +42,8 @@ pub struct BootstrapConfig {
 
 impl Default for BootstrapConfig {
     fn default() -> Self {
-        Self {
-            dns_seeds: DNS_SEEDS.iter().map(|s| s.to_string()).collect(),
-            static_peers: vec![],
-            enable_mdns: true,
-            enable_dht: true,
-        }
+        // Default to testnet seeds
+        Self::for_network("testnet")
     }
 }
 
@@ -38,6 +51,16 @@ impl BootstrapConfig {
     /// Create a new bootstrap configuration
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Create configuration for specific network
+    pub fn for_network(network: &str) -> Self {
+        Self {
+            dns_seeds: get_dns_seeds(network).iter().map(|s| s.to_string()).collect(),
+            static_peers: vec![],
+            enable_mdns: true,
+            enable_dht: true,
+        }
     }
 
     /// Add a static peer (multiaddr format)

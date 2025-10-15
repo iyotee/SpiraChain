@@ -2,12 +2,62 @@
 export class RPCClient {
   constructor() {
     this.networks = {
-      testnet: 'https://testnet-rpc.spirachain.org',
-      mainnet: 'https://rpc.spirachain.org',
-      local: 'http://localhost:8545'
+      local: 'http://localhost:8545',
+      testnet: [
+        'http://localhost:8545', // Try local first
+        'https://seed1-testnet.spirachain.org:8545',
+        'https://seed2-testnet.spirachain.org:8545'
+      ],
+      mainnet: [
+        'http://localhost:8545', // Try local first
+        'https://seed1.spirachain.org:8545',
+        'https://seed2.spirachain.org:8545'
+      ]
     };
-    this.currentNetwork = 'local'; // Default to local for development
-    this.rpcUrl = this.networks[this.currentNetwork];
+    this.currentNetwork = 'testnet'; // Default to testnet
+    this.rpcUrl = null;
+    this.initialized = false;
+  }
+
+  async initialize() {
+    if (this.initialized) return;
+    
+    // Try to find a working RPC endpoint
+    const endpoints = Array.isArray(this.networks[this.currentNetwork])
+      ? this.networks[this.currentNetwork]
+      : [this.networks[this.currentNetwork]];
+    
+    for (const endpoint of endpoints) {
+      if (await this.testConnection(endpoint)) {
+        this.rpcUrl = endpoint;
+        this.initialized = true;
+        console.log(`✅ Connected to SpiraChain node: ${endpoint}`);
+        return;
+      }
+    }
+    
+    // No connection available
+    console.warn('⚠️ No SpiraChain node available. Please run a local node or wait for public nodes.');
+    throw new Error('No RPC endpoint available. Run: curl -sSL https://install.spirachain.org | bash');
+  }
+
+  async testConnection(url) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'network_getInfo',
+          params: []
+        }),
+        signal: AbortSignal.timeout(2000) // 2 second timeout
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
   }
 
   setNetwork(network) {
@@ -25,6 +75,11 @@ export class RPCClient {
   }
 
   async call(method, params = []) {
+    // Initialize if not done yet
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    
     try {
       const response = await fetch(this.rpcUrl, {
         method: 'POST',
