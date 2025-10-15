@@ -306,9 +306,9 @@ class SpiraChainSeeder:
     
     def save_state(self):
         """Save known nodes to disk"""
-        # Use absolute path in the script's directory
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        state_file = os.path.join(script_dir, f"dns_seeder_{self.network}.json")
+        # Use home directory for guaranteed write permissions
+        home_dir = os.path.expanduser("~/.spirachain")
+        state_file = os.path.join(home_dir, f"dns_seeder_{self.network}.json")
         
         state = {
             'last_updated': datetime.now().isoformat(),
@@ -325,16 +325,18 @@ class SpiraChainSeeder:
             }
         }
         
-        with open(state_file, 'w') as f:
-            json.dump(state, f, indent=2)
-        
-        logger.debug(f"💾 Saved state to {state_file}")
+        try:
+            with open(state_file, 'w') as f:
+                json.dump(state, f, indent=2)
+            logger.debug(f"💾 Saved state to {state_file}")
+        except Exception as e:
+            logger.warning(f"⚠️  Failed to save state: {e}")
     
     def load_state(self):
         """Load known nodes from disk"""
-        # Use absolute path in the script's directory
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        state_file = os.path.join(script_dir, f"dns_seeder_{self.network}.json")
+        # Use home directory for guaranteed read permissions
+        home_dir = os.path.expanduser("~/.spirachain")
+        state_file = os.path.join(home_dir, f"dns_seeder_{self.network}.json")
         
         try:
             with open(state_file, 'r') as f:
