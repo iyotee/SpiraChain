@@ -12,6 +12,7 @@ struct WalletFile {
 
 #[derive(Deserialize)]
 struct BalanceResponse {
+    #[allow(dead_code)]
     address: String,
     balance: String,
 }
