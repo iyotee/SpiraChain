@@ -671,26 +671,34 @@ Even if ALL DNS seeds go offline, existing nodes continue working! True decentra
 Want to help the network by running a DNS seed node?
 
 **Requirements:**
-- Static public IP (or dynamic DNS)
+- Static public IP (or dynamic DNS like DuckDNS)
 - Port 30333 open on your firewall/router
 - 99%+ uptime (24/7 server recommended)
-- Run a validator node
+- Must run a validator node first
 
-**Setup:**
+**Setup (2 simple steps):**
 ```bash
-# 1. Install and run SpiraChain validator
+# Step 1: Install SpiraChain validator
 curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash
 
-# 2. Run the DNS seeder (discovers all network nodes)
+# Step 2: Setup DNS seeder service (runs in background)
 cd ~/.spirachain/SpiraChain/scripts
-python3 dns_seeder.py --network testnet --bootstrap-ips 127.0.0.1
+bash setup_dns_seeder.sh testnet
 
-# 3. Contact us to add your seed to the official list
-# Email: jeremy.noverraz@gmail.com
-# Include: Your DNS name, IP, and location
+# That's it! The seeder now runs 24/7 in background
 ```
 
-Your DNS seed will be added to the codebase, helping new nodes discover the network!
+**What happens:**
+- ✅ Seeder discovers all active nodes on the network
+- ✅ Monitors their health every 5 minutes
+- ✅ Outputs DNS records every hour
+- ✅ Runs automatically on system startup
+
+**To become an official seed:**
+- Email: jeremy.noverraz@gmail.com
+- Include: Your DNS name (e.g., myseed.duckdns.org), IP, location
+
+Your seed will be added to the hardcoded bootstrap list for maximum reliability!
 
 ---
 
