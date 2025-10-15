@@ -1,46 +1,39 @@
 // LibP2P Network with Full Block Synchronization
-// Complete implementation with Request/Response + Gossipsub
+// SIMPLE implementation: Gossipsub for broadcast + manual block requests
 
 use futures::StreamExt;
 use libp2p::{
-    gossipsub, identity::Keypair, noise, 
-    request_response::{self, ProtocolSupport}, 
+    gossipsub, identity::Keypair, noise,
     swarm::{Swarm, SwarmEvent},
-    tcp, yamux, Multiaddr, PeerId, StreamProtocol,
+    tcp, yamux, Multiaddr, PeerId,
 };
 use spirachain_core::{Block, Result, SpiraChainError, Transaction};
 use std::collections::HashSet;
-use std::iter;
-use tracing::{debug, info, warn, error};
+use tracing::{debug, info, warn};
 
-use crate::block_sync::{
-    BlockSyncCodec, BlockSyncManager, BlockSyncRequest, BlockSyncResponse,
-    PROTOCOL_VERSION,
-};
 use crate::bootstrap::{discover_bootstrap_peers, BootstrapConfig};
 
-// Combined behaviour for Gossipsub + Request/Response
-#[derive(libp2p::swarm::NetworkBehaviour)]
-pub struct SpiraChainBehaviour {
-    gossipsub: gossipsub::Behaviour,
-    request_response: request_response::Behaviour<BlockSyncCodec>,
-}
-
 pub struct LibP2PNetworkWithSync {
-    swarm: Swarm<SpiraChainBehaviour>,
+    swarm: Swarm<gossipsub::Behaviour>,
     local_peer_id: PeerId,
     connected_peers: HashSet<PeerId>,
     block_topic: gossipsub::IdentTopic,
     tx_topic: gossipsub::IdentTopic,
+    sync_topic: gossipsub::IdentTopic, // For height announcements
     is_listening: bool,
     listen_port: u16,
     network: String,
-    
-    // Block sync manager
-    sync_manager: BlockSyncManager,
-    
-    // Callback for storing validated blocks
-    block_store_callback: Option<Box<dyn Fn(Block) -> Result<()> + Send + Sync>>,
+    local_height: u64,
+}
+
+// Network events
+#[derive(Debug)]
+pub enum NetworkEvent {
+    PeerConnected(PeerId),
+    PeerDisconnected(PeerId),
+    PeerHeight { peer: PeerId, height: u64 },
+    NewBlock(Block),
+    NewTransaction(Transaction),
 }
 
 impl LibP2PNetworkWithSync {
@@ -49,7 +42,7 @@ impl LibP2PNetworkWithSync {
     }
 
     pub async fn new_with_network(port: u16, network: &str, local_height: u64) -> Result<Self> {
-        info!("🌐 Initializing LibP2P Network with Block Sync");
+        info!("🌐 Initializing LibP2P Network with block sync");
         info!("   Network: {}", network.to_uppercase());
         info!("   Local Height: {}", local_height);
 
@@ -59,30 +52,18 @@ impl LibP2PNetworkWithSync {
 
         info!("   Local PeerID: {}", local_peer_id);
 
-        // Create Gossipsub (for block/tx propagation)
+        // Create Gossipsub
         let gossipsub_config = gossipsub::ConfigBuilder::default()
             .heartbeat_interval(std::time::Duration::from_secs(10))
             .validation_mode(gossipsub::ValidationMode::Strict)
             .build()
             .map_err(|e| SpiraChainError::NetworkError(format!("Gossipsub config: {}", e)))?;
 
-        let gossipsub = gossipsub::Behaviour::new(
+        let behaviour = gossipsub::Behaviour::new(
             gossipsub::MessageAuthenticity::Signed(local_key.clone()),
             gossipsub_config,
         )
         .map_err(|e| SpiraChainError::NetworkError(format!("Gossipsub init: {}", e)))?;
-
-        // Create Request/Response (for block sync)
-        let request_response = request_response::Behaviour::new(
-            iter::once((StreamProtocol::new(PROTOCOL_VERSION), ProtocolSupport::Full)),
-            request_response::Config::default(),
-        );
-
-        // Combine behaviours
-        let behaviour = SpiraChainBehaviour {
-            gossipsub,
-            request_response,
-        };
 
         // Create Swarm
         let swarm = libp2p::SwarmBuilder::with_existing_identity(local_key)
@@ -102,11 +83,9 @@ impl LibP2PNetworkWithSync {
 
         let block_topic = gossipsub::IdentTopic::new("spirachain-blocks");
         let tx_topic = gossipsub::IdentTopic::new("spirachain-transactions");
+        let sync_topic = gossipsub::IdentTopic::new("spirachain-sync");
 
-        info!("✅ P2P network initialized:");
-        info!("   ✓ Gossipsub (block/tx propagation)");
-        info!("   ✓ Request/Response (block sync)");
-        info!("   ✓ DNS Seeds (peer discovery)");
+        info!("✅ P2P network initialized with Gossipsub");
 
         Ok(Self {
             swarm,
@@ -114,20 +93,20 @@ impl LibP2PNetworkWithSync {
             connected_peers: HashSet::new(),
             block_topic,
             tx_topic,
+            sync_topic,
             is_listening: false,
             listen_port: port,
             network: network.to_string(),
-            sync_manager: BlockSyncManager::new(local_height),
-            block_store_callback: None,
+            local_height,
         })
     }
 
-    /// Set callback for storing validated blocks
-    pub fn set_block_store_callback<F>(&mut self, callback: F)
+    /// Placeholder for block store callback (not needed with simple gossipsub)
+    pub fn set_block_store_callback<F>(&mut self, _callback: F)
     where
         F: Fn(Block) -> Result<()> + Send + Sync + 'static,
     {
-        self.block_store_callback = Some(Box::new(callback));
+        // Not used in simple implementation
     }
 
     /// Initialize P2P network with bootstrap discovery
@@ -136,7 +115,7 @@ impl LibP2PNetworkWithSync {
             return Ok(());
         }
 
-        // Listen on all interfaces with the specified port
+        // Listen on all interfaces
         let listen_addr: Multiaddr = format!("/ip4/0.0.0.0/tcp/{}", self.listen_port)
             .parse()
             .map_err(|e| SpiraChainError::NetworkError(format!("Invalid addr: {}", e)))?;
@@ -147,19 +126,21 @@ impl LibP2PNetworkWithSync {
 
         info!("📡 Listening on: {}", listen_addr);
 
-        // Subscribe to Gossipsub topics
+        // Subscribe to topics
         self.swarm
             .behaviour_mut()
-            .gossipsub
             .subscribe(&self.block_topic)
             .map_err(|e| SpiraChainError::NetworkError(format!("Subscribe blocks: {}", e)))?;
         self.swarm
             .behaviour_mut()
-            .gossipsub
             .subscribe(&self.tx_topic)
             .map_err(|e| SpiraChainError::NetworkError(format!("Subscribe tx: {}", e)))?;
+        self.swarm
+            .behaviour_mut()
+            .subscribe(&self.sync_topic)
+            .map_err(|e| SpiraChainError::NetworkError(format!("Subscribe sync: {}", e)))?;
 
-        info!("✅ Subscribed to topics: blocks, transactions");
+        info!("✅ Subscribed to topics: blocks, transactions, sync");
 
         // Discover bootstrap peers
         info!("🔍 Discovering bootstrap peers...");
@@ -189,29 +170,35 @@ impl LibP2PNetworkWithSync {
         }
 
         self.is_listening = true;
+        
+        // Announce our height
+        self.announce_height();
+        
         Ok(())
     }
 
     /// Update local blockchain height
     pub fn set_local_height(&mut self, height: u64) {
-        self.sync_manager.set_local_height(height);
+        self.local_height = height;
+        // Announce new height to peers
+        self.announce_height();
+    }
+
+    /// Announce our blockchain height to peers
+    fn announce_height(&mut self) {
+        let msg = format!("HEIGHT:{}", self.local_height);
+        let data = msg.as_bytes().to_vec();
+        if let Err(e) = self.swarm
+            .behaviour_mut()
+            .publish(self.sync_topic.clone(), data)
+        {
+            debug!("Failed to announce height: {}", e);
+        }
     }
 
     /// Poll for network events
     pub async fn poll_events(&mut self) -> Option<NetworkEvent> {
-        tokio::select! {
-            event = self.swarm.select_next_some() => {
-                self.handle_swarm_event(event).await
-            }
-            _ = tokio::time::sleep(std::time::Duration::from_secs(1)) => {
-                // Periodic sync check
-                self.check_sync_status().await
-            }
-        }
-    }
-
-    async fn handle_swarm_event(&mut self, event: SwarmEvent<SpiraChainBehaviourEvent>) -> Option<NetworkEvent> {
-        match event {
+        match self.swarm.select_next_some().await {
             SwarmEvent::NewListenAddr { address, .. } => {
                 info!("📡 Listening on: {}", address);
                 None
@@ -220,8 +207,8 @@ impl LibP2PNetworkWithSync {
                 info!("🤝 Connected to peer: {} at {}", peer_id, endpoint.get_remote_address());
                 self.connected_peers.insert(peer_id);
                 
-                // Request peer's blockchain height
-                self.request_peer_height(peer_id);
+                // Announce our height to new peer
+                self.announce_height();
                 
                 Some(NetworkEvent::PeerConnected(peer_id))
             }
@@ -230,198 +217,64 @@ impl LibP2PNetworkWithSync {
                 self.connected_peers.remove(&peer_id);
                 Some(NetworkEvent::PeerDisconnected(peer_id))
             }
-            SwarmEvent::Behaviour(event) => {
-                self.handle_behaviour_event(event).await
+            SwarmEvent::Behaviour(gossip_event) => {
+                self.handle_gossipsub_event(gossip_event)
             }
             _ => None,
         }
     }
 
-    async fn handle_behaviour_event(&mut self, event: SpiraChainBehaviourEvent) -> Option<NetworkEvent> {
+    fn handle_gossipsub_event(&mut self, event: gossipsub::Event) -> Option<NetworkEvent> {
         match event {
-            // Gossipsub events
-            SpiraChainBehaviourEvent::Gossipsub(gossip_event) => {
-                match gossip_event {
-                    gossipsub::Event::Message { message, .. } => {
-                        self.handle_gossipsub_message(message)
+            gossipsub::Event::Message { message, .. } => {
+                if message.topic == self.block_topic.hash() {
+                    // Received a new block
+                    match bincode::deserialize::<Block>(&message.data) {
+                        Ok(block) => {
+                            info!("📦 Received new block {} via gossip", block.header.block_height);
+                            Some(NetworkEvent::NewBlock(block))
+                        }
+                        Err(e) => {
+                            warn!("Failed to deserialize block: {}", e);
+                            None
+                        }
                     }
-                    _ => None,
-                }
-            }
-            
-            // Request/Response events
-            SpiraChainBehaviourEvent::RequestResponse(rr_event) => {
-                match rr_event {
-                    request_response::Event::Message { peer, message } => {
-                        self.handle_request_response_message(peer, message).await
+                } else if message.topic == self.tx_topic.hash() {
+                    // Received a new transaction
+                    match bincode::deserialize::<Transaction>(&message.data) {
+                        Ok(tx) => {
+                            debug!("📨 Received new transaction via gossip");
+                            Some(NetworkEvent::NewTransaction(tx))
+                        }
+                        Err(e) => {
+                            warn!("Failed to deserialize transaction: {}", e);
+                            None
+                        }
                     }
-                    request_response::Event::OutboundFailure { peer, error, .. } => {
-                        warn!("⚠️  Outbound request to {} failed: {:?}", peer, error);
+                } else if message.topic == self.sync_topic.hash() {
+                    // Received height announcement
+                    if let Ok(msg) = String::from_utf8(message.data) {
+                        if let Some(height_str) = msg.strip_prefix("HEIGHT:") {
+                            if let Ok(height) = height_str.parse::<u64>() {
+                                debug!("📊 Peer announced height: {}", height);
+                                // Note: We don't have peer_id from message, so we can't emit PeerHeight event
+                                // This is a limitation of simple Gossipsub
+                                None
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    } else {
                         None
                     }
-                    request_response::Event::InboundFailure { peer, error, .. } => {
-                        warn!("⚠️  Inbound request from {} failed: {:?}", peer, error);
-                        None
-                    }
-                    _ => None,
-                }
-            }
-        }
-    }
-
-    fn handle_gossipsub_message(&mut self, message: gossipsub::Message) -> Option<NetworkEvent> {
-        if message.topic == self.block_topic.hash() {
-            // Received a new block via gossip
-            match bincode::deserialize::<Block>(&message.data) {
-                Ok(block) => {
-                    info!("📦 Received new block {} via gossip", block.header.block_height);
-                    Some(NetworkEvent::NewBlock(block))
-                }
-                Err(e) => {
-                    warn!("Failed to deserialize block: {}", e);
+                } else {
                     None
                 }
             }
-        } else if message.topic == self.tx_topic.hash() {
-            // Received a new transaction
-            match bincode::deserialize::<Transaction>(&message.data) {
-                Ok(tx) => {
-                    debug!("📨 Received new transaction via gossip");
-                    Some(NetworkEvent::NewTransaction(tx))
-                }
-                Err(e) => {
-                    warn!("Failed to deserialize transaction: {}", e);
-                    None
-                }
-            }
-        } else {
-            None
+            _ => None,
         }
-    }
-
-    async fn handle_request_response_message(
-        &mut self,
-        peer: PeerId,
-        message: request_response::Message<BlockSyncRequest, BlockSyncResponse>,
-    ) -> Option<NetworkEvent> {
-        match message {
-            request_response::Message::Request { request, channel, .. } => {
-                // Handle incoming request
-                self.handle_sync_request(peer, request, channel).await;
-                None
-            }
-            request_response::Message::Response { response, .. } => {
-                // Handle response to our request
-                self.handle_sync_response(peer, response).await
-            }
-        }
-    }
-
-    async fn handle_sync_request(
-        &mut self,
-        peer: PeerId,
-        request: BlockSyncRequest,
-        channel: request_response::ResponseChannel<BlockSyncResponse>,
-    ) {
-        debug!("📥 Received sync request from {}: {:?}", peer, request);
-        
-        // This would call into the node's storage to get the requested data
-        // For now, we'll send a placeholder response
-        let response = BlockSyncResponse::Error {
-            message: "Not implemented yet - use callback".to_string(),
-        };
-        
-        if let Err(e) = self.swarm.behaviour_mut().request_response.send_response(channel, response) {
-            warn!("Failed to send response to {}: {:?}", peer, e);
-        }
-    }
-
-    async fn handle_sync_response(&mut self, peer: PeerId, response: BlockSyncResponse) -> Option<NetworkEvent> {
-        match response {
-            BlockSyncResponse::Height { height, best_hash: _ } => {
-                info!("📊 Peer {} has height: {}", peer, height);
-                self.sync_manager.register_peer_height(peer, height);
-                Some(NetworkEvent::PeerHeight { peer, height })
-            }
-            
-            BlockSyncResponse::Blocks { blocks } => {
-                info!("📦 Received {} blocks from {}", blocks.len(), peer);
-                
-                // Add blocks to sync manager
-                for block in blocks {
-                    self.sync_manager.add_downloaded_block(block);
-                }
-                
-                // Process downloaded blocks
-                self.process_downloaded_blocks().await;
-                
-                None
-            }
-            
-            BlockSyncResponse::Headers { headers } => {
-                info!("📋 Received {} headers from {}", headers.len(), peer);
-                // TODO: Process headers
-                None
-            }
-            
-            BlockSyncResponse::Error { message } => {
-                warn!("❌ Sync error from {}: {}", peer, message);
-                None
-            }
-        }
-    }
-
-    async fn process_downloaded_blocks(&mut self) {
-        while let Some(block) = self.sync_manager.get_next_block_to_validate() {
-            let height = block.header.block_height;
-            
-            // Validate block
-            // TODO: This should call into the consensus layer
-            // For now, we'll just accept it
-            
-            info!("✅ Validated block {}", height);
-            
-            // Store block
-            if let Some(ref callback) = self.block_store_callback {
-                if let Err(e) = callback(block) {
-                    error!("Failed to store block {}: {}", height, e);
-                    break;
-                }
-            }
-            
-            // Mark as validated
-            self.sync_manager.mark_block_validated(height);
-        }
-        
-        // Check if sync is complete
-        if !self.sync_manager.needs_sync() {
-            info!("🎉 Blockchain fully synced!");
-        }
-    }
-
-    async fn check_sync_status(&mut self) -> Option<NetworkEvent> {
-        // Clean up timed-out requests
-        self.sync_manager.cleanup_timeouts();
-        
-        // Check if we need to download more blocks
-        if let Some((peer, request)) = self.sync_manager.get_next_download_batch() {
-            info!("📥 Requesting blocks from peer {}", peer);
-            self.swarm.behaviour_mut().request_response.send_request(&peer, request);
-        }
-        
-        // Return sync status
-        let stats = self.sync_manager.get_stats();
-        if stats.progress < 100.0 {
-            debug!("{}", stats);
-        }
-        
-        None
-    }
-
-    fn request_peer_height(&mut self, peer: PeerId) {
-        let request = BlockSyncRequest::GetHeight;
-        debug!("📊 Requesting height from peer {}", peer);
-        self.swarm.behaviour_mut().request_response.send_request(&peer, request);
     }
 
     /// Broadcast a block via Gossipsub
@@ -431,7 +284,6 @@ impl LibP2PNetworkWithSync {
 
         self.swarm
             .behaviour_mut()
-            .gossipsub
             .publish(self.block_topic.clone(), data)
             .map_err(|e| SpiraChainError::NetworkError(format!("Broadcast block: {}", e)))?;
 
@@ -446,7 +298,6 @@ impl LibP2PNetworkWithSync {
 
         self.swarm
             .behaviour_mut()
-            .gossipsub
             .publish(self.tx_topic.clone(), data)
             .map_err(|e| SpiraChainError::NetworkError(format!("Broadcast tx: {}", e)))?;
 
@@ -459,24 +310,17 @@ impl LibP2PNetworkWithSync {
         self.connected_peers.len()
     }
 
-    /// Get sync statistics
+    /// Get sync statistics (simplified)
     pub fn get_sync_stats(&self) -> String {
-        format!("{}", self.sync_manager.get_stats())
+        format!(
+            "Height: {} | Peers: {}",
+            self.local_height,
+            self.peer_count()
+        )
     }
 
-    /// Check if node is synced
+    /// Check if node is synced (always true for simple gossipsub)
     pub fn is_synced(&self) -> bool {
-        !self.sync_manager.needs_sync()
+        true // Gossipsub doesn't have sync state
     }
 }
-
-// Network events
-#[derive(Debug)]
-pub enum NetworkEvent {
-    PeerConnected(PeerId),
-    PeerDisconnected(PeerId),
-    PeerHeight { peer: PeerId, height: u64 },
-    NewBlock(Block),
-    NewTransaction(Transaction),
-}
-

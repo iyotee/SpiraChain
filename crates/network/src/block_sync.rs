@@ -75,14 +75,14 @@ pub struct BlockHeader {
 pub struct BlockSyncCodec;
 
 impl request_response::Codec for BlockSyncCodec {
-    type Protocol = String;
+    type Protocol = libp2p::StreamProtocol;
     type Request = BlockSyncRequest;
     type Response = BlockSyncResponse;
 
-    async fn read_request<'a, T>(
+    async fn read_request<T>(
         &mut self,
         _protocol: &Self::Protocol,
-        io: &'a mut T,
+        io: &mut T,
     ) -> std::io::Result<Self::Request>
     where
         T: futures::AsyncRead + Unpin + Send,
@@ -94,10 +94,10 @@ impl request_response::Codec for BlockSyncCodec {
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
     }
 
-    async fn read_response<'a, T>(
+    async fn read_response<T>(
         &mut self,
         _protocol: &Self::Protocol,
-        io: &'a mut T,
+        io: &mut T,
     ) -> std::io::Result<Self::Response>
     where
         T: futures::AsyncRead + Unpin + Send,
@@ -109,10 +109,10 @@ impl request_response::Codec for BlockSyncCodec {
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
     }
 
-    async fn write_request<'a, T>(
+    async fn write_request<T>(
         &mut self,
         _protocol: &Self::Protocol,
-        io: &'a mut T,
+        io: &mut T,
         req: Self::Request,
     ) -> std::io::Result<()>
     where
@@ -125,10 +125,10 @@ impl request_response::Codec for BlockSyncCodec {
         io.close().await
     }
 
-    async fn write_response<'a, T>(
+    async fn write_response<T>(
         &mut self,
         _protocol: &Self::Protocol,
-        io: &'a mut T,
+        io: &mut T,
         res: Self::Response,
     ) -> std::io::Result<()>
     where
