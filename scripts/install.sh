@@ -40,44 +40,64 @@ fi
 echo -e "${CYAN}📋 Detected OS: $OS${NC}"
 echo ""
 
-# Ask user what to install
-echo -e "${YELLOW}What do you want to install?${NC}"
-echo "1) Light Node (Recommended - Low resources, wallet usage)"
-echo "2) Full Node (Stores complete blockchain)"
-echo "3) Validator Node (Stake 10K QBT, earn rewards)"
-echo "4) Development Environment (For developers)"
-echo ""
-read -p "Choice [1-4]: " INSTALL_TYPE
+# Check if running interactively
+if [ -t 0 ]; then
+    # Interactive mode - ask user
+    echo -e "${YELLOW}What do you want to install?${NC}"
+    echo "1) Light Node (Recommended - Low resources, wallet usage)"
+    echo "2) Full Node (Stores complete blockchain)"
+    echo "3) Validator Node (Stake 10K QBT, earn rewards)"
+    echo "4) Development Environment (For developers)"
+    echo ""
+    read -p "Choice [1-4]: " INSTALL_TYPE
 
-case $INSTALL_TYPE in
-    1) NODE_TYPE="light" ;;
-    2) NODE_TYPE="full" ;;
-    3) NODE_TYPE="validator" ;;
-    4) NODE_TYPE="dev" ;;
-    *) 
-        echo -e "${RED}Invalid choice${NC}"
+    case $INSTALL_TYPE in
+        1) NODE_TYPE="light" ;;
+        2) NODE_TYPE="full" ;;
+        3) NODE_TYPE="validator" ;;
+        4) NODE_TYPE="dev" ;;
+        *) 
+            echo -e "${RED}Invalid choice${NC}"
+            exit 1
+            ;;
+    esac
+
+    # Ask network
+    echo ""
+    echo -e "${YELLOW}Which network?${NC}"
+    echo "1) Testnet (Free tokens, testing)"
+    echo "2) Mainnet (Real QBT, production)"
+    echo "3) Local (Development)"
+    echo ""
+    read -p "Network [1-3]: " NETWORK_CHOICE
+
+    case $NETWORK_CHOICE in
+        1) NETWORK="testnet" ;;
+        2) NETWORK="mainnet" ;;
+        3) NETWORK="local" ;;
+        *) 
+            echo -e "${RED}Invalid choice${NC}"
+            exit 1
+            ;;
+    esac
+else
+    # Non-interactive mode (piped from curl) - use defaults
+    echo -e "${YELLOW}⚠️  Non-interactive mode detected${NC}"
+    echo "Using defaults: Validator Node on Testnet"
+    echo ""
+    echo "To customize, download and run locally:"
+    echo "  wget https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh"
+    echo "  bash install.sh"
+    echo ""
+    read -p "Continue with defaults? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 1
-        ;;
-esac
-
-# Ask network
-echo ""
-echo -e "${YELLOW}Which network?${NC}"
-echo "1) Testnet (Free tokens, testing)"
-echo "2) Mainnet (Real QBT, production)"
-echo "3) Local (Development)"
-echo ""
-read -p "Network [1-3]: " NETWORK_CHOICE
-
-case $NETWORK_CHOICE in
-    1) NETWORK="testnet" ;;
-    2) NETWORK="mainnet" ;;
-    3) NETWORK="local" ;;
-    *) 
-        echo -e "${RED}Invalid choice${NC}"
-        exit 1
-        ;;
-esac
+    fi
+    
+    NODE_TYPE="validator"
+    NETWORK="testnet"
+fi
 
 echo ""
 echo -e "${GREEN}Installing: $NODE_TYPE node on $NETWORK${NC}"
