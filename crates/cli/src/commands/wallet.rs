@@ -52,33 +52,32 @@ pub async fn handle_wallet_address(wallet_path: String) -> Result<()> {
 
 pub async fn handle_wallet_balance(address: String) -> Result<()> {
     println!("Querying balance for: {}", address);
-    
+
     // Try to connect to local RPC server
     let rpc_url = "http://localhost:8545";
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(5))
         .build()?;
-    
+
     // Clean address (remove 0x prefix if present)
     let clean_address = address.trim_start_matches("0x");
-    
+
     // Call the balance endpoint
     let url = format!("{}/balance/{}", rpc_url, clean_address);
-    
+
     match client.get(&url).send().await {
         Ok(response) => {
             if response.status().is_success() {
                 match response.json::<BalanceResponse>().await {
                     Ok(balance_data) => {
                         // Parse balance string to u128
-                        let balance_wei: u128 = balance_data.balance.parse()
-                            .unwrap_or(0);
-                        
+                        let balance_wei: u128 = balance_data.balance.parse().unwrap_or(0);
+
                         // Convert to QBT (divide by 1e18)
                         let balance_qbt = balance_wei as f64 / 1e18;
-                        
+
                         println!("Balance: {:.18} QBT", balance_qbt);
-                        
+
                         if balance_qbt > 0.0 {
                             println!("\n💰 You have {} QBT!", balance_qbt);
                         } else {

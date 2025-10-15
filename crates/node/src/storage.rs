@@ -189,11 +189,11 @@ impl NodeStorage {
         let key = format!("balance:{}", address);
         let data = bincode::serialize(&balance)
             .map_err(|e| SpiraChainError::SerializationError(e.to_string()))?;
-        
+
         self.state
             .insert(key.as_bytes(), data)
             .map_err(|e| SpiraChainError::StorageError(e.to_string()))?;
-        
+
         Ok(())
     }
 
