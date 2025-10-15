@@ -603,18 +603,24 @@ free -h
 
 ## 🌐 Network Information
 
-### Mainnet (Not Yet Launched)
+### Mainnet (Not Yet Launched - Q3 2025)
 - **Chain ID:** 314159
 - **Block Time:** 60 seconds
-- **RPC:** Coming soon
+- **Your Node:** Run locally with `curl -sSL ... | bash -s -- mainnet`
+- **RPC:** Your local node at `http://localhost:8545`
+- **DNS Seeds:** `seed1.spirachain.org`, `seed2.spirachain.org`, `seed3.spirachain.org`
 - **Explorer:** Coming soon
 
-### Testnet (Coming Soon)
+### Testnet (Live Now!)
 - **Chain ID:** 271828
 - **Block Time:** 30 seconds
-- **RPC:** `https://testnet-rpc.spirachain.org`
-- **Explorer:** `https://testnet-explorer.spirachain.org`
-- **Faucet:** `https://faucet.spirachain.org`
+- **Your Node:** Run locally with `curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash`
+- **RPC:** Your local node at `http://localhost:8545`
+- **DNS Seeds:** `seed1-testnet.spirachain.org`, `seed2-testnet.spirachain.org`, `seed3-testnet.spirachain.org`
+- **Explorer:** Coming soon
+- **Faucet:** Coming soon
+
+**Important:** SpiraChain is fully decentralized. You run YOUR OWN node, not connect to a central server. See [Decentralized Architecture](docs/DECENTRALIZED_ARCHITECTURE.md) for details.
 
 ---
 
