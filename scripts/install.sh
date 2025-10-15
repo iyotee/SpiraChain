@@ -1,18 +1,45 @@
 #!/bin/bash
 # SpiraChain Universal Installer
 # 
-# INTERACTIVE INSTALL (recommended):
-#   wget https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh
-#   bash install.sh
+# TESTNET VALIDATOR (default - one line):
+#   curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash
 #
-# QUICK INSTALL with defaults:
-#   curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash -s -- validator testnet
+# MAINNET VALIDATOR (production):
+#   curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash -s -- mainnet
+#
+# CUSTOM (interactive menu):
+#   wget https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh && bash install.sh
 
 set -e
 
 # Parse command line arguments
-NODE_TYPE="${1:-}"
-NETWORK="${2:-}"
+# First arg can be: mainnet, light, full, validator, dev
+# If only one arg and it's a network, assume validator
+FIRST_ARG="${1:-}"
+SECOND_ARG="${2:-}"
+
+# Determine node type and network
+if [ -z "$FIRST_ARG" ]; then
+    # No arguments - defaults for curl | bash
+    NODE_TYPE="validator"
+    NETWORK="testnet"
+elif [ "$FIRST_ARG" == "mainnet" ] && [ -z "$SECOND_ARG" ]; then
+    # Special case: mainnet alone = validator mainnet
+    NODE_TYPE="validator"
+    NETWORK="mainnet"
+elif [ "$FIRST_ARG" == "testnet" ] && [ -z "$SECOND_ARG" ]; then
+    # Special case: testnet alone = validator testnet
+    NODE_TYPE="validator"
+    NETWORK="testnet"
+elif [ -n "$SECOND_ARG" ]; then
+    # Two arguments: type + network
+    NODE_TYPE="$FIRST_ARG"
+    NETWORK="$SECOND_ARG"
+else
+    # One argument that's not a network - treat as node type, default to testnet
+    NODE_TYPE="$FIRST_ARG"
+    NETWORK="testnet"
+fi
 
 # Colors
 RED='\033[0;31m'
@@ -49,98 +76,27 @@ fi
 echo -e "${CYAN}📋 Detected OS: $OS${NC}"
 echo ""
 
-# If arguments provided, validate them
-if [ -n "$NODE_TYPE" ]; then
-    case $NODE_TYPE in
-        light|full|validator|dev)
-            ;;
-        *)
-            echo -e "${RED}Invalid node type: $NODE_TYPE${NC}"
-            echo "Valid types: light, full, validator, dev"
-            exit 1
-            ;;
-    esac
-    
-    if [ -z "$NETWORK" ]; then
-        NETWORK="testnet"
-    fi
-    
-    case $NETWORK in
-        testnet|mainnet|local)
-            ;;
-        *)
-            echo -e "${RED}Invalid network: $NETWORK${NC}"
-            echo "Valid networks: testnet, mainnet, local"
-            exit 1
-            ;;
-    esac
-else
-    # No arguments - check if we can read input
-    if [ ! -t 0 ]; then
-        # Running via curl | bash without arguments - can't be interactive
-        echo -e "${RED}╔══════════════════════════════════════════════════════╗${NC}"
-        echo -e "${RED}║  ⚠️  ERROR: Interactive mode not available          ║${NC}"
-        echo -e "${RED}╚══════════════════════════════════════════════════════╝${NC}"
-        echo ""
-        echo -e "${YELLOW}You're running this via 'curl | bash' which doesn't support interactive menus.${NC}"
-        echo ""
-        echo -e "${GREEN}To install with choices, download first:${NC}"
-        echo ""
-        echo "  wget https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh"
-        echo "  bash install.sh"
-        echo ""
-        echo -e "${GREEN}Or specify arguments directly:${NC}"
-        echo ""
-        echo "  curl -sSL ... | bash -s -- <type> <network>"
-        echo ""
-        echo "Examples:"
-        echo "  curl -sSL ... | bash -s -- validator testnet"
-        echo "  curl -sSL ... | bash -s -- light testnet"
-        echo "  curl -sSL ... | bash -s -- full mainnet"
-        echo ""
+# Validate node type
+case $NODE_TYPE in
+    light|full|validator|dev)
+        ;;
+    *)
+        echo -e "${RED}Invalid node type: $NODE_TYPE${NC}"
+        echo "Valid types: light, full, validator, dev"
         exit 1
-    fi
-    
-    # Interactive mode - ask user
-    echo -e "${YELLOW}What do you want to install?${NC}"
-    echo "1) Light Node (Recommended - Low resources, wallet usage)"
-    echo "2) Full Node (Stores complete blockchain)"
-    echo "3) Validator Node (Stake 10K QBT, earn rewards)"
-    echo "4) Development Environment (For developers)"
-    echo ""
-    echo -n "Choice [1-4]: "
-    read INSTALL_TYPE
-    
-    case $INSTALL_TYPE in
-        1) NODE_TYPE="light" ;;
-        2) NODE_TYPE="full" ;;
-        3) NODE_TYPE="validator" ;;
-        4) NODE_TYPE="dev" ;;
-        *) 
-            echo -e "${RED}Invalid choice${NC}"
-            exit 1
-            ;;
-    esac
-    
-    echo ""
-    echo -e "${YELLOW}Which network?${NC}"
-    echo "1) Testnet (Free tokens, testing)"
-    echo "2) Mainnet (Real QBT, production)"
-    echo "3) Local (Development)"
-    echo ""
-    echo -n "Network [1-3]: "
-    read NETWORK_CHOICE
-    
-    case $NETWORK_CHOICE in
-        1) NETWORK="testnet" ;;
-        2) NETWORK="mainnet" ;;
-        3) NETWORK="local" ;;
-        *) 
-            echo -e "${RED}Invalid choice${NC}"
-            exit 1
-            ;;
-    esac
-fi
+        ;;
+esac
+
+# Validate network
+case $NETWORK in
+    testnet|mainnet|local)
+        ;;
+    *)
+        echo -e "${RED}Invalid network: $NETWORK${NC}"
+        echo "Valid networks: testnet, mainnet, local"
+        exit 1
+        ;;
+esac
 
 echo ""
 echo -e "${GREEN}Installing: $NODE_TYPE node on $NETWORK${NC}"

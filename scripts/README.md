@@ -8,35 +8,37 @@
 
 ### `install.sh` - Universal Installer ⭐
 
-**The ONE script to install everything.**
+**ONE script with smart defaults!**
 
+**Default (Testnet Validator):**
 ```bash
 curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash
 ```
+No arguments = Validator on Testnet (perfect for Raspberry Pi!)
 
-**What it does:**
-- Installs dependencies (Rust, Git, Python)
-- Builds SpiraChain from source
-- Creates wallet
-- Sets up background service (systemd/launchd)
-- Creates management scripts
+**Mainnet Validator:**
+```bash
+curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash -s -- mainnet
+```
+Production validator (requires 10,000 QBT stake)
 
-**Supports:**
-- Light Node (for wallet users)
-- Full Node (for enthusiasts)
-- Validator Node (for stakers)
-- Development Environment (for developers)
+**Custom Node Types:**
+```bash
+# Light node on testnet
+curl -sSL ... | bash -s -- light testnet
 
-**Networks:**
-- Testnet
-- Mainnet
-- Local
+# Full node on mainnet
+curl -sSL ... | bash -s -- full mainnet
 
-**This replaces:**
-- ~~install_validator.sh~~ (deleted)
-- ~~install_validator.ps1~~ (deleted)
-- ~~install_local_node.sh~~ (deleted)
-- ~~install_pi_bootstrap.sh~~ (deleted)
+# Dev environment locally
+curl -sSL ... | bash -s -- dev local
+```
+
+**All combinations:**
+- Types: `light`, `full`, `validator`, `dev`
+- Networks: `testnet`, `mainnet`, `local`
+- Format: `bash -s -- <type> <network>`
+- Default: `validator testnet` (no args)
 
 ---
 
@@ -168,8 +170,9 @@ These scripts were removed to simplify:
 
 | Task | Command |
 |------|---------|
-| **Install light node** | `curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh \| bash` |
-| **Install validator** | Same script, choose "Validator" option |
+| **Testnet Validator** | `curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh \| bash` |
+| **Mainnet Validator** | `curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh \| bash -s -- mainnet` |
+| **Light Node** | `curl -sSL ... \| bash -s -- light testnet` |
 | **Install AI features** | `python3 scripts/install_ai.py` |
 | **Test locally** | `bash scripts/deploy_testnet.sh deploy` |
 | **Benchmark** | `python3 scripts/benchmark.py` |
