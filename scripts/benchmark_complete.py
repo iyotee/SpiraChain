@@ -19,8 +19,16 @@ try:
 except ImportError:
     print("📦 Installing required dependency: psutil")
     if sys.platform.startswith('linux'):
-        # Use apt on Linux (Raspberry Pi)
-        subprocess.check_call(["sudo", "apt", "install", "-y", "python3-psutil"])
+        # Try different package names for psutil on Linux
+        try:
+            subprocess.check_call(["sudo", "apt", "install", "-y", "python3-psutil"])
+        except subprocess.CalledProcessError:
+            try:
+                subprocess.check_call(["sudo", "apt", "install", "-y", "python-psutil"])
+            except subprocess.CalledProcessError:
+                # Fallback to pip with --break-system-packages
+                print("   Using pip with --break-system-packages for Raspberry Pi")
+                subprocess.check_call([sys.executable, "-m", "pip", "install", "psutil", "--break-system-packages"])
     else:
         # Use pip on other platforms
         subprocess.check_call([sys.executable, "-m", "pip", "install", "psutil"])
