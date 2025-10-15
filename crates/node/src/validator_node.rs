@@ -127,7 +127,7 @@ impl ValidatorNode {
         }
 
         // Start RPC server
-        let rpc_port = 9933;
+        let rpc_port = 8545;
         info!("🌐 Starting RPC server on port {}...", rpc_port);
 
         let mempool_clone = Arc::clone(&self.mempool);
