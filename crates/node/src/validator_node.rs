@@ -126,6 +126,20 @@ impl ValidatorNode {
             }
         }
 
+        // Credit initial staking balance for testnet (no staking required)
+        let initial_stake = Amount::new(1000 * 1e18 as u64); // 1000 QBT
+        if let Err(e) = self
+            .storage
+            .set_balance(&self.validator.address, initial_stake)
+        {
+            warn!("Failed to set initial stake: {}", e);
+        } else {
+            info!(
+                "💰 Initial staking balance credited: {} QBT",
+                initial_stake.value() as f64 / 1e18
+            );
+        }
+
         // Start RPC server
         let rpc_port = 8545;
         info!("🌐 Starting RPC server on port {}...", rpc_port);
