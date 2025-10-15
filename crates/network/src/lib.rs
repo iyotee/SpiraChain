@@ -1,4 +1,3 @@
-pub mod block_sync;
 pub mod bootstrap;
 pub mod encryption;
 pub mod libp2p_v53;
@@ -7,11 +6,10 @@ pub mod p2p;
 pub mod protocol;
 pub mod sync;
 
-pub use block_sync::*;
 pub use bootstrap::*;
 pub use encryption::*;
 pub use libp2p_v53::LibP2PNetwork;
-pub use libp2p_sync::LibP2PNetworkWithSync;
+pub use libp2p_sync::{LibP2PNetworkWithSync, NetworkEvent};
 pub use p2p::*;
 pub use protocol::*;
 pub use sync::*;
