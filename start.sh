@@ -1,52 +1,41 @@
 #!/bin/bash
+# SpiraChain Quick Start
+# Starts a local development node
 
-echo "========================================"
-echo "Starting SpiraChain Node"
-echo "Post-Quantum Bitcoin 2.0"
-echo "========================================"
-echo
+set -e
 
-echo "[1/3] Starting SpiraPi API Server..."
-cd crates/spirapi
-python3 -m src.api.main &
-SPIRAPI_API_PID=$!
-cd ../..
-sleep 3
+echo "🌀 Starting SpiraChain Node..."
+echo ""
 
-echo "[2/3] Starting SpiraPi Web Admin Interface..."
-cd crates/spirapi
-python3 -m src.web.admin_interface &
-SPIRAPI_WEB_PID=$!
-cd ../..
-sleep 3
+# Check if binary exists
+if [ ! -f "target/release/spira" ]; then
+    echo "❌ Binary not found. Build first with: ./build.sh"
+    exit 1
+fi
 
-echo "[3/3] Starting SpiraChain Node..."
-echo
-echo "========================================"
-echo "SpiraChain Node Running"
-echo "========================================"
-echo
-echo "Services:"
-echo "  - SpiraPi API:        http://localhost:8000"
-echo "  - SpiraPi API Docs:   http://localhost:8000/docs"
-echo "  - SpiraPi Web Admin:  http://localhost:8081"
-echo "  - SpiraChain Node:    Starting..."
-echo
-echo "Press Ctrl+C to stop the node"
-echo "========================================"
-echo
+# Check if wallet exists
+WALLET="dev_wallet.json"
+if [ ! -f "$WALLET" ]; then
+    echo "🔑 Creating development wallet..."
+    ./target/release/spira wallet new --output "$WALLET"
+    echo ""
+    echo "✅ Wallet created: $WALLET"
+    echo "⚠️  This is a development wallet. Backup for production use!"
+    echo ""
+fi
 
-cleanup() {
-    echo
-    echo "Shutting down SpiraChain..."
-    kill $SPIRAPI_API_PID 2>/dev/null
-    kill $SPIRAPI_WEB_PID 2>/dev/null
-    exit 0
-}
+echo "🚀 Starting validator node..."
+echo ""
+echo "RPC endpoint: http://localhost:8545"
+echo "P2P port: 30333"
+echo ""
+echo "Press Ctrl+C to stop"
+echo ""
 
-trap cleanup INT TERM
-
-cargo run --release --bin spirachain-cli -- node start --validator
-
-cleanup
+./target/release/spira node start \
+    --validator \
+    --wallet "$WALLET" \
+    --data-dir ./data \
+    --rpc-port 8545 \
+    --port 30333
 

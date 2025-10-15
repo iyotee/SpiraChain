@@ -48,9 +48,11 @@ That's it! The script will:
 
 After installation:
 ```bash
-cd ~/.spirachain/validator
-./start.sh  # Start your validator
-./status.sh # Check status
+# Management scripts are created in ~/.spirachain/
+~/.spirachain/start-testnet.sh    # Start your node
+~/.spirachain/stop-testnet.sh     # Stop your node
+~/.spirachain/status-testnet.sh   # Check status
+~/.spirachain/logs-testnet.sh     # View logs
 ```
 
 ---

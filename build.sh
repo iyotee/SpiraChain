@@ -1,27 +1,26 @@
 #!/bin/bash
+# SpiraChain Build Script
+# Builds all workspace crates in release mode
 
-echo "========================================"
-echo "Building SpiraChain + SpiraPi"
-echo "Post-Quantum Bitcoin 2.0"
-echo "========================================"
-echo
+set -e
 
-echo "[1/2] Building Rust components with optimizations..."
-cargo build --release || {
-    echo "ERROR: Build failed!"
+echo "🌀 Building SpiraChain..."
+echo ""
+
+# Check Rust installation
+if ! command -v cargo &> /dev/null; then
+    echo "❌ Rust not found. Install from: https://rustup.rs/"
     exit 1
-}
+fi
 
-echo
-echo "[2/2] Testing SpiraPi integration..."
-cd crates/spirapi
-python3 -c "from src.math_engine.pi_sequences import PiDIndexationEngine, PrecisionLevel, PiAlgorithm; engine = PiDIndexationEngine(precision=PrecisionLevel.HIGH, algorithm=PiAlgorithm.CHUDNOVSKY, enable_caching=True); print('Testing ID generation...'); ids = engine.generate_batch_identifiers(count=100, length=20, include_spiral=True); print(f'Generated {len(ids)} IDs successfully!'); print(f'Sample ID: {ids[0][\"identifier\"]}')"
-cd ../..
+# Build workspace
+echo "🔨 Building workspace (release mode)..."
+cargo build --workspace --release
 
-echo
-echo "========================================"
-echo "Build Complete!"
-echo "========================================"
-echo
-echo "Binary location: target/release/spirachain-cli"
-echo
+echo ""
+echo "✅ Build complete!"
+echo ""
+echo "Binary location: target/release/spira"
+echo ""
+echo "Run with: ./target/release/spira --help"
+
