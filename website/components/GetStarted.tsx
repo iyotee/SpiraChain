@@ -10,8 +10,8 @@ export default function GetStarted() {
   const [copiedWindows, setCopiedWindows] = useState(false);
   const [activeTab, setActiveTab] = useState<'quickstart' | 'manual'>('quickstart');
 
-  const linuxCommand = 'curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install_validator.sh | bash';
-  const windowsCommand = 'iwr -useb https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install_validator.ps1 | iex';
+  const linuxCommand = 'curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash';
+  const windowsCommand = 'wsl curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash';
 
   const copyToClipboard = (text: string, type: 'linux' | 'windows') => {
     navigator.clipboard.writeText(text);

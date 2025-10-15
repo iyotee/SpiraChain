@@ -26,12 +26,17 @@
 
 **Linux / macOS:**
 ```bash
-curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install_validator.sh | bash
+curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash
 ```
+
+The script will ask you:
+- What to install: Light Node / Full Node / Validator / Dev Environment
+- Which network: Testnet / Mainnet / Local
 
 **Windows (PowerShell):**
 ```powershell
-iwr -useb https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install_validator.ps1 | iex
+# Coming soon - use WSL for now
+wsl curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash
 ```
 
 That's it! The script will:
