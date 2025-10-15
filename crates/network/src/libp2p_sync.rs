@@ -152,16 +152,36 @@ impl LibP2PNetworkWithSync {
                     warn!("⚠️  No bootstrap peers found - running in isolated mode");
                 } else {
                     info!("📋 Found {} bootstrap peers", bootstrap_peers.len());
+                    
+                    let mut dialed_count = 0;
                     for addr_str in bootstrap_peers {
                         if let Ok(addr) = addr_str.parse::<Multiaddr>() {
-                            if let Err(e) = self.swarm.dial(addr.clone()) {
-                                warn!("Failed to dial {}: {}", addr, e);
-                            } else {
-                                debug!("Dialing bootstrap peer: {}", addr);
+                            // Skip if this looks like our own listening address
+                            // (bootstrap will naturally include ourselves from DNS seeds)
+                            let addr_string = addr.to_string();
+                            if addr_string.contains("127.0.0.1") || addr_string.contains("localhost") {
+                                debug!("⊘ Skipping localhost: {}", addr);
+                                continue;
+                            }
+                            
+                            match self.swarm.dial(addr.clone()) {
+                                Ok(_) => {
+                                    info!("📞 Dialing bootstrap peer: {}", addr);
+                                    dialed_count += 1;
+                                }
+                                Err(e) => {
+                                    debug!("Failed to dial {}: {}", addr, e);
+                                }
                             }
                         } else {
                             warn!("Invalid multiaddr: {}", addr_str);
                         }
+                    }
+                    
+                    if dialed_count == 0 {
+                        warn!("⚠️  No external peers to dial - waiting for incoming connections");
+                    } else {
+                        info!("✅ Dialed {} bootstrap peers", dialed_count);
                     }
                 }
             }
