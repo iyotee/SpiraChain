@@ -127,30 +127,42 @@ impl ValidatorNode {
         }
 
         // Credit initial staking balance for testnet (no staking required)
-        let initial_stake = Amount::new(1000 * 1e18 as u128); // 1000 QBT
-        if let Err(e) = self
+        // Only credit if balance is currently zero (first time setup)
+        let current_balance = self
             .storage
-            .set_balance(&self.validator.address, initial_stake)
-        {
-            warn!("Failed to set initial stake: {}", e);
-        } else {
-            info!(
-                "💰 Initial staking balance credited: {} QBT",
-                initial_stake.value() as f64 / 1e18
-            );
+            .get_balance(&self.validator.address)
+            .unwrap_or_default();
+        if current_balance.is_zero() {
+            let initial_stake = Amount::new(1000 * 1e18 as u128); // 1000 QBT
+            if let Err(e) = self
+                .storage
+                .set_balance(&self.validator.address, initial_stake)
+            {
+                warn!("Failed to set initial stake: {}", e);
+            } else {
+                info!(
+                    "💰 Initial staking balance credited: {} QBT",
+                    initial_stake.value() as f64 / 1e18
+                );
 
-            // Verify the balance was actually stored
-            match self.storage.get_balance(&self.validator.address) {
-                Ok(stored_balance) => {
-                    info!(
-                        "✅ Verified stored balance: {} QBT",
-                        stored_balance.value() as f64 / 1e18
-                    );
-                }
-                Err(e) => {
-                    warn!("❌ Failed to verify stored balance: {}", e);
+                // Verify the balance was actually stored
+                match self.storage.get_balance(&self.validator.address) {
+                    Ok(stored_balance) => {
+                        info!(
+                            "✅ Verified stored balance: {} QBT",
+                            stored_balance.value() as f64 / 1e18
+                        );
+                    }
+                    Err(e) => {
+                        warn!("❌ Failed to verify stored balance: {}", e);
+                    }
                 }
             }
+        } else {
+            info!(
+                "💰 Existing balance found: {} QBT (skipping initial credit)",
+                current_balance.value() as f64 / 1e18
+            );
         }
 
         // Start RPC server
@@ -319,6 +331,13 @@ impl ValidatorNode {
                 warn!("Failed to persist validator balance: {}", e);
             } else {
                 info!("✅ Balance persisted to storage");
+            }
+
+            // Sync all balances from WorldState to BlockStorage
+            for (address, balance) in state.get_all_balances() {
+                if let Err(e) = self.storage.set_balance(&address, balance) {
+                    warn!("Failed to sync balance for {}: {}", address, e);
+                }
             }
 
             state.set_height(block.header.block_height);

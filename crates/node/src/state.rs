@@ -27,6 +27,13 @@ impl WorldState {
             .unwrap_or(Amount::zero())
     }
 
+    pub fn get_all_balances(&self) -> Vec<(Address, Amount)> {
+        self.accounts
+            .iter()
+            .map(|(address, acc)| (*address, acc.balance))
+            .collect()
+    }
+
     pub fn set_balance(&mut self, address: Address, balance: Amount) {
         self.accounts
             .entry(address)
