@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SpiraWallet</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="screen">
+      <div class="spiral-loader"></div>
+      <p>Loading SpiraWallet...</p>
+    </div>
+
+    <!-- Welcome Screen (No Wallet) -->
+    <div id="welcome-screen" class="screen hidden">
+      <div class="header">
+        <img src="assets/logo.png" alt="SpiraChain" class="logo">
+        <h1>SpiraWallet</h1>
+        <p class="subtitle">Quantum-Resistant Wallet</p>
+      </div>
+      
+      <div class="welcome-content">
+        <div class="feature-list">
+          <div class="feature">
+            <span class="icon">🔐</span>
+            <span>Post-Quantum Security</span>
+          </div>
+          <div class="feature">
+            <span class="icon">⚡</span>
+            <span>Lightning Fast</span>
+          </div>
+          <div class="feature">
+            <span class="icon">🌀</span>
+            <span>π-Dimensional</span>
+          </div>
+        </div>
+        
+        <div class="actions">
+          <button id="create-wallet-btn" class="btn btn-primary">
+            <span class="icon">✨</span>
+            Create New Wallet
+          </button>
+          <button id="import-wallet-btn" class="btn btn-secondary">
+            <span class="icon">📥</span>
+            Import Existing Wallet
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Wallet Screen -->
+    <div id="create-wallet-screen" class="screen hidden">
+      <div class="header-small">
+        <button id="back-from-create" class="btn-back">←</button>
+        <h2>Create Wallet</h2>
+      </div>
+      
+      <div class="content">
+        <div class="warning-box">
+          <span class="icon">⚠️</span>
+          <p><strong>Save your seed phrase!</strong> You'll need it to recover your wallet.</p>
+        </div>
+        
+        <div id="seed-phrase-container" class="seed-phrase">
+          <!-- Generated dynamically -->
+        </div>
+        
+        <div class="checkbox-group">
+          <input type="checkbox" id="saved-seed-checkbox">
+          <label for="saved-seed-checkbox">I have saved my seed phrase securely</label>
+        </div>
+        
+        <button id="confirm-seed-btn" class="btn btn-primary" disabled>
+          Continue
+        </button>
+      </div>
+    </div>
+
+    <!-- Import Wallet Screen -->
+    <div id="import-wallet-screen" class="screen hidden">
+      <div class="header-small">
+        <button id="back-from-import" class="btn-back">←</button>
+        <h2>Import Wallet</h2>
+      </div>
+      
+      <div class="content">
+        <div class="tabs">
+          <button class="tab active" data-tab="seed">Seed Phrase</button>
+          <button class="tab" data-tab="json">JSON File</button>
+          <button class="tab" data-tab="private-key">Private Key</button>
+        </div>
+        
+        <div id="import-seed-tab" class="tab-content">
+          <label>Enter your 12-word seed phrase:</label>
+          <textarea id="seed-phrase-input" rows="4" placeholder="word1 word2 word3 ..."></textarea>
+        </div>
+        
+        <div id="import-json-tab" class="tab-content hidden">
+          <label>Upload wallet JSON file:</label>
+          <input type="file" id="json-file-input" accept=".json">
+          <div id="json-preview" class="json-preview"></div>
+        </div>
+        
+        <div id="import-private-key-tab" class="tab-content hidden">
+          <label>Enter your private key (hex):</label>
+          <textarea id="private-key-input" rows="3" placeholder="0x..."></textarea>
+        </div>
+        
+        <button id="import-wallet-confirm-btn" class="btn btn-primary">
+          Import Wallet
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Wallet Screen -->
+    <div id="wallet-screen" class="screen hidden">
+      <div class="header-wallet">
+        <div class="network-indicator">
+          <span class="status-dot" id="network-status"></span>
+          <span id="network-name">Testnet</span>
+        </div>
+        <button id="settings-btn" class="btn-icon">⚙️</button>
+      </div>
+      
+      <div class="wallet-info">
+        <div class="address-section">
+          <p class="label">Your Address</p>
+          <div class="address-display">
+            <span id="wallet-address">0x0000...0000</span>
+            <button id="copy-address-btn" class="btn-icon-small" title="Copy address">📋</button>
+          </div>
+        </div>
+        
+        <div class="balance-section">
+          <p class="balance-label">Balance</p>
+          <h1 class="balance" id="wallet-balance">0.00</h1>
+          <p class="balance-currency">QBT</p>
+          <p class="balance-fiat" id="balance-fiat">$0.00 USD</p>
+        </div>
+        
+        <div class="action-buttons">
+          <button id="send-btn" class="btn btn-action">
+            <span class="icon">📤</span>
+            Send
+          </button>
+          <button id="receive-btn" class="btn btn-action">
+            <span class="icon">📥</span>
+            Receive
+          </button>
+          <button id="swap-btn" class="btn btn-action">
+            <span class="icon">🔄</span>
+            Swap
+          </button>
+        </div>
+      </div>
+      
+      <div class="transactions-section">
+        <div class="section-header">
+          <h3>Recent Transactions</h3>
+          <button id="refresh-txs-btn" class="btn-icon-small">🔄</button>
+        </div>
+        
+        <div id="transactions-list" class="transactions-list">
+          <!-- Dynamically populated -->
+          <div class="empty-state">
+            <span class="icon">📭</span>
+            <p>No transactions yet</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Send Transaction Screen -->
+    <div id="send-screen" class="screen hidden">
+      <div class="header-small">
+        <button id="back-from-send" class="btn-back">←</button>
+        <h2>Send QBT</h2>
+      </div>
+      
+      <div class="content">
+        <div class="form-group">
+          <label>To Address</label>
+          <input type="text" id="send-to-address" placeholder="0x..." class="input">
+        </div>
+        
+        <div class="form-group">
+          <label>Amount (QBT)</label>
+          <div class="input-with-max">
+            <input type="number" id="send-amount" placeholder="0.00" class="input" step="0.000001">
+            <button id="send-max-btn" class="btn-max">MAX</button>
+          </div>
+          <p class="input-hint">Available: <span id="available-balance">0.00</span> QBT</p>
+        </div>
+        
+        <div class="form-group">
+          <label>Purpose (Optional)</label>
+          <input type="text" id="send-purpose" placeholder="Payment for..." class="input">
+        </div>
+        
+        <div class="form-group">
+          <label>Network Fee</label>
+          <div class="fee-selector">
+            <button class="fee-option active" data-fee="slow">
+              <span class="fee-label">Slow</span>
+              <span class="fee-value">0.0001 QBT</span>
+            </button>
+            <button class="fee-option" data-fee="normal">
+              <span class="fee-label">Normal</span>
+              <span class="fee-value">0.001 QBT</span>
+            </button>
+            <button class="fee-option" data-fee="fast">
+              <span class="fee-label">Fast</span>
+              <span class="fee-value">0.01 QBT</span>
+            </button>
+          </div>
+        </div>
+        
+        <div class="transaction-summary">
+          <div class="summary-row">
+            <span>Amount:</span>
+            <span id="summary-amount">0.00 QBT</span>
+          </div>
+          <div class="summary-row">
+            <span>Fee:</span>
+            <span id="summary-fee">0.0001 QBT</span>
+          </div>
+          <div class="summary-row total">
+            <span>Total:</span>
+            <span id="summary-total">0.00 QBT</span>
+          </div>
+        </div>
+        
+        <button id="send-confirm-btn" class="btn btn-primary">
+          Send Transaction
+        </button>
+      </div>
+    </div>
+
+    <!-- Receive Screen -->
+    <div id="receive-screen" class="screen hidden">
+      <div class="header-small">
+        <button id="back-from-receive" class="btn-back">←</button>
+        <h2>Receive QBT</h2>
+      </div>
+      
+      <div class="content receive-content">
+        <p class="receive-instruction">Share your address to receive QBT</p>
+        
+        <div id="qr-code-container" class="qr-code">
+          <!-- QR code generated here -->
+        </div>
+        
+        <div class="address-box">
+          <p id="receive-address" class="receive-address">0x0000...0000</p>
+          <button id="copy-receive-address-btn" class="btn btn-secondary">
+            <span class="icon">📋</span>
+            Copy Address
+          </button>
+        </div>
+        
+        <div class="warning-box">
+          <span class="icon">⚠️</span>
+          <p>Only send <strong>Qubitum (QBT)</strong> to this address on <strong>SpiraChain</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Screen -->
+    <div id="settings-screen" class="screen hidden">
+      <div class="header-small">
+        <button id="back-from-settings" class="btn-back">←</button>
+        <h2>Settings</h2>
+      </div>
+      
+      <div class="content">
+        <div class="settings-section">
+          <h3>Network</h3>
+          <select id="network-select" class="input">
+            <option value="testnet">Testnet</option>
+            <option value="mainnet">Mainnet (Coming Soon)</option>
+            <option value="custom">Custom RPC</option>
+          </select>
+          
+          <div id="custom-rpc-input" class="form-group hidden">
+            <label>Custom RPC URL</label>
+            <input type="text" id="custom-rpc-url" placeholder="http://localhost:8545" class="input">
+          </div>
+        </div>
+        
+        <div class="settings-section">
+          <h3>Security</h3>
+          <button id="export-wallet-btn" class="btn btn-secondary">
+            <span class="icon">💾</span>
+            Export Wallet
+          </button>
+          <button id="show-seed-btn" class="btn btn-secondary">
+            <span class="icon">🔑</span>
+            Show Seed Phrase
+          </button>
+        </div>
+        
+        <div class="settings-section">
+          <h3>About</h3>
+          <div class="info-row">
+            <span>Version:</span>
+            <span>1.0.0</span>
+          </div>
+          <div class="info-row">
+            <span>Chain ID:</span>
+            <span id="chain-id">7529</span>
+          </div>
+          <a href="https://github.com/iyotee/SpiraChain" target="_blank" class="btn btn-link">
+            View on GitHub
+          </a>
+        </div>
+        
+        <button id="lock-wallet-btn" class="btn btn-danger">
+          <span class="icon">🔒</span>
+          Lock Wallet
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
+
