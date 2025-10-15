@@ -127,7 +127,7 @@ impl ValidatorNode {
         }
 
         // Credit initial staking balance for testnet (no staking required)
-        let initial_stake = Amount::new(1000 * 1e18 as u64); // 1000 QBT
+        let initial_stake = Amount::new(1000 * 1e18 as u128); // 1000 QBT
         if let Err(e) = self
             .storage
             .set_balance(&self.validator.address, initial_stake)
