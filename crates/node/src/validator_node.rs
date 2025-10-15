@@ -69,6 +69,8 @@ impl ValidatorNode {
 
         // Get initial blockchain height
         let initial_height = storage.get_latest_block()
+            .ok()
+            .flatten()
             .map(|b| b.header.block_height)
             .unwrap_or(0);
 
@@ -127,7 +129,7 @@ impl ValidatorNode {
                     info!("💾 Storing synced block {}", height);
                     
                     // Store the block
-                    storage_clone.insert_block(&block)?;
+                    storage_clone.store_block(&block)?;
                     
                     // Update height
                     let rt = tokio::runtime::Handle::current();
@@ -140,7 +142,7 @@ impl ValidatorNode {
                     rt.block_on(async {
                         let mut state = state_clone.write().await;
                         for tx in &block.transactions {
-                            if let Err(e) = state.apply_transaction(tx) {
+                            if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
                                 warn!("Failed to apply transaction in synced block: {}", e);
                             }
                         }
@@ -313,18 +315,25 @@ impl ValidatorNode {
                 _ = network_tick.tick() => {
                     // Poll P2P events and handle network messages
                     if let Some(ref network) = self.network {
-                        let mut net = network.write().await;
-                        if let Some(event) = net.poll_events().await {
+                        let event = {
+                            let mut net = network.write().await;
+                            let evt = net.poll_events().await;
+                            
+                            // Update local height in sync manager
+                            let current_height = *self.current_height.read().await;
+                            net.set_local_height(current_height);
+                            
+                            // Update connected peers count
+                            let peer_count = net.peer_count();
+                            *self.connected_peers.write().await = peer_count;
+                            
+                            evt
+                        };
+                        
+                        // Handle event outside of the lock
+                        if let Some(event) = event {
                             self.handle_network_event(event).await;
                         }
-                        
-                        // Update local height in sync manager
-                        let current_height = *self.current_height.read().await;
-                        net.set_local_height(current_height);
-                        
-                        // Update connected peers count
-                        let peer_count = net.peer_count();
-                        *self.connected_peers.write().await = peer_count;
                     }
                 }
             }
@@ -516,7 +525,7 @@ impl ValidatorNode {
                 }
                 
                 // Store the block
-                if let Err(e) = self.storage.insert_block(&block) {
+                if let Err(e) = self.storage.store_block(&block) {
                     error!("Failed to store block {}: {}", height, e);
                     return;
                 }
@@ -524,7 +533,7 @@ impl ValidatorNode {
                 // Update state with block transactions
                 let mut state = self.state.write().await;
                 for tx in &block.transactions {
-                    if let Err(e) = state.apply_transaction(tx) {
+                    if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
                         warn!("Failed to apply transaction in block {}: {}", height, e);
                     }
                 }

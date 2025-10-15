@@ -15,6 +15,7 @@ use crate::bootstrap::{discover_bootstrap_peers, BootstrapConfig};
 
 pub struct LibP2PNetworkWithSync {
     swarm: Swarm<gossipsub::Behaviour>,
+    #[allow(dead_code)]
     local_peer_id: PeerId,
     connected_peers: HashSet<PeerId>,
     block_topic: gossipsub::IdentTopic,
