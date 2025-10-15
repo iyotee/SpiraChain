@@ -56,7 +56,10 @@ impl BootstrapConfig {
     /// Create configuration for specific network
     pub fn for_network(network: &str) -> Self {
         Self {
-            dns_seeds: get_dns_seeds(network).iter().map(|s| s.to_string()).collect(),
+            dns_seeds: get_dns_seeds(network)
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             static_peers: vec![],
             enable_mdns: true,
             enable_dht: true,
