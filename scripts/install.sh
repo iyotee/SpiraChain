@@ -439,6 +439,40 @@ EOF
     echo -e "${GREEN}✅ LaunchAgent created and started${NC}"
 fi
 
+# Create DNS Seeder service (for validators only)
+if [ "$NODE_TYPE" == "validator" ]; then
+    echo ""
+    echo -e "${CYAN}🌐 Setting up DNS seeder service...${NC}"
+    
+    if [[ "$OS" == "linux" ]]; then
+        SEEDER_SERVICE_FILE="$HOME/.config/systemd/user/spirachain-seeder-${NETWORK}.service"
+        
+        cat > "$SEEDER_SERVICE_FILE" <<EOF
+[Unit]
+Description=SpiraChain DNS Seeder ($NETWORK)
+After=network.target spirachain-${NETWORK}.service
+Wants=spirachain-${NETWORK}.service
+
+[Service]
+Type=simple
+WorkingDirectory=$INSTALL_DIR/SpiraChain/scripts
+ExecStart=/usr/bin/python3 dns_seeder.py --network $NETWORK --bootstrap-ips 127.0.0.1
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=default.target
+EOF
+
+        systemctl --user daemon-reload
+        systemctl --user enable spirachain-seeder-${NETWORK}
+        systemctl --user start spirachain-seeder-${NETWORK}
+        
+        echo -e "${GREEN}✅ DNS Seeder service created and started${NC}"
+        echo -e "${CYAN}   View logs: journalctl --user -u spirachain-seeder-${NETWORK} -f${NC}"
+    fi
+fi
+
 # Create management scripts
 echo ""
 echo -e "${CYAN}📝 Creating management scripts...${NC}"
