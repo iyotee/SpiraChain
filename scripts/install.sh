@@ -12,8 +12,8 @@
 
 set -e
 
-# Check and install dependencies
-echo "🔍 Checking dependencies..."
+# Check and install system dependencies
+echo "🔍 Checking system dependencies..."
 
 # Detect OS
 if [ -f /etc/os-release ]; then
@@ -23,9 +23,9 @@ else
     OS_ID="unknown"
 fi
 
-# Install build-essential if not present
+# Check and install build-essential
 if ! command -v cc &> /dev/null; then
-    echo "⚙️  Installing build tools (required for Rust compilation)..."
+    echo "⚙️  Installing build tools (C compiler, make, etc.)..."
     case "$OS_ID" in
         ubuntu|debian)
             sudo apt-get update -qq
@@ -52,10 +52,10 @@ if ! command -v cc &> /dev/null; then
     esac
     echo "✅ Build tools installed"
 else
-    echo "✅ Build tools already installed"
+    echo "✅ C compiler (cc) already installed"
 fi
 
-# Install pkg-config if not present (needed for OpenSSL)
+# Check and install pkg-config (needed for OpenSSL)
 if ! command -v pkg-config &> /dev/null; then
     echo "⚙️  Installing pkg-config..."
     case "$OS_ID" in
@@ -74,9 +74,11 @@ if ! command -v pkg-config &> /dev/null; then
             ;;
     esac
     echo "✅ pkg-config installed"
+else
+    echo "✅ pkg-config already installed"
 fi
 
-# Install curl if not present
+# Check and install curl
 if ! command -v curl &> /dev/null; then
     echo "⚙️  Installing curl..."
     case "$OS_ID" in
@@ -95,9 +97,11 @@ if ! command -v curl &> /dev/null; then
             ;;
     esac
     echo "✅ curl installed"
+else
+    echo "✅ curl already installed"
 fi
 
-# Install git if not present
+# Check and install git
 if ! command -v git &> /dev/null; then
     echo "⚙️  Installing git..."
     case "$OS_ID" in
@@ -116,7 +120,12 @@ if ! command -v git &> /dev/null; then
             ;;
     esac
     echo "✅ git installed"
+else
+    echo "✅ git already installed"
 fi
+
+echo "✅ All system dependencies checked"
+echo ""
 
 # Parse command line arguments
 # First arg can be: mainnet, light, full, validator, dev
