@@ -196,11 +196,11 @@ echo -e "${CYAN}⚙️  Setting up background service...${NC}"
 
 # Build command based on node type
 if [ "$NODE_TYPE" == "validator" ]; then
-    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node start --validator --wallet $WALLET_FILE --data-dir $INSTALL_DIR/${NETWORK}_data --port 30333"
+    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node --validator --wallet $WALLET_FILE --data-dir $INSTALL_DIR/${NETWORK}_data --port 30333"
 elif [ "$NODE_TYPE" == "light" ]; then
-    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node start --data-dir $INSTALL_DIR/${NETWORK}_data --port 30333"
+    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node --data-dir $INSTALL_DIR/${NETWORK}_data --port 30333"
 else
-    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node start --data-dir $INSTALL_DIR/${NETWORK}_data --port 30333"
+    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node --data-dir $INSTALL_DIR/${NETWORK}_data --port 30333"
 fi
 
 # Create service file
