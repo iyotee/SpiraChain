@@ -59,9 +59,9 @@ class NodeInfo:
     
     @property
     def is_healthy(self) -> bool:
-        """Node is healthy if uptime > 90% and seen in last 24h"""
+        """Node is healthy if uptime > 50% and seen in last 24h"""
         age_hours = (datetime.now() - self.last_seen).total_seconds() / 3600
-        return self.uptime_percentage > 90 and age_hours < 24
+        return self.uptime_percentage > 50 and age_hours < 24
     
     def __str__(self):
         return f"{self.ip}:{self.port} (uptime: {self.uptime_percentage:.1f}%, latency: {self.latency_ms}ms)"
