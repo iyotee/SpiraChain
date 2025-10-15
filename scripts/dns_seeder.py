@@ -95,18 +95,31 @@ class SpiraChainSeeder:
             return []
     
     def _get_public_ip(self) -> str:
-        """Get public IP of this machine"""
+        """Get public IPv4 of this machine"""
         try:
-            response = requests.get('https://ifconfig.me/ip', timeout=5)
+            response = requests.get('https://api.ipify.org', timeout=5)
             if response.status_code == 200:
-                return response.text.strip()
+                ip = response.text.strip()
+                if ':' not in ip:  # IPv4 only (no colons)
+                    return ip
         except:
             pass
         
         try:
-            response = requests.get('https://api.ipify.org', timeout=5)
+            response = requests.get('https://ipv4.icanhazip.com', timeout=5)
             if response.status_code == 200:
-                return response.text.strip()
+                ip = response.text.strip()
+                if ':' not in ip:
+                    return ip
+        except:
+            pass
+        
+        try:
+            response = requests.get('https://checkip.amazonaws.com', timeout=5)
+            if response.status_code == 200:
+                ip = response.text.strip()
+                if ':' not in ip:
+                    return ip
         except:
             pass
         
