@@ -130,18 +130,15 @@ class SpiraChainSeeder:
         """Check if a node is responsive"""
         node.uptime_checks += 1
         
-        # If checking localhost, replace with public IP for DNS
+        # Determine which IP to test
+        # If localhost, test locally but store public IP for DNS
         check_ip = node.ip
-        if node.ip in ['127.0.0.1', 'localhost', '::1']:
-            public_ip = self._get_public_ip()
-            if public_ip:
-                node.ip = public_ip  # Update to public IP for DNS records
-                logger.info(f"🌐 Detected public IP: {public_ip} (replacing localhost)")
+        is_localhost = node.ip in ['127.0.0.1', 'localhost', '::1']
         
         try:
             start_time = time.time()
             
-            # Try to connect to P2P port
+            # Try to connect to P2P port (test actual IP, not public)
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(5)
             result = sock.connect_ex((check_ip, node.port))
@@ -152,9 +149,17 @@ class SpiraChainSeeder:
                 node.successful_checks += 1
                 node.last_seen = datetime.now()
                 
-                # Try to get blockchain height via RPC (if available)
+                # If this is localhost, replace with public IP for DNS records
+                if is_localhost:
+                    public_ip = self._get_public_ip()
+                    if public_ip:
+                        node.ip = public_ip  # Update to public IP for DNS records
+                        logger.info(f"🌐 Detected public IP: {public_ip} (replacing localhost)")
+                
+                # Try to get blockchain height via RPC (always use localhost for RPC)
                 try:
-                    rpc_url = f"http://{node.ip}:8545/status"
+                    rpc_ip = '127.0.0.1' if is_localhost else node.ip
+                    rpc_url = f"http://{rpc_ip}:8545/status"
                     response = requests.get(rpc_url, timeout=3)
                     if response.status_code == 200:
                         data = response.json()
