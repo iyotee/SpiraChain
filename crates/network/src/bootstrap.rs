@@ -20,11 +20,34 @@ pub const DNS_SEEDS_MAINNET: &[&str] = &[
     "seed5.spirachain.org",
 ];
 
+/// Fallback bootstrap nodes (used if DNS seeds fail)
+/// These are hardcoded multiaddrs of known stable nodes
+/// Updated with each release to ensure connectivity
+pub const FALLBACK_NODES_TESTNET: &[&str] = &[
+    // These will be populated once DNS seeds are configured
+    // Format: "/ip4/IP_ADDRESS/tcp/30333/p2p/PEER_ID"
+    // Or simpler: "/ip4/IP_ADDRESS/tcp/30333"
+    // 
+    // Will be updated in next release after your Raspberry Pi and VPS are stable
+];
+
+pub const FALLBACK_NODES_MAINNET: &[&str] = &[
+    // To be populated before mainnet launch
+];
+
 /// Get DNS seeds based on network
 pub fn get_dns_seeds(network: &str) -> &'static [&'static str] {
     match network {
         "mainnet" => DNS_SEEDS_MAINNET,
         _ => DNS_SEEDS_TESTNET,
+    }
+}
+
+/// Get fallback nodes based on network
+pub fn get_fallback_nodes(network: &str) -> &'static [&'static str] {
+    match network {
+        "mainnet" => FALLBACK_NODES_MAINNET,
+        _ => FALLBACK_NODES_TESTNET,
     }
 }
 
@@ -60,7 +83,10 @@ impl BootstrapConfig {
                 .iter()
                 .map(|s| s.to_string())
                 .collect(),
-            static_peers: vec![],
+            static_peers: get_fallback_nodes(network)
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
             enable_mdns: true,
             enable_dht: true,
         }

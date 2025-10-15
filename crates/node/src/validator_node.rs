@@ -100,9 +100,9 @@ impl ValidatorNode {
             .and_then(|p| p.parse::<u16>().ok())
             .unwrap_or(30333);
 
-        match LibP2PNetwork::new(port).await {
+        match LibP2PNetwork::new_with_network(port, &self.config.network).await {
             Ok(mut network) => {
-                info!("✅ P2P network created");
+                info!("✅ P2P network created for {}", self.config.network.to_uppercase());
 
                 // Initialize listening with bootstrap
                 if let Err(e) = network.initialize_with_bootstrap().await {

@@ -37,7 +37,7 @@ num-bigint = "0.4"
 num-traits = "0.2"
 ed25519-dalek = { version = "2.1", features = ["rand_core"] }
 rand = "0.8"
-libp2p = { version = "0.53", features = ["tcp", "noise", "yamux", "gossipsub", "mdns", "kad", "identify", "tokio", "macros", "dns"] }
+libp2p = { version = "0.53", features = ["tcp", "noise", "yamux", "gossipsub", "mdns", "kad", "identify", "request-response", "cbor", "tokio", "macros", "dns"] }
 rocksdb = "0.21"
 warp = "0.3"
 wasmtime = "15.0"

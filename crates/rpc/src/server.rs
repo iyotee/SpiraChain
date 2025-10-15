@@ -59,6 +59,7 @@ impl RpcServer {
             .route("/submit_transaction", post(submit_transaction))
             .route("/block/:height", get(get_block))
             .route("/balance/:address", get(get_balance))
+            .route("/peers", get(get_peers))
             .layer(CorsLayer::permissive())
             .with_state(self.state);
 
@@ -242,4 +243,21 @@ async fn get_balance(
             )
         }
     }
+}
+
+async fn get_peers(
+    State(_state): State<Arc<RpcServerState>>,
+) -> impl IntoResponse {
+    // For now, return empty list
+    // TODO: Get actual connected peers from network layer
+    // This requires passing network state to RPC server
+    
+    (
+        StatusCode::OK,
+        Json(json!({
+            "peers": [],
+            "count": 0,
+            "note": "Peer list endpoint - to be implemented with network state"
+        })),
+    )
 }

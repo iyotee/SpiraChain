@@ -660,7 +660,33 @@ free -h
 - **Explorer:** Coming soon
 - **Faucet:** Coming soon
 
-**Important:** SpiraChain is fully decentralized. You run YOUR OWN node, not connect to a central server. See [Decentralized Architecture](docs/DECENTRALIZED_ARCHITECTURE.md) for details.
+**Important:** SpiraChain is fully decentralized. You run YOUR OWN node, not connect to a central server.
+
+### How Peer Discovery Works
+
+SpiraChain uses a multi-layered approach (like Bitcoin):
+
+1. **DNS Seeds** - Query seed1-testnet.spirachain.org for initial peer IPs
+2. **mDNS** - Auto-discover nodes on your local network
+3. **Kademlia DHT** - Distributed peer discovery globally
+4. **Peer Exchange** - Nodes share their peer lists
+
+Even if ALL DNS seeds go offline, existing nodes continue working! True decentralization. 🌐
+
+### Become a DNS Seeder (Help the Network!)
+
+Run a DNS seeder to help new nodes discover the network:
+
+```bash
+# Install and run the seeder
+cd ~/.spirachain/SpiraChain/scripts
+python3 dns_seeder.py --network testnet --bootstrap-ips YOUR_RPI_IP YOUR_VPS_IP
+
+# Then configure DNS:
+# seed1-testnet.spirachain.org → IPs from seeder output
+```
+
+The seeder discovers all active nodes and outputs DNS records to configure. Simple!
 
 ---
 
