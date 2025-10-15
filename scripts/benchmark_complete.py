@@ -152,7 +152,12 @@ class UltraCompleteBenchmark:
         print("\n💿 BENCHMARK 3: Disk Usage")
         print("="*60)
         
-        dirs_to_check = ["testnet_data/node_1", "testnet_data/node_2", "testnet_data/node_3"]
+        dirs_to_check = [
+            os.path.expanduser("~/.spirachain/testnet_data"),
+            "testnet_data/node_1", 
+            "testnet_data/node_2", 
+            "testnet_data/node_3"
+        ]
         total_size = 0
         node_sizes = []
         
@@ -171,11 +176,14 @@ class UltraCompleteBenchmark:
                 print(f"   {node_dir}: {size / (1024 * 1024):.2f} MB")
         
         print(f"\n   TOTAL: {total_size / (1024 * 1024):.2f} MB")
-        print(f"   Avg/node: {(total_size / len(node_sizes)) / (1024 * 1024):.2f} MB")
+        if node_sizes:
+            print(f"   Avg/node: {(total_size / len(node_sizes)) / (1024 * 1024):.2f} MB")
+        else:
+            print(f"   Avg/node: 0.00 MB (no nodes found)")
         
         self.results["benchmarks"]["disk"] = {
             "total_mb": total_size / (1024 * 1024),
-            "avg_per_node_mb": (total_size / len(node_sizes)) / (1024 * 1024),
+            "avg_per_node_mb": (total_size / max(1, len(node_sizes))) / (1024 * 1024),
             "node_details": node_sizes
         }
     
