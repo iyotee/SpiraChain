@@ -46,30 +46,8 @@ fi
 echo -e "${CYAN}📋 Detected OS: $OS${NC}"
 echo ""
 
-# If no arguments provided, use defaults for quick install
-if [ -z "$NODE_TYPE" ]; then
-    echo -e "${YELLOW}⚠️  Quick install mode (no arguments provided)${NC}"
-    echo ""
-    echo "Using defaults:"
-    echo "  • Node Type: Validator"
-    echo "  • Network: Testnet"
-    echo ""
-    echo "To customize, run with arguments:"
-    echo "  curl -sSL ... | bash -s -- <type> <network>"
-    echo ""
-    echo "Types: light, full, validator, dev"
-    echo "Networks: testnet, mainnet, local"
-    echo ""
-    echo "Example: curl -sSL ... | bash -s -- validator testnet"
-    echo ""
-    
-    NODE_TYPE="validator"
-    NETWORK="testnet"
-    
-    echo -e "${GREEN}Continuing in 3 seconds...${NC}"
-    sleep 3
-else
-    # Validate arguments
+# If arguments provided, validate them
+if [ -n "$NODE_TYPE" ]; then
     case $NODE_TYPE in
         light|full|validator|dev)
             ;;
@@ -90,6 +68,46 @@ else
         *)
             echo -e "${RED}Invalid network: $NETWORK${NC}"
             echo "Valid networks: testnet, mainnet, local"
+            exit 1
+            ;;
+    esac
+else
+    # No arguments - ask user interactively
+    echo -e "${YELLOW}What do you want to install?${NC}"
+    echo "1) Light Node (Recommended - Low resources, wallet usage)"
+    echo "2) Full Node (Stores complete blockchain)"
+    echo "3) Validator Node (Stake 10K QBT, earn rewards)"
+    echo "4) Development Environment (For developers)"
+    echo ""
+    echo -n "Choice [1-4]: "
+    read INSTALL_TYPE
+    
+    case $INSTALL_TYPE in
+        1) NODE_TYPE="light" ;;
+        2) NODE_TYPE="full" ;;
+        3) NODE_TYPE="validator" ;;
+        4) NODE_TYPE="dev" ;;
+        *) 
+            echo -e "${RED}Invalid choice${NC}"
+            exit 1
+            ;;
+    esac
+    
+    echo ""
+    echo -e "${YELLOW}Which network?${NC}"
+    echo "1) Testnet (Free tokens, testing)"
+    echo "2) Mainnet (Real QBT, production)"
+    echo "3) Local (Development)"
+    echo ""
+    echo -n "Network [1-3]: "
+    read NETWORK_CHOICE
+    
+    case $NETWORK_CHOICE in
+        1) NETWORK="testnet" ;;
+        2) NETWORK="mainnet" ;;
+        3) NETWORK="local" ;;
+        *) 
+            echo -e "${RED}Invalid choice${NC}"
             exit 1
             ;;
     esac
