@@ -52,7 +52,7 @@ pub fn get_fallback_nodes(network: &str) -> &'static [&'static str] {
 }
 
 /// Default P2P port
-pub const DEFAULT_P2P_PORT: u16 = 9000;
+pub const DEFAULT_P2P_PORT: u16 = 30333;
 
 /// Bootstrap node configuration
 #[derive(Debug, Clone)]
