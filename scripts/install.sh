@@ -29,23 +29,23 @@ if ! command -v cc &> /dev/null; then
     case "$OS_ID" in
         ubuntu|debian)
             sudo apt-get update -qq
-            sudo apt-get install -y build-essential curl git
+            sudo apt-get install -y build-essential curl git pkg-config libssl-dev
             ;;
         centos|rhel|fedora)
             if command -v dnf &> /dev/null; then
                 sudo dnf groupinstall -y "Development Tools"
-                sudo dnf install -y curl git
+                sudo dnf install -y curl git pkg-config openssl-devel
             else
                 sudo yum groupinstall -y "Development Tools"
-                sudo yum install -y curl git
+                sudo yum install -y curl git pkg-config openssl-devel
             fi
             ;;
         alpine)
-            sudo apk add build-base curl git
+            sudo apk add build-base curl git pkgconf openssl-dev
             ;;
         *)
             echo "⚠️  Warning: Could not auto-install build tools for $OS_ID"
-            echo "   Please install: build-essential, curl, git manually"
+            echo "   Please install: build-essential, pkg-config, libssl-dev, curl, git manually"
             echo "   Then re-run this script"
             exit 1
             ;;
@@ -53,6 +53,27 @@ if ! command -v cc &> /dev/null; then
     echo "✅ Build tools installed"
 else
     echo "✅ Build tools already installed"
+fi
+
+# Install pkg-config if not present (needed for OpenSSL)
+if ! command -v pkg-config &> /dev/null; then
+    echo "⚙️  Installing pkg-config..."
+    case "$OS_ID" in
+        ubuntu|debian)
+            sudo apt-get install -y pkg-config libssl-dev
+            ;;
+        centos|rhel|fedora)
+            if command -v dnf &> /dev/null; then
+                sudo dnf install -y pkg-config openssl-devel
+            else
+                sudo yum install -y pkg-config openssl-devel
+            fi
+            ;;
+        alpine)
+            sudo apk add pkgconf openssl-dev
+            ;;
+    esac
+    echo "✅ pkg-config installed"
 fi
 
 # Install curl if not present

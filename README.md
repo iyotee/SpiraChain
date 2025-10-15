@@ -561,18 +561,18 @@ watch -n 1 vcgencmd measure_temp
 
 ### Troubleshooting
 
-**Installation fails with "linker `cc` not found":**
+**Installation fails with "linker `cc` not found" or "Could not find openssl":**
 ```bash
 # Ubuntu/Debian
 sudo apt-get update
-sudo apt-get install -y build-essential curl git
+sudo apt-get install -y build-essential pkg-config libssl-dev curl git
 
 # CentOS/RHEL/Fedora
 sudo dnf groupinstall -y "Development Tools"
-sudo dnf install -y curl git
+sudo dnf install -y pkg-config openssl-devel curl git
 
 # Alpine Linux
-sudo apk add build-base curl git
+sudo apk add build-base pkgconf openssl-dev curl git
 ```
 
 **Installation fails with "curl: command not found":**
