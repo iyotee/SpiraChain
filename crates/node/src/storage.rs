@@ -243,6 +243,10 @@ impl BlockStorage {
     pub fn get_balance(&self, address: &Address) -> Result<Amount> {
         self.storage.get_balance(address)
     }
+
+    pub fn set_balance(&self, address: &Address, balance: Amount) -> Result<()> {
+        self.storage.set_balance(address, balance)
+    }
 }
 
 impl spirachain_rpc::server::BlockchainStorage for BlockStorage {
