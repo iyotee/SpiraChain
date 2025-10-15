@@ -27,6 +27,7 @@ pub struct NodeConfig {
     pub data_dir: PathBuf,
     pub network_addr: String,
     pub rpc_addr: String,
+    pub network: String, // "testnet" or "mainnet"
 }
 
 impl Default for NodeConfig {
@@ -36,6 +37,7 @@ impl Default for NodeConfig {
             data_dir: PathBuf::from("./data"),
             network_addr: "0.0.0.0:30303".to_string(),
             rpc_addr: "127.0.0.1:8545".to_string(),
+            network: "testnet".to_string(), // Default to testnet
         }
     }
 }

@@ -11,8 +11,11 @@ pub async fn handle_node_start(
     wallet_path: Option<String>,
     data_dir: Option<String>,
     port: u16,
+    network: Option<String>,
 ) -> Result<()> {
     let _ = tracing_subscriber::fmt::try_init();
+
+    let network_type = network.unwrap_or_else(|| "testnet".to_string());
 
     info!("🚀 Starting SpiraChain Node");
     info!(
@@ -23,12 +26,14 @@ pub async fn handle_node_start(
             "Full Node"
         }
     );
+    info!("   Network: {}", network_type.to_uppercase());
 
     let mut config = NodeConfig::default();
     if let Some(dir) = data_dir {
         config.data_dir = std::path::PathBuf::from(dir);
     }
     config.network_addr = format!("0.0.0.0:{}", port);
+    config.network = network_type;
     info!("   P2P Port: {}", port);
 
     if validator_mode {

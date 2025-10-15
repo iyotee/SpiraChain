@@ -73,6 +73,9 @@ enum Commands {
 
         #[arg(long, default_value = "9000")]
         port: u16,
+
+        #[arg(long, help = "Network type: testnet or mainnet (default: testnet)")]
+        network: Option<String>,
     },
 }
 
@@ -235,8 +238,9 @@ async fn main() -> anyhow::Result<()> {
             wallet,
             data_dir,
             port,
+            network,
         } => {
-            node::handle_node_start(validator, wallet, data_dir, port).await?;
+            node::handle_node_start(validator, wallet, data_dir, port, network).await?;
         }
     }
 

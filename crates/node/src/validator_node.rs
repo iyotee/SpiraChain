@@ -126,43 +126,48 @@ impl ValidatorNode {
             }
         }
 
-        // Credit initial staking balance for testnet (no staking required)
-        // Only credit if balance is currently zero (first time setup)
-        let current_balance = self
-            .storage
-            .get_balance(&self.validator.address)
-            .unwrap_or_default();
-        if current_balance.is_zero() {
-            let initial_stake = Amount::new(1000 * 1e18 as u128); // 1000 QBT
-            if let Err(e) = self
+        // Credit initial staking balance ONLY for testnet (no staking required)
+        // Mainnet: No initial credit, fair launch - everyone starts at 0 and earns through rewards
+        if self.config.network == "testnet" {
+            let current_balance = self
                 .storage
-                .set_balance(&self.validator.address, initial_stake)
-            {
-                warn!("Failed to set initial stake: {}", e);
-            } else {
-                info!(
-                    "💰 Initial staking balance credited: {} QBT",
-                    initial_stake.value() as f64 / 1e18
-                );
+                .get_balance(&self.validator.address)
+                .unwrap_or_default();
+            if current_balance.is_zero() {
+                let initial_stake = Amount::new(1000 * 1e18 as u128); // 1000 QBT for testnet only
+                if let Err(e) = self
+                    .storage
+                    .set_balance(&self.validator.address, initial_stake)
+                {
+                    warn!("Failed to set initial stake: {}", e);
+                } else {
+                    info!(
+                        "💰 [TESTNET] Initial staking balance credited: {} QBT",
+                        initial_stake.value() as f64 / 1e18
+                    );
 
-                // Verify the balance was actually stored
-                match self.storage.get_balance(&self.validator.address) {
-                    Ok(stored_balance) => {
-                        info!(
-                            "✅ Verified stored balance: {} QBT",
-                            stored_balance.value() as f64 / 1e18
-                        );
-                    }
-                    Err(e) => {
-                        warn!("❌ Failed to verify stored balance: {}", e);
+                    // Verify the balance was actually stored
+                    match self.storage.get_balance(&self.validator.address) {
+                        Ok(stored_balance) => {
+                            info!(
+                                "✅ Verified stored balance: {} QBT",
+                                stored_balance.value() as f64 / 1e18
+                            );
+                        }
+                        Err(e) => {
+                            warn!("❌ Failed to verify stored balance: {}", e);
+                        }
                     }
                 }
+            } else {
+                info!(
+                    "💰 Existing balance found: {} QBT (skipping initial credit)",
+                    current_balance.value() as f64 / 1e18
+                );
             }
         } else {
-            info!(
-                "💰 Existing balance found: {} QBT (skipping initial credit)",
-                current_balance.value() as f64 / 1e18
-            );
+            // Mainnet: No initial credit - fair launch like Bitcoin
+            info!("🚀 [MAINNET] Fair launch mode: Starting with 0 QBT, earn through block rewards only");
         }
 
         // Load validator balance from storage into WorldState
