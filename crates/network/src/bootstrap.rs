@@ -24,7 +24,7 @@ pub const DNS_SEEDS_MAINNET: &[&str] = &[
 pub fn get_dns_seeds(network: &str) -> &'static [&'static str] {
     match network {
         "mainnet" => DNS_SEEDS_MAINNET,
-        "testnet" | _ => DNS_SEEDS_TESTNET,
+        _ => DNS_SEEDS_TESTNET,
     }
 }
 
