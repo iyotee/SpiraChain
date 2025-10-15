@@ -1,12 +1,12 @@
 use crate::{BlockStorage, NodeConfig, WorldState};
 use spirachain_consensus::{ProofOfSpiral, Validator};
-use spirachain_core::{Address, Amount, Result, Transaction};
+use spirachain_core::{Address, Amount, Block, Result, Transaction};
 use spirachain_crypto::KeyPair;
-use spirachain_network::LibP2PNetwork;
+use spirachain_network::{LibP2PNetworkWithSync, NetworkEvent};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio::time::{interval, Duration};
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 pub struct ValidatorNode {
     config: NodeConfig,
@@ -16,10 +16,11 @@ pub struct ValidatorNode {
     state: Arc<RwLock<WorldState>>,
     storage: Arc<BlockStorage>,
     consensus: ProofOfSpiral,
-    network: Option<Arc<RwLock<LibP2PNetwork>>>,
+    network: Option<Arc<RwLock<LibP2PNetworkWithSync>>>,
     is_running: Arc<RwLock<bool>>,
     blocks_produced: u64,
     connected_peers: Arc<RwLock<usize>>,
+    current_height: Arc<RwLock<u64>>,
 }
 
 impl ValidatorNode {
@@ -66,6 +67,11 @@ impl ValidatorNode {
             warn!("⚠️ SpiraPi directory not found. AI semantic layer will use fallback mode.");
         }
 
+        // Get initial blockchain height
+        let initial_height = storage.get_latest_block()
+            .map(|b| b.header.block_height)
+            .unwrap_or(0);
+
         Ok(Self {
             config,
             keypair,
@@ -78,6 +84,7 @@ impl ValidatorNode {
             is_running: Arc::new(RwLock::new(false)),
             blocks_produced: 0,
             connected_peers: Arc::new(RwLock::new(0)),
+            current_height: Arc::new(RwLock::new(initial_height)),
         })
     }
 
@@ -90,8 +97,8 @@ impl ValidatorNode {
         );
         info!("   Data dir: {}", self.config.data_dir.display());
 
-        // Initialize P2P network
-        info!("🌐 Starting LibP2P network...");
+        // Initialize P2P network with block sync
+        info!("🌐 Starting LibP2P network with block synchronization...");
         let port = self
             .config
             .network_addr
@@ -100,12 +107,54 @@ impl ValidatorNode {
             .and_then(|p| p.parse::<u16>().ok())
             .unwrap_or(30333);
 
-        match LibP2PNetwork::new_with_network(port, &self.config.network).await {
+        let current_height = *self.current_height.read().await;
+        info!("📊 Current blockchain height: {}", current_height);
+
+        match LibP2PNetworkWithSync::new_with_network(port, &self.config.network, current_height).await {
             Ok(mut network) => {
                 info!(
-                    "✅ P2P network created for {}",
+                    "✅ P2P network with sync created for {}",
                     self.config.network.to_uppercase()
                 );
+
+                // Set up block storage callback
+                let storage_clone = Arc::clone(&self.storage);
+                let state_clone = Arc::clone(&self.state);
+                let height_clone = Arc::clone(&self.current_height);
+                
+                network.set_block_store_callback(move |block: Block| {
+                    let height = block.header.block_height;
+                    info!("💾 Storing synced block {}", height);
+                    
+                    // Store the block
+                    storage_clone.insert_block(&block)?;
+                    
+                    // Update height
+                    let rt = tokio::runtime::Handle::current();
+                    rt.block_on(async {
+                        let mut h = height_clone.write().await;
+                        *h = height;
+                    });
+                    
+                    // Update state with block transactions
+                    rt.block_on(async {
+                        let mut state = state_clone.write().await;
+                        for tx in &block.transactions {
+                            if let Err(e) = state.apply_transaction(tx) {
+                                warn!("Failed to apply transaction in synced block: {}", e);
+                            }
+                        }
+                        
+                        // Persist all balances after applying block
+                        for (address, balance) in state.get_all_balances() {
+                            if let Err(e) = storage_clone.set_balance(&address, balance) {
+                                warn!("Failed to persist balance for {}: {}", address, e);
+                            }
+                        }
+                    });
+                    
+                    Ok(())
+                });
 
                 // Initialize listening with bootstrap
                 if let Err(e) = network.initialize_with_bootstrap().await {
@@ -118,7 +167,7 @@ impl ValidatorNode {
                     {
                         self.network = Some(Arc::new(RwLock::new(network)));
                     }
-                    info!("📡 P2P network ready - will poll in validator loop");
+                    info!("📡 P2P network ready with block sync - will poll in validator loop");
                 }
             }
             Err(e) => {
@@ -262,10 +311,20 @@ impl ValidatorNode {
                 }
 
                 _ = network_tick.tick() => {
-                    // Poll P2P events (non-blocking)
+                    // Poll P2P events and handle network messages
                     if let Some(ref network) = self.network {
                         let mut net = network.write().await;
-                        net.poll_events();
+                        if let Some(event) = net.poll_events().await {
+                            self.handle_network_event(event).await;
+                        }
+                        
+                        // Update local height in sync manager
+                        let current_height = *self.current_height.read().await;
+                        net.set_local_height(current_height);
+                        
+                        // Update connected peers count
+                        let peer_count = net.peer_count();
+                        *self.connected_peers.write().await = peer_count;
                     }
                 }
             }
@@ -374,6 +433,9 @@ impl ValidatorNode {
         self.validator.blocks_proposed += 1;
         self.validator.last_block_height = block.header.block_height;
 
+        // Update current height
+        *self.current_height.write().await = block.header.block_height;
+
         info!(
             "✅ Block {} produced successfully!",
             block.header.block_height
@@ -386,6 +448,8 @@ impl ValidatorNode {
             let mut net = network.write().await;
             if let Err(e) = net.broadcast_block(&block).await {
                 warn!("Failed to broadcast block: {}", e);
+            } else {
+                debug!("📡 Block {} broadcasted to {} peers", block.header.block_height, net.peer_count());
             }
         }
 
@@ -416,6 +480,81 @@ impl ValidatorNode {
         drop(mempool_guard);
 
         Ok(())
+    }
+
+    async fn handle_network_event(&mut self, event: NetworkEvent) {
+        match event {
+            NetworkEvent::PeerConnected(peer) => {
+                info!("🤝 Peer connected: {}", peer);
+            }
+            NetworkEvent::PeerDisconnected(peer) => {
+                info!("👋 Peer disconnected: {}", peer);
+            }
+            NetworkEvent::PeerHeight { peer, height } => {
+                debug!("📊 Peer {} has height: {}", peer, height);
+                let current_height = *self.current_height.read().await;
+                if height > current_height {
+                    info!(
+                        "🔄 Peer {} ahead by {} blocks, will sync...",
+                        peer,
+                        height - current_height
+                    );
+                }
+            }
+            NetworkEvent::NewBlock(block) => {
+                let height = block.header.block_height;
+                info!("📦 Received new block {} from network", height);
+                
+                // Validate and store the block
+                if let Ok(previous_block) = self.storage.get_latest_block() {
+                    if let Some(prev) = previous_block {
+                        if let Err(e) = self.consensus.validate_block(&block, &prev) {
+                            warn!("❌ Invalid block {} from network: {}", height, e);
+                            return;
+                        }
+                    }
+                }
+                
+                // Store the block
+                if let Err(e) = self.storage.insert_block(&block) {
+                    error!("Failed to store block {}: {}", height, e);
+                    return;
+                }
+                
+                // Update state with block transactions
+                let mut state = self.state.write().await;
+                for tx in &block.transactions {
+                    if let Err(e) = state.apply_transaction(tx) {
+                        warn!("Failed to apply transaction in block {}: {}", height, e);
+                    }
+                }
+                
+                // Persist all balances
+                for (address, balance) in state.get_all_balances() {
+                    if let Err(e) = self.storage.set_balance(&address, balance) {
+                        warn!("Failed to persist balance for {}: {}", address, e);
+                    }
+                }
+                drop(state);
+                
+                // Update current height
+                *self.current_height.write().await = height;
+                
+                info!("✅ Block {} accepted and stored", height);
+            }
+            NetworkEvent::NewTransaction(tx) => {
+                debug!("📨 Received new transaction from network");
+                
+                // Add to mempool if valid
+                if let Err(e) = tx.validate() {
+                    warn!("Invalid transaction from network: {}", e);
+                    return;
+                }
+                
+                let mut mempool = self.mempool.write().await;
+                mempool.push(tx);
+            }
+        }
     }
 
     async fn check_mempool(&self) {
