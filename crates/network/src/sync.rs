@@ -14,6 +14,7 @@ pub struct SyncManager {
     target_height: u64,
     state: SyncState,
     pending_blocks: HashMap<u64, Block>,
+    #[allow(dead_code)]
     sync_queue: VecDeque<u64>,
     last_sync_attempt: std::time::Instant,
 }
