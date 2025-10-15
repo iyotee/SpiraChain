@@ -6,7 +6,6 @@
 
 **The World's First Post-Quantum Semantic Blockchain**
 
-[![Build](https://github.com/iyotee/SpiraChain/actions/workflows/rust.yml/badge.svg)](https://github.com/iyotee/SpiraChain/actions)
 [![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)](https://www.rust-lang.org/)
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-CC--BY--SA--4.0-green.svg)](LICENSE)
