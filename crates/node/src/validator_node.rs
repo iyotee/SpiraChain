@@ -277,12 +277,21 @@ impl ValidatorNode {
             let block_reward = Amount::new(spirachain_core::INITIAL_BLOCK_REWARD);
             state.credit_balance(&self.validator.address, block_reward);
 
+            let new_balance = state.get_balance(&self.validator.address);
+            info!(
+                "💰 Crediting {} QBT to validator. New balance: {} QBT",
+                block_reward.value() as f64 / 1e18,
+                new_balance.value() as f64 / 1e18
+            );
+
             // Persist validator balance to storage
-            if let Err(e) = self.storage.set_balance(
-                &self.validator.address,
-                state.get_balance(&self.validator.address),
-            ) {
+            if let Err(e) = self
+                .storage
+                .set_balance(&self.validator.address, new_balance)
+            {
                 warn!("Failed to persist validator balance: {}", e);
+            } else {
+                info!("✅ Balance persisted to storage");
             }
 
             state.set_height(block.header.block_height);
