@@ -165,6 +165,21 @@ impl ValidatorNode {
             );
         }
 
+        // Load validator balance from storage into WorldState
+        // This ensures the initial stake is not lost when producing the first block
+        let stored_balance = self
+            .storage
+            .get_balance(&self.validator.address)
+            .unwrap_or_default();
+        if !stored_balance.is_zero() {
+            let mut state = self.state.write().await;
+            state.set_balance(&self.validator.address, stored_balance);
+            info!(
+                "🔄 Loaded validator balance into WorldState: {} QBT",
+                stored_balance.value() as f64 / 1e18
+            );
+        }
+
         // Start RPC server
         let rpc_port = 8545;
         info!("🌐 Starting RPC server on port {}...", rpc_port);
