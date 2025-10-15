@@ -3,17 +3,19 @@
 
 use futures::StreamExt;
 use libp2p::{
-    gossipsub, identity::Keypair, noise, request_response, swarm::{Swarm, SwarmEvent},
+    gossipsub, identity::Keypair, noise, 
+    request_response::{self, ProtocolSupport}, 
+    swarm::{Swarm, SwarmEvent},
     tcp, yamux, Multiaddr, PeerId, StreamProtocol,
 };
-use spirachain_core::{Block, Hash, Result, SpiraChainError, Transaction};
-use std::collections::{HashMap, HashSet};
+use spirachain_core::{Block, Result, SpiraChainError, Transaction};
+use std::collections::HashSet;
 use std::iter;
 use tracing::{debug, info, warn, error};
 
 use crate::block_sync::{
-    BlockHeader, BlockSyncCodec, BlockSyncManager, BlockSyncRequest, BlockSyncResponse,
-    SyncState, PROTOCOL_VERSION,
+    BlockSyncCodec, BlockSyncManager, BlockSyncRequest, BlockSyncResponse,
+    PROTOCOL_VERSION,
 };
 use crate::bootstrap::{discover_bootstrap_peers, BootstrapConfig};
 
@@ -162,18 +164,27 @@ impl LibP2PNetworkWithSync {
         // Discover bootstrap peers
         info!("🔍 Discovering bootstrap peers...");
         let config = BootstrapConfig::for_network(&self.network);
-        let bootstrap_peers = discover_bootstrap_peers(&config).await;
-
-        if bootstrap_peers.is_empty() {
-            warn!("⚠️  No bootstrap peers found - running in isolated mode");
-        } else {
-            info!("📋 Found {} bootstrap peers", bootstrap_peers.len());
-            for addr in bootstrap_peers {
-                if let Err(e) = self.swarm.dial(addr.clone()) {
-                    warn!("Failed to dial {}: {}", addr, e);
+        match discover_bootstrap_peers(&config).await {
+            Ok(bootstrap_peers) => {
+                if bootstrap_peers.is_empty() {
+                    warn!("⚠️  No bootstrap peers found - running in isolated mode");
                 } else {
-                    debug!("Dialing bootstrap peer: {}", addr);
+                    info!("📋 Found {} bootstrap peers", bootstrap_peers.len());
+                    for addr_str in bootstrap_peers {
+                        if let Ok(addr) = addr_str.parse::<Multiaddr>() {
+                            if let Err(e) = self.swarm.dial(addr.clone()) {
+                                warn!("Failed to dial {}: {}", addr, e);
+                            } else {
+                                debug!("Dialing bootstrap peer: {}", addr);
+                            }
+                        } else {
+                            warn!("Invalid multiaddr: {}", addr_str);
+                        }
+                    }
                 }
+            }
+            Err(e) => {
+                warn!("⚠️  Failed to discover bootstrap peers: {}. Running in isolated mode.", e);
             }
         }
 
@@ -327,7 +338,7 @@ impl LibP2PNetworkWithSync {
 
     async fn handle_sync_response(&mut self, peer: PeerId, response: BlockSyncResponse) -> Option<NetworkEvent> {
         match response {
-            BlockSyncResponse::Height { height, best_hash } => {
+            BlockSyncResponse::Height { height, best_hash: _ } => {
                 info!("📊 Peer {} has height: {}", peer, height);
                 self.sync_manager.register_peer_height(peer, height);
                 Some(NetworkEvent::PeerHeight { peer, height })

@@ -2,12 +2,12 @@
 // Implements Bitcoin-style block download and validation
 
 use libp2p::{
-    request_response::{self, OutboundRequestId, ProtocolSupport, ResponseChannel},
+    request_response::{self, OutboundRequestId},
     PeerId,
 };
 use serde::{Deserialize, Serialize};
-use spirachain_core::{Block, Hash, Result, SpiraChainError};
-use std::collections::{HashMap, HashSet};
+use spirachain_core::{Block, Hash};
+use std::collections::HashMap;
 use tracing::{debug, info, warn};
 
 // Protocol version
@@ -71,7 +71,7 @@ pub struct BlockHeader {
 }
 
 // Codec for request/response
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct BlockSyncCodec;
 
 impl request_response::Codec for BlockSyncCodec {
@@ -79,10 +79,10 @@ impl request_response::Codec for BlockSyncCodec {
     type Request = BlockSyncRequest;
     type Response = BlockSyncResponse;
 
-    async fn read_request<T>(
+    async fn read_request<'a, T>(
         &mut self,
         _protocol: &Self::Protocol,
-        io: &mut T,
+        io: &'a mut T,
     ) -> std::io::Result<Self::Request>
     where
         T: futures::AsyncRead + Unpin + Send,
@@ -94,10 +94,10 @@ impl request_response::Codec for BlockSyncCodec {
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
     }
 
-    async fn read_response<T>(
+    async fn read_response<'a, T>(
         &mut self,
         _protocol: &Self::Protocol,
-        io: &mut T,
+        io: &'a mut T,
     ) -> std::io::Result<Self::Response>
     where
         T: futures::AsyncRead + Unpin + Send,
@@ -109,10 +109,10 @@ impl request_response::Codec for BlockSyncCodec {
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
     }
 
-    async fn write_request<T>(
+    async fn write_request<'a, T>(
         &mut self,
         _protocol: &Self::Protocol,
-        io: &mut T,
+        io: &'a mut T,
         req: Self::Request,
     ) -> std::io::Result<()>
     where
@@ -125,10 +125,10 @@ impl request_response::Codec for BlockSyncCodec {
         io.close().await
     }
 
-    async fn write_response<T>(
+    async fn write_response<'a, T>(
         &mut self,
         _protocol: &Self::Protocol,
-        io: &mut T,
+        io: &'a mut T,
         res: Self::Response,
     ) -> std::io::Result<()>
     where
