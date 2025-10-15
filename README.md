@@ -39,20 +39,28 @@ The script will ask you:
 wsl curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash
 ```
 
-That's it! The script will:
-- ✅ Install all dependencies (Rust, Git, Python)
-- ✅ Build SpiraChain from source
-- ✅ Generate your validator wallet
-- ✅ Set up systemd service (Linux) or background process
-- ✅ Create management scripts (start/stop/status)
+The script will ask:
+1. **Node type:** Light / Full / Validator / Dev
+2. **Network:** Testnet / Mainnet / Local
 
-After installation:
+Then automatically:
+- ✅ Install dependencies (Rust, Git, Python)
+- ✅ Build SpiraChain from source
+- ✅ Create your wallet
+- ✅ Set up systemd service (Linux) or LaunchAgent (macOS)
+- ✅ Start your node in background
+
+After installation, manage your node with:
 ```bash
-# Management scripts are created in ~/.spirachain/
-~/.spirachain/start-testnet.sh    # Start your node
-~/.spirachain/stop-testnet.sh     # Stop your node
+# If you chose Testnet network:
+~/.spirachain/start-testnet.sh    # Start node
+~/.spirachain/stop-testnet.sh     # Stop node
 ~/.spirachain/status-testnet.sh   # Check status
 ~/.spirachain/logs-testnet.sh     # View logs
+
+# Or use systemd directly:
+systemctl --user status spirachain-testnet
+journalctl --user -u spirachain-testnet -f
 ```
 
 ---
