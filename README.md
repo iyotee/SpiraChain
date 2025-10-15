@@ -694,11 +694,7 @@ bash setup_dns_seeder.sh testnet
 - ✅ Outputs DNS records every hour
 - ✅ Runs automatically on system startup
 
-**To become an official seed:**
-- Email: jeremy.noverraz@gmail.com
-- Include: Your DNS name (e.g., myseed.duckdns.org), IP, location
-
-Your seed will be added to the hardcoded bootstrap list for maximum reliability!
+The seeder will show you the DNS records to configure on your domain (Cloudflare, DuckDNS, etc.). Once configured, new nodes will automatically discover your seed!
 
 ---
 
