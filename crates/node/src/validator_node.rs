@@ -138,6 +138,19 @@ impl ValidatorNode {
                 "💰 Initial staking balance credited: {} QBT",
                 initial_stake.value() as f64 / 1e18
             );
+
+            // Verify the balance was actually stored
+            match self.storage.get_balance(&self.validator.address) {
+                Ok(stored_balance) => {
+                    info!(
+                        "✅ Verified stored balance: {} QBT",
+                        stored_balance.value() as f64 / 1e18
+                    );
+                }
+                Err(e) => {
+                    warn!("❌ Failed to verify stored balance: {}", e);
+                }
+            }
         }
 
         // Start RPC server
