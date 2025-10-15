@@ -561,10 +561,40 @@ watch -n 1 vcgencmd measure_temp
 
 ### Troubleshooting
 
+**Installation fails with "linker `cc` not found":**
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y build-essential curl git
+
+# CentOS/RHEL/Fedora
+sudo dnf groupinstall -y "Development Tools"
+sudo dnf install -y curl git
+
+# Alpine Linux
+sudo apk add build-base curl git
+```
+
+**Installation fails with "curl: command not found":**
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y curl
+
+# CentOS/RHEL/Fedora
+sudo dnf install -y curl
+
+# Alpine Linux
+sudo apk add curl
+
+# Then retry installation
+curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash
+```
+
 **Node won't start:**
 ```bash
 # Check logs
-sudo journalctl -u spirachain -n 100
+journalctl --user -u spirachain-testnet -n 100
 
 # Check disk space
 df -h
@@ -585,6 +615,15 @@ free -h
 # Upgrade to 8 GB Raspberry Pi
 # Or run light node instead:
 ./target/release/spira node start --light
+```
+
+**Balance shows 0 QBT but blocks are being produced:**
+```bash
+# Check which wallet address is being used
+~/.spirachain/balance-testnet.sh
+
+# If still 0, wait for next block (30 seconds) and check again
+# The balance synchronization happens after each block
 ```
 
 ### Rewards on Raspberry Pi

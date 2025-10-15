@@ -12,6 +12,91 @@
 
 set -e
 
+# Check and install dependencies
+echo "🔍 Checking dependencies..."
+
+# Detect OS
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS_ID=$ID
+else
+    OS_ID="unknown"
+fi
+
+# Install build-essential if not present
+if ! command -v cc &> /dev/null; then
+    echo "⚙️  Installing build tools (required for Rust compilation)..."
+    case "$OS_ID" in
+        ubuntu|debian)
+            sudo apt-get update -qq
+            sudo apt-get install -y build-essential curl git
+            ;;
+        centos|rhel|fedora)
+            if command -v dnf &> /dev/null; then
+                sudo dnf groupinstall -y "Development Tools"
+                sudo dnf install -y curl git
+            else
+                sudo yum groupinstall -y "Development Tools"
+                sudo yum install -y curl git
+            fi
+            ;;
+        alpine)
+            sudo apk add build-base curl git
+            ;;
+        *)
+            echo "⚠️  Warning: Could not auto-install build tools for $OS_ID"
+            echo "   Please install: build-essential, curl, git manually"
+            echo "   Then re-run this script"
+            exit 1
+            ;;
+    esac
+    echo "✅ Build tools installed"
+else
+    echo "✅ Build tools already installed"
+fi
+
+# Install curl if not present
+if ! command -v curl &> /dev/null; then
+    echo "⚙️  Installing curl..."
+    case "$OS_ID" in
+        ubuntu|debian)
+            sudo apt-get install -y curl
+            ;;
+        centos|rhel|fedora)
+            if command -v dnf &> /dev/null; then
+                sudo dnf install -y curl
+            else
+                sudo yum install -y curl
+            fi
+            ;;
+        alpine)
+            sudo apk add curl
+            ;;
+    esac
+    echo "✅ curl installed"
+fi
+
+# Install git if not present
+if ! command -v git &> /dev/null; then
+    echo "⚙️  Installing git..."
+    case "$OS_ID" in
+        ubuntu|debian)
+            sudo apt-get install -y git
+            ;;
+        centos|rhel|fedora)
+            if command -v dnf &> /dev/null; then
+                sudo dnf install -y git
+            else
+                sudo yum install -y git
+            fi
+            ;;
+        alpine)
+            sudo apk add git
+            ;;
+    esac
+    echo "✅ git installed"
+fi
+
 # Parse command line arguments
 # First arg can be: mainnet, light, full, validator, dev
 # If only one arg and it's a network, assume validator
