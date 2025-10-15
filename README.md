@@ -668,18 +668,29 @@ Even if ALL DNS seeds go offline, existing nodes continue working! True decentra
 
 ### Become a DNS Seeder (Help the Network!)
 
-Run a DNS seeder to help new nodes discover the network:
+Want to help the network by running a DNS seed node?
 
+**Requirements:**
+- Static public IP (or dynamic DNS)
+- Port 30333 open on your firewall/router
+- 99%+ uptime (24/7 server recommended)
+- Run a validator node
+
+**Setup:**
 ```bash
-# Install and run the seeder
-cd ~/.spirachain/SpiraChain/scripts
-python3 dns_seeder.py --network testnet --bootstrap-ips YOUR_RPI_IP YOUR_VPS_IP
+# 1. Install and run SpiraChain validator
+curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash
 
-# Then configure DNS:
-# seed1-testnet.spirachain.org → IPs from seeder output
+# 2. Run the DNS seeder (discovers all network nodes)
+cd ~/.spirachain/SpiraChain/scripts
+python3 dns_seeder.py --network testnet --bootstrap-ips 127.0.0.1
+
+# 3. Contact us to add your seed to the official list
+# Email: jeremy.noverraz@gmail.com
+# Include: Your DNS name, IP, and location
 ```
 
-The seeder discovers all active nodes and outputs DNS records to configure. Simple!
+Your DNS seed will be added to the codebase, helping new nodes discover the network!
 
 ---
 

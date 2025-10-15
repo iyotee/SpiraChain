@@ -94,9 +94,35 @@ class SpiraChainSeeder:
         else:  # mainnet
             return []
     
+    def _get_public_ip(self) -> str:
+        """Get public IP of this machine"""
+        try:
+            response = requests.get('https://ifconfig.me/ip', timeout=5)
+            if response.status_code == 200:
+                return response.text.strip()
+        except:
+            pass
+        
+        try:
+            response = requests.get('https://api.ipify.org', timeout=5)
+            if response.status_code == 200:
+                return response.text.strip()
+        except:
+            pass
+        
+        return None
+    
     async def check_node_health(self, node: NodeInfo) -> bool:
         """Check if a node is responsive"""
         node.uptime_checks += 1
+        
+        # If checking localhost, replace with public IP for DNS
+        check_ip = node.ip
+        if node.ip in ['127.0.0.1', 'localhost', '::1']:
+            public_ip = self._get_public_ip()
+            if public_ip:
+                node.ip = public_ip  # Update to public IP for DNS records
+                logger.info(f"🌐 Detected public IP: {public_ip} (replacing localhost)")
         
         try:
             start_time = time.time()
@@ -104,7 +130,7 @@ class SpiraChainSeeder:
             # Try to connect to P2P port
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.settimeout(5)
-            result = sock.connect_ex((node.ip, node.port))
+            result = sock.connect_ex((check_ip, node.port))
             sock.close()
             
             if result == 0:
