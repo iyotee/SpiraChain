@@ -40,12 +40,15 @@ impl SyncManager {
         if peer_height > self.target_height {
             let was_synced = self.state == SyncState::Synced;
             self.target_height = peer_height;
-            
+
             if peer_height > self.current_height {
                 self.state = SyncState::Syncing;
-                info!("🔄 Sync target updated: {} → {} ({} blocks behind)", 
-                    self.current_height, self.target_height, 
-                    self.target_height - self.current_height);
+                info!(
+                    "🔄 Sync target updated: {} → {} ({} blocks behind)",
+                    self.current_height,
+                    self.target_height,
+                    self.target_height - self.current_height
+                );
                 return true;
             } else if was_synced {
                 self.state = SyncState::Synced;
@@ -66,7 +69,10 @@ impl SyncManager {
 
         if self.current_height >= self.target_height {
             self.state = SyncState::Synced;
-            info!("✅ Blockchain synchronized at height {}", self.current_height);
+            info!(
+                "✅ Blockchain synchronized at height {}",
+                self.current_height
+            );
             return None;
         }
 
@@ -98,15 +104,18 @@ impl SyncManager {
 
     pub async fn sync_block(&mut self, block: Block) -> Result<()> {
         let block_height = block.header.block_height;
-        
+
         if block_height == self.current_height + 1 {
             info!("✅ Synced block at height {}", block_height);
             self.current_height = block_height;
-            
+
             // Check if we've caught up
             if self.current_height >= self.target_height {
                 self.state = SyncState::Synced;
-                info!("🎉 Blockchain fully synchronized at height {}", self.current_height);
+                info!(
+                    "🎉 Blockchain fully synchronized at height {}",
+                    self.current_height
+                );
             }
         } else if block_height > self.current_height + 1 {
             // Out of order - add to pending

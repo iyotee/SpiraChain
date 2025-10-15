@@ -4,9 +4,9 @@
 use futures::StreamExt;
 use libp2p::{
     gossipsub,
-    swarm::{Swarm, SwarmEvent},
     identity::Keypair,
     noise,
+    swarm::{Swarm, SwarmEvent},
     tcp, yamux, Multiaddr, PeerId,
 };
 use spirachain_core::{Block, Result, SpiraChainError, Transaction};
@@ -118,7 +118,10 @@ impl LibP2PNetwork {
         info!("✅ P2P network listening on port {}", self.listen_port);
 
         // Discover and connect to bootstrap peers
-        info!("🔍 Discovering bootstrap peers for {}...", self.network.to_uppercase());
+        info!(
+            "🔍 Discovering bootstrap peers for {}...",
+            self.network.to_uppercase()
+        );
         let config = BootstrapConfig::for_network(&self.network);
 
         match discover_bootstrap_peers(&config).await {
@@ -127,7 +130,7 @@ impl LibP2PNetwork {
                 for peer_addr in peers {
                     if let Ok(addr) = peer_addr.parse::<Multiaddr>() {
                         info!("   Connecting to: {}", addr);
-                        
+
                         // Dial the peer
                         if let Err(e) = self.swarm.dial(addr.clone()) {
                             warn!("   Failed to dial {}: {}", addr, e);
@@ -189,8 +192,14 @@ impl LibP2PNetwork {
                     info!("📡 Listening on: {}", address);
                     Some(format!("Listening: {}", address))
                 }
-                SwarmEvent::ConnectionEstablished { peer_id, endpoint, .. } => {
-                    info!("🤝 Connected to peer: {} at {}", peer_id, endpoint.get_remote_address());
+                SwarmEvent::ConnectionEstablished {
+                    peer_id, endpoint, ..
+                } => {
+                    info!(
+                        "🤝 Connected to peer: {} at {}",
+                        peer_id,
+                        endpoint.get_remote_address()
+                    );
                     self.connected_peers.insert(peer_id);
                     Some(format!("Connected: {}", peer_id))
                 }
@@ -329,8 +338,17 @@ impl LibP2PNetwork {
     }
 
     /// Request blocks from a peer (via Gossipsub for now)
-    pub fn request_blocks(&mut self, _peer_id: PeerId, start_height: u64, count: u64) -> Result<()> {
-        debug!("📥 Block sync: {}-{} (via Gossipsub propagation)", start_height, start_height + count - 1);
+    pub fn request_blocks(
+        &mut self,
+        _peer_id: PeerId,
+        start_height: u64,
+        count: u64,
+    ) -> Result<()> {
+        debug!(
+            "📥 Block sync: {}-{} (via Gossipsub propagation)",
+            start_height,
+            start_height + count - 1
+        );
         Ok(())
     }
 

@@ -245,13 +245,11 @@ async fn get_balance(
     }
 }
 
-async fn get_peers(
-    State(_state): State<Arc<RpcServerState>>,
-) -> impl IntoResponse {
+async fn get_peers(State(_state): State<Arc<RpcServerState>>) -> impl IntoResponse {
     // For now, return empty list
     // TODO: Get actual connected peers from network layer
     // This requires passing network state to RPC server
-    
+
     (
         StatusCode::OK,
         Json(json!({
