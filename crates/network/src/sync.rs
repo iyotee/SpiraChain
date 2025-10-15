@@ -1,6 +1,6 @@
-use spirachain_core::{Block, Result, SpiraChainError};
+use spirachain_core::{Block, Result};
 use std::collections::{HashMap, VecDeque};
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SyncState {

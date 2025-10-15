@@ -23,7 +23,7 @@ use crate::bootstrap::{discover_bootstrap_peers, BootstrapConfig};
 pub struct SpiraChainBehaviour {
     pub gossipsub: gossipsub::Behaviour,
     pub mdns: mdns::tokio::Behaviour,
-    pub kademlia: kad::Kademlia<kad::store::MemoryStore>,
+    pub kademlia: kad::Behaviour<kad::store::MemoryStore>,
     pub identify: identify::Behaviour,
     pub request_response: request_response::cbor::Behaviour<BlockRequest, BlockResponse>,
 }
@@ -84,10 +84,9 @@ impl LibP2PNetwork {
             .map_err(|e| SpiraChainError::NetworkError(format!("mDNS init: {}", e)))?;
 
         // 3. Create Kademlia/DHT (for global peer discovery)
-        let mut kad_config = kad::KademliaConfig::default();
-        kad_config.set_query_timeout(std::time::Duration::from_secs(60));
         let store = kad::store::MemoryStore::new(local_peer_id);
-        let kademlia = kad::Kademlia::with_config(local_peer_id, store, kad_config);
+        let mut kademlia = kad::Behaviour::new(local_peer_id, store);
+        kademlia.set_mode(Some(kad::Mode::Server));
 
         // 4. Create Identify (for peer info exchange)
         let identify = identify::Behaviour::new(identify::Config::new(
