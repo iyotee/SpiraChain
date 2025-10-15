@@ -7,10 +7,17 @@ Measures TPS, finality time, and memory usage
 
 import subprocess
 import time
-import psutil
 import json
 import sys
 from datetime import datetime
+
+# Install missing dependencies if needed
+try:
+    import psutil
+except ImportError:
+    print("📦 Installing required dependency: psutil")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "psutil"])
+    import psutil
 
 # Fix Windows console encoding
 if sys.platform == "win32":
