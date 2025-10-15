@@ -172,7 +172,7 @@ impl fmt::Display for Address {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
 pub struct Amount(u128);
 
 impl Amount {
@@ -182,6 +182,10 @@ impl Amount {
 
     pub fn zero() -> Self {
         Self(0)
+    }
+
+    pub fn is_zero(&self) -> bool {
+        self.0 == 0
     }
 
     pub fn qbt(value: u64) -> Self {
