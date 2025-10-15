@@ -1,9 +1,15 @@
 #!/bin/bash
 # SpiraChain Universal Installer
-# Works for: validators, light nodes, full nodes, testnet, mainnet
-# Usage: curl -sSL https://install.spirachain.org | bash
+# Usage: 
+#   Interactive: bash install.sh
+#   Quick install: bash <(curl -sSL ...) validator testnet
+#   Or: curl -sSL ... | bash -s -- validator testnet
 
 set -e
+
+# Parse command line arguments
+NODE_TYPE="${1:-}"
+NETWORK="${2:-}"
 
 # Colors
 RED='\033[0;31m'
@@ -40,63 +46,53 @@ fi
 echo -e "${CYAN}📋 Detected OS: $OS${NC}"
 echo ""
 
-# Check if running interactively
-if [ -t 0 ]; then
-    # Interactive mode - ask user
-    echo -e "${YELLOW}What do you want to install?${NC}"
-    echo "1) Light Node (Recommended - Low resources, wallet usage)"
-    echo "2) Full Node (Stores complete blockchain)"
-    echo "3) Validator Node (Stake 10K QBT, earn rewards)"
-    echo "4) Development Environment (For developers)"
+# If no arguments provided, use defaults for quick install
+if [ -z "$NODE_TYPE" ]; then
+    echo -e "${YELLOW}⚠️  Quick install mode (no arguments provided)${NC}"
     echo ""
-    read -p "Choice [1-4]: " INSTALL_TYPE
-
-    case $INSTALL_TYPE in
-        1) NODE_TYPE="light" ;;
-        2) NODE_TYPE="full" ;;
-        3) NODE_TYPE="validator" ;;
-        4) NODE_TYPE="dev" ;;
-        *) 
-            echo -e "${RED}Invalid choice${NC}"
-            exit 1
-            ;;
-    esac
-
-    # Ask network
+    echo "Using defaults:"
+    echo "  • Node Type: Validator"
+    echo "  • Network: Testnet"
     echo ""
-    echo -e "${YELLOW}Which network?${NC}"
-    echo "1) Testnet (Free tokens, testing)"
-    echo "2) Mainnet (Real QBT, production)"
-    echo "3) Local (Development)"
+    echo "To customize, run with arguments:"
+    echo "  curl -sSL ... | bash -s -- <type> <network>"
     echo ""
-    read -p "Network [1-3]: " NETWORK_CHOICE
-
-    case $NETWORK_CHOICE in
-        1) NETWORK="testnet" ;;
-        2) NETWORK="mainnet" ;;
-        3) NETWORK="local" ;;
-        *) 
-            echo -e "${RED}Invalid choice${NC}"
-            exit 1
-            ;;
-    esac
-else
-    # Non-interactive mode (piped from curl) - use defaults
-    echo -e "${YELLOW}⚠️  Non-interactive mode detected${NC}"
-    echo "Using defaults: Validator Node on Testnet"
+    echo "Types: light, full, validator, dev"
+    echo "Networks: testnet, mainnet, local"
     echo ""
-    echo "To customize, download and run locally:"
-    echo "  wget https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh"
-    echo "  bash install.sh"
+    echo "Example: curl -sSL ... | bash -s -- validator testnet"
     echo ""
-    read -p "Continue with defaults? (y/n) " -n 1 -r
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-    fi
     
     NODE_TYPE="validator"
     NETWORK="testnet"
+    
+    echo -e "${GREEN}Continuing in 3 seconds...${NC}"
+    sleep 3
+else
+    # Validate arguments
+    case $NODE_TYPE in
+        light|full|validator|dev)
+            ;;
+        *)
+            echo -e "${RED}Invalid node type: $NODE_TYPE${NC}"
+            echo "Valid types: light, full, validator, dev"
+            exit 1
+            ;;
+    esac
+    
+    if [ -z "$NETWORK" ]; then
+        NETWORK="testnet"
+    fi
+    
+    case $NETWORK in
+        testnet|mainnet|local)
+            ;;
+        *)
+            echo -e "${RED}Invalid network: $NETWORK${NC}"
+            echo "Valid networks: testnet, mainnet, local"
+            exit 1
+            ;;
+    esac
 fi
 
 echo ""
