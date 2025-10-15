@@ -194,6 +194,9 @@ impl NodeStorage {
             .insert(key.as_bytes(), data)
             .map_err(|e| SpiraChainError::StorageError(e.to_string()))?;
 
+        // Flush to disk to ensure persistence
+        self.flush()?;
+
         Ok(())
     }
 
