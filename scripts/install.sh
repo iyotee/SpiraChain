@@ -1,9 +1,12 @@
 #!/bin/bash
 # SpiraChain Universal Installer
-# Usage: 
-#   Interactive: bash install.sh
-#   Quick install: bash <(curl -sSL ...) validator testnet
-#   Or: curl -sSL ... | bash -s -- validator testnet
+# 
+# INTERACTIVE INSTALL (recommended):
+#   wget https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh
+#   bash install.sh
+#
+# QUICK INSTALL with defaults:
+#   curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash -s -- validator testnet
 
 set -e
 
@@ -72,7 +75,33 @@ if [ -n "$NODE_TYPE" ]; then
             ;;
     esac
 else
-    # No arguments - ask user interactively
+    # No arguments - check if we can read input
+    if [ ! -t 0 ]; then
+        # Running via curl | bash without arguments - can't be interactive
+        echo -e "${RED}╔══════════════════════════════════════════════════════╗${NC}"
+        echo -e "${RED}║  ⚠️  ERROR: Interactive mode not available          ║${NC}"
+        echo -e "${RED}╚══════════════════════════════════════════════════════╝${NC}"
+        echo ""
+        echo -e "${YELLOW}You're running this via 'curl | bash' which doesn't support interactive menus.${NC}"
+        echo ""
+        echo -e "${GREEN}To install with choices, download first:${NC}"
+        echo ""
+        echo "  wget https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh"
+        echo "  bash install.sh"
+        echo ""
+        echo -e "${GREEN}Or specify arguments directly:${NC}"
+        echo ""
+        echo "  curl -sSL ... | bash -s -- <type> <network>"
+        echo ""
+        echo "Examples:"
+        echo "  curl -sSL ... | bash -s -- validator testnet"
+        echo "  curl -sSL ... | bash -s -- light testnet"
+        echo "  curl -sSL ... | bash -s -- full mainnet"
+        echo ""
+        exit 1
+    fi
+    
+    # Interactive mode - ask user
     echo -e "${YELLOW}What do you want to install?${NC}"
     echo "1) Light Node (Recommended - Low resources, wallet usage)"
     echo "2) Full Node (Stores complete blockchain)"

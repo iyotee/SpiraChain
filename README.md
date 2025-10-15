@@ -22,21 +22,36 @@
 
 ## 🚀 Quick Start - Become a Validator in 1 Line!
 
-### **One-Line Installation** ⚡
+### **Interactive Installation (Recommended)** ⚡
 
-**Linux / macOS:**
+**Linux / macOS / Raspberry Pi:**
 ```bash
-curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash
+# Download the script first
+wget https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh
+
+# Run interactively (you choose node type and network)
+bash install.sh
 ```
 
-The script will ask you:
-- What to install: Light Node / Full Node / Validator / Dev Environment
-- Which network: Testnet / Mainnet / Local
+The script will ask:
+- **Node type:** Light / Full / Validator / Dev
+- **Network:** Testnet / Mainnet / Local
+
+### **Quick Install with Arguments**
+
+```bash
+# Validator on Testnet (most common)
+curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash -s -- validator testnet
+
+# Light node on Testnet
+curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash -s -- light testnet
+```
 
 **Windows (PowerShell):**
 ```powershell
-# Coming soon - use WSL for now
-wsl curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash
+# Download and run with WSL
+wsl wget https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh
+wsl bash install.sh
 ```
 
 The script will ask:
