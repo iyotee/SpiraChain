@@ -316,6 +316,39 @@ elif [[ "\$(uname -s)" == "Darwin" ]]; then
 fi
 EOF
 
+cat > "$INSTALL_DIR/balance-${NETWORK}.sh" <<EOF
+#!/bin/bash
+# Extract validator address from wallet file
+WALLET_FILE="$WALLET_FILE"
+if [ ! -f "\$WALLET_FILE" ]; then
+    echo "❌ Wallet file not found: \$WALLET_FILE"
+    exit 1
+fi
+
+# Get address from wallet (supports both old and new format)
+if command -v jq &> /dev/null; then
+    ADDRESS=\$(jq -r '.address' "\$WALLET_FILE" 2>/dev/null)
+else
+    # Fallback: use grep if jq not available
+    ADDRESS=\$(grep -o '"address"[[:space:]]*:[[:space:]]*"[^"]*"' "\$WALLET_FILE" | cut -d'"' -f4)
+fi
+
+# Remove 0x prefix if present
+ADDRESS=\${ADDRESS#0x}
+
+if [ -z "\$ADDRESS" ]; then
+    echo "❌ Could not extract address from wallet file"
+    exit 1
+fi
+
+echo "🔍 Checking balance for validator..."
+echo "   Address: 0x\$ADDRESS"
+echo ""
+
+# Query balance using spira CLI
+$INSTALL_DIR/SpiraChain/target/release/spira wallet balance --address "\$ADDRESS"
+EOF
+
 chmod +x "$INSTALL_DIR"/*.sh
 
 # Installation complete
@@ -331,10 +364,11 @@ echo -e "${CYAN}📊 Network:${NC} $NETWORK"
 echo -e "${CYAN}🎯 Type:${NC} $NODE_TYPE node"
 echo ""
 echo -e "${YELLOW}🎮 Management Commands:${NC}"
-echo "  Start:  $INSTALL_DIR/start-${NETWORK}.sh"
-echo "  Stop:   $INSTALL_DIR/stop-${NETWORK}.sh"
-echo "  Status: $INSTALL_DIR/status-${NETWORK}.sh"
-echo "  Logs:   $INSTALL_DIR/logs-${NETWORK}.sh"
+echo "  Start:   $INSTALL_DIR/start-${NETWORK}.sh"
+echo "  Stop:    $INSTALL_DIR/stop-${NETWORK}.sh"
+echo "  Status:  $INSTALL_DIR/status-${NETWORK}.sh"
+echo "  Logs:    $INSTALL_DIR/logs-${NETWORK}.sh"
+echo "  Balance: $INSTALL_DIR/balance-${NETWORK}.sh  💰"
 echo ""
 
 if [[ "$OS" == "linux" ]]; then
