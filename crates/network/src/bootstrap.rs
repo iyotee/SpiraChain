@@ -1,6 +1,6 @@
 use spirachain_core::Result;
 use std::net::{IpAddr, ToSocketAddrs};
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 /// DNS seeds for bootstrap node discovery (Testnet)
 /// These DNS records should return A records with IPs of active seed nodes
@@ -124,8 +124,13 @@ pub fn resolve_dns_seeds(seeds: &[String]) -> Vec<(IpAddr, u16)> {
         match addr_with_port.to_socket_addrs() {
             Ok(addrs) => {
                 for addr in addrs {
-                    info!("   ✓ Found peer: {}", addr);
-                    resolved_peers.push((addr.ip(), addr.port()));
+                    // Only use IPv4 addresses for better compatibility
+                    if addr.is_ipv4() {
+                        info!("   ✓ Found peer: {}", addr);
+                        resolved_peers.push((addr.ip(), addr.port()));
+                    } else {
+                        debug!("   ⊘ Skipping IPv6: {}", addr);
+                    }
                 }
             }
             Err(e) => {
