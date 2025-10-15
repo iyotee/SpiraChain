@@ -80,10 +80,10 @@ Every user should run their own node:
 - ~10-50 GB storage
 - Helps network health
 
-**Validator Node** (For stakers)
+**Validator Node** (Fair launch - no staking)
 - Full node + block production
-- Requires 10,000 QBT stake
-- Earns rewards
+- No staking required - anyone can participate
+- Earns rewards (10 QBT per block)
 - Critical for network security
 
 ---
@@ -191,7 +191,7 @@ cargo build --release
 - RAM: 8 GB
 - Storage: 100 GB SSD
 - Network: 100 Mbps, stable
-- Stake: 10,000 QBT
+- No staking required - fair launch!
 
 ---
 
@@ -312,7 +312,7 @@ We track these metrics for network health:
 - **Nakamoto Coefficient**: Minimum nodes to control 51%
 - **Client Diversity**: Percentage using different software
 - **Geographic Distribution**: Herfindahl index by country
-- **Validator Independence**: Stake controlled by individuals vs pools
+- **Validator Independence**: Fully decentralized - no staking pools needed
 
 **Target:** Nakamoto coefficient > 100 (like Bitcoin's ~7000)
 

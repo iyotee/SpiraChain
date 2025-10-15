@@ -5,14 +5,14 @@
 SpiraChain uses a **hybrid Proof of Spiral (PoSp)** consensus that combines:
 - Geometric-semantic validation (primary)
 - Computational proof-of-work (secondary, anti-spam)
-- Validator staking (economic security)
+- **No staking required** (fair launch model)
 
 ## How Mining/Validation Works
 
 ### Not Traditional "Mining"
 
 SpiraChain doesn't have traditional mining like Bitcoin. Instead, it uses **Validator Nodes** that:
-1. **Stake QBT tokens** (minimum 10,000 QBT)
+1. **No staking required** - Fair launch, anyone can participate
 2. **Generate spiral blocks** (computational + creative)
 3. **Validate semantics** (AI-powered analysis)
 4. **Earn rewards** based on quality, not just computation
@@ -23,21 +23,18 @@ SpiraChain doesn't have traditional mining like Bitcoin. Instead, it uses **Vali
 # 1. Create a wallet
 spira wallet new --output validator-wallet.json
 
-# 2. Acquire 10,000+ QBT tokens (from genesis allocation or purchase)
+# 2. Start validating immediately - no capital required!
 
-# 3. Register as validator
-spira validator register \
-  --stake 10000 \
-  --wallet validator-wallet.json \
-  --region "Europe"
+# Testnet (1000 QBT initial balance for testing)
+spira node --validator --wallet validator-wallet.json --network testnet
 
-# 4. Run validator node (when network is ready)
-spira node start --mode validator --wallet validator-wallet.json
+# Mainnet (0 QBT initial balance - fair launch!)
+spira node --validator --wallet validator-wallet.json --network mainnet
 ```
 
 ### Requirements for Validators
 
-**Minimum Stake**: 10,000 QBT  
+**No Staking Required**: Fair launch - start with 0 QBT on mainnet!  
 **Hardware** (Raspberry Pi Compatible!):
 - CPU: 4+ cores (Pi 4/5, x86-64, ARM64)
 - RAM: 8 GB (4 GB works but 8 GB recommended)
@@ -46,7 +43,7 @@ spira node start --mode validator --wallet validator-wallet.json
 - Network: 10+ Mbps stable connection
 - Power: 5-15W (ultra-low power consumption)
 
-**Lock Period**: ~35 days (100,000 blocks)
+**Earning Model**: Earn 10 QBT per block validated from day one!
 
 **Why Raspberry Pi Works:**
 - Current implementation is CPU-only (no GPU needed)

@@ -125,7 +125,7 @@ Qbitum/
 2. Check spiral complexity
 3. Validate semantic coherence
 4. Verify spiral continuity
-5. Check validator stake
+5. Verify validator identity (no staking required)
 6. Verify proof-of-work
 7. Verify XMSS signature
 8. Accept or reject
@@ -152,8 +152,8 @@ Qbitum/
 - **Spiral Geometry**: Serialized binary data
 
 ### State Layer
-- **Accounts**: Balance, nonce, stake
-- **Validators**: Stake, reputation, history
+- **Accounts**: Balance, nonce
+- **Validators**: Reputation, history (no staking required)
 - **Contracts**: (Planned)
 
 ### Semantic Layer (Planned)
@@ -182,13 +182,13 @@ Qbitum/
 - **Collision Resistance**: 2^256
 
 ### Consensus Security
-- **51% Attack Cost**: High stake requirement
+- **51% Attack Cost**: Computational + reputation requirements (no staking)
 - **Spiral Forgery**: Computationally infeasible
 - **Semantic Manipulation**: AI anomaly detection
 
 ### Economic Security
-- **Slashing**: 5-50% of stake
-- **Reputation**: Exponential decay
+- **No Slashing**: Fair launch model without staking penalties
+- **Reputation**: Exponential decay for misbehavior
 - **Lock Period**: ~35 days
 
 ## Performance Characteristics

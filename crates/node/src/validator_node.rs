@@ -178,7 +178,7 @@ impl ValidatorNode {
             .unwrap_or_default();
         if !stored_balance.is_zero() {
             let mut state = self.state.write().await;
-            state.set_balance(&self.validator.address, stored_balance);
+            state.set_balance(self.validator.address, stored_balance);
             info!(
                 "🔄 Loaded validator balance into WorldState: {} QBT",
                 stored_balance.value() as f64 / 1e18

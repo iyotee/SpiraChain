@@ -33,7 +33,7 @@ Perfect for testing, learning, and Raspberry Pi!
 ```bash
 curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash -s -- mainnet
 ```
-Requires 10,000 QBT stake and stable server.
+**Fair launch:** Start with 0 QBT, earn through block rewards only. No staking required!
 
 **Other Options:**
 ```bash
@@ -183,7 +183,7 @@ Validators don't just mine—they create **geometrically beautiful spirals**:
 - **Halving:** Every 2,102,400 blocks (~2 years)
 - **Base reward:** 10 QBT per block (up to 20 QBT with bonuses)
 - **Fee burning:** 30% of all transaction fees are burned (deflationary)
-- **Validator minimum:** 10,000 QBT stake required
+- **Fair launch:** No staking required - anyone can become a validator
 
 ### 🚀 Performance
 - **Block time:** 30 seconds (20x faster than Bitcoin)
@@ -369,24 +369,26 @@ python3 -c "from sentence_transformers import SentenceTransformer; SentenceTrans
 Validators produce blocks and earn rewards. Here's how to become one:
 
 #### 1. **Requirements**
-- **Stake:** Minimum 10,000 QBT
+- **No staking required:** Fair launch - start with 0 QBT, earn through validation
 - **Hardware:** 4+ CPU cores, 8 GB RAM, 256 GB SSD (Raspberry Pi 4/5 perfect!)
 - **GPU:** NOT required (optional for AI acceleration in future)
 - **Network:** Stable connection, open port 30333, 10+ Mbps
 - **Uptime:** 99%+ recommended
 - **Power:** 5-15W (can run on solar/battery!)
 
-#### 2. **Register as Validator**
+#### 2. **Start Validating**
 ```bash
-./target/release/spira validator register \
-  --wallet validator_wallet.json \
-  --stake 10000 \
-  --commission 5.0
+# Testnet (1000 QBT initial balance for testing)
+./target/release/spira node --validator --wallet validator_wallet.json --network testnet
+
+# Mainnet (0 QBT initial balance - fair launch!)
+./target/release/spira node --validator --wallet validator_wallet.json --network mainnet
 ```
 
 **Parameters:**
-- `--stake`: Amount to stake (min 10,000 QBT)
-- `--commission`: Your fee percentage (0-10%)
+- `--validator`: Run as validator node
+- `--wallet`: Path to your validator wallet
+- `--network`: testnet or mainnet
 
 #### 3. **Start Validator Node**
 ```bash
@@ -669,15 +671,18 @@ Every transaction pays a fee. The fee is distributed as follows:
 ### Validator Requirements
 
 To become a validator and earn rewards:
-- **Minimum Stake:** 10,000 QBT
-- **Lock Period:** 100,000 blocks (~35 days)
-- **Reputation:** Must maintain >30% reputation score
+- **No staking required:** Fair launch - anyone can participate
+- **Start with 0 QBT:** Earn through block validation rewards
+- **Testnet:** 1000 QBT initial balance for testing
+- **Mainnet:** 0 QBT initial balance - true fair launch
+- **Reputation:** Build through consistent validation
 - **No Slashing:** No penalties in history
 
-**How to get 10,000 QBT:**
-1. Join testnet early and accumulate rewards
-2. Buy on exchanges after mainnet launch
-3. Contribute to development (grants)
+**How to start:**
+1. Install SpiraChain validator node (one command)
+2. Start validating blocks immediately
+3. Earn 10 QBT per block validated
+4. No barriers, no pre-mine, fully decentralized
 
 ### Halving Schedule
 
