@@ -18,7 +18,12 @@ try:
     import psutil
 except ImportError:
     print("📦 Installing required dependency: psutil")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "psutil"])
+    if sys.platform.startswith('linux'):
+        # Use apt on Linux (Raspberry Pi)
+        subprocess.check_call(["sudo", "apt", "install", "-y", "python3-psutil"])
+    else:
+        # Use pip on other platforms
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "psutil"])
     import psutil
 
 # Fix Windows console encoding
