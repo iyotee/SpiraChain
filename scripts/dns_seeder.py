@@ -300,7 +300,9 @@ class SpiraChainSeeder:
     
     def save_state(self):
         """Save known nodes to disk"""
-        state_file = f"dns_seeder_{self.network}.json"
+        # Use absolute path in the script's directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        state_file = os.path.join(script_dir, f"dns_seeder_{self.network}.json")
         
         state = {
             'last_updated': datetime.now().isoformat(),
@@ -324,7 +326,9 @@ class SpiraChainSeeder:
     
     def load_state(self):
         """Load known nodes from disk"""
-        state_file = f"dns_seeder_{self.network}.json"
+        # Use absolute path in the script's directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        state_file = os.path.join(script_dir, f"dns_seeder_{self.network}.json")
         
         try:
             with open(state_file, 'r') as f:
