@@ -185,6 +185,18 @@ impl NodeStorage {
         }
     }
 
+    pub fn set_balance(&self, address: &Address, balance: Amount) -> Result<()> {
+        let key = format!("balance:{}", address);
+        let data = bincode::serialize(&balance)
+            .map_err(|e| SpiraChainError::SerializationError(e.to_string()))?;
+        
+        self.state
+            .insert(key.as_bytes(), data)
+            .map_err(|e| SpiraChainError::StorageError(e.to_string()))?;
+        
+        Ok(())
+    }
+
     pub fn flush(&self) -> Result<()> {
         self.db.flush().map_err(|e| {
             SpiraChainError::StorageError(format!("Failed to flush database: {}", e))

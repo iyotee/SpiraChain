@@ -38,6 +38,13 @@ impl WorldState {
             .balance = balance;
     }
 
+    pub fn credit_balance(&mut self, address: &Address, amount: Amount) {
+        let current_balance = self.get_balance(address);
+        if let Some(new_balance) = current_balance.checked_add(amount) {
+            self.set_balance(*address, new_balance);
+        }
+    }
+
     pub fn transfer(&mut self, from: &Address, to: &Address, amount: Amount) -> Result<()> {
         let from_balance = self.get_balance(from);
         let to_balance = self.get_balance(to);

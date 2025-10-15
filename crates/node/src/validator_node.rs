@@ -263,6 +263,8 @@ impl ValidatorNode {
 
         {
             let mut state = self.state.write().await;
+            
+            // Process transactions
             for tx in &block.transactions {
                 if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
                     warn!("Failed to transfer in block: {}", e);
@@ -270,6 +272,16 @@ impl ValidatorNode {
                     state.increment_nonce(&tx.from);
                 }
             }
+            
+            // Credit block reward to validator
+            let block_reward = Amount::new(spirachain_core::INITIAL_BLOCK_REWARD);
+            state.credit_balance(&self.validator.address, block_reward);
+            
+            // Persist validator balance to storage
+            if let Err(e) = self.storage.set_balance(&self.validator.address, state.get_balance(&self.validator.address)) {
+                warn!("Failed to persist validator balance: {}", e);
+            }
+            
             state.set_height(block.header.block_height);
         }
 
