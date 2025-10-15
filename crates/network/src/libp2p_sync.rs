@@ -151,19 +151,28 @@ impl LibP2PNetworkWithSync {
                 if bootstrap_peers.is_empty() {
                     warn!("⚠️  No bootstrap peers found - running in isolated mode");
                 } else {
-                    info!("📋 Found {} bootstrap peers", bootstrap_peers.len());
+                    info!("📋 Found {} bootstrap peers (may include self)", bootstrap_peers.len());
+                    
+                    // Get our listen addresses to filter them out
+                    let listen_addrs: Vec<String> = self.swarm
+                        .listeners()
+                        .map(|a| a.to_string())
+                        .collect();
                     
                     let mut dialed_count = 0;
                     for addr_str in bootstrap_peers {
+                        // Skip our own listening addresses
+                        let is_self = listen_addrs.iter().any(|listen| {
+                            addr_str.contains(&listen.to_string()) || 
+                            listen.contains(&addr_str)
+                        });
+                        
+                        if is_self {
+                            debug!("⊘ Skipping self: {}", addr_str);
+                            continue;
+                        }
+                        
                         if let Ok(addr) = addr_str.parse::<Multiaddr>() {
-                            // Skip if this looks like our own listening address
-                            // (bootstrap will naturally include ourselves from DNS seeds)
-                            let addr_string = addr.to_string();
-                            if addr_string.contains("127.0.0.1") || addr_string.contains("localhost") {
-                                debug!("⊘ Skipping localhost: {}", addr);
-                                continue;
-                            }
-                            
                             match self.swarm.dial(addr.clone()) {
                                 Ok(_) => {
                                     info!("📞 Dialing bootstrap peer: {}", addr);
@@ -180,6 +189,7 @@ impl LibP2PNetworkWithSync {
                     
                     if dialed_count == 0 {
                         warn!("⚠️  No external peers to dial - waiting for incoming connections");
+                        info!("   This is normal if you're the first/only node on the network");
                     } else {
                         info!("✅ Dialed {} bootstrap peers", dialed_count);
                     }
