@@ -85,7 +85,7 @@ impl LibP2PNetworkWithSync {
             .with_behaviour(|_key| behaviour)
             .map_err(|e| SpiraChainError::NetworkError(format!("Behaviour: {}", e)))?
             .with_swarm_config(|c| {
-                c.with_idle_connection_timeout(std::time::Duration::from_secs(60))
+                c.with_idle_connection_timeout(std::time::Duration::from_secs(300)) // 5 minutes
             })
             .build();
 
@@ -214,14 +214,11 @@ impl LibP2PNetworkWithSync {
         let height_changed = height != self.local_height;
         self.local_height = height;
 
-        // Announce new height only if changed AND at most once per 2 seconds
-        // (faster re-announcement for sync)
-        if height_changed {
-            let elapsed = self.last_height_announcement.elapsed();
-            if elapsed.as_secs() >= 2 {
-                self.announce_height();
-                self.last_height_announcement = std::time::Instant::now();
-            }
+        // Announce height every 10 seconds (keep-alive) OR if changed
+        let elapsed = self.last_height_announcement.elapsed();
+        if height_changed || elapsed.as_secs() >= 10 {
+            self.announce_height();
+            self.last_height_announcement = std::time::Instant::now();
         }
     }
 
