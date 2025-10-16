@@ -25,6 +25,7 @@ pub struct LibP2PNetworkWithSync {
     listen_port: u16,
     network: String,
     local_height: u64,
+    last_height_announcement: std::time::Instant,
 }
 
 // Network events
@@ -100,6 +101,7 @@ impl LibP2PNetworkWithSync {
             listen_port: port,
             network: network.to_string(),
             local_height,
+            last_height_announcement: std::time::Instant::now(),
         })
     }
 
@@ -195,9 +197,17 @@ impl LibP2PNetworkWithSync {
 
     /// Update local blockchain height
     pub fn set_local_height(&mut self, height: u64) {
+        let height_changed = height != self.local_height;
         self.local_height = height;
-        // Announce new height to peers
-        self.announce_height();
+        
+        // Announce new height only if changed AND at most once per 10 seconds
+        if height_changed {
+            let elapsed = self.last_height_announcement.elapsed();
+            if elapsed.as_secs() >= 10 {
+                self.announce_height();
+                self.last_height_announcement = std::time::Instant::now();
+            }
+        }
     }
 
     /// Announce our blockchain height to peers
@@ -209,6 +219,8 @@ impl LibP2PNetworkWithSync {
             .publish(self.sync_topic.clone(), data)
         {
             debug!("Failed to announce height: {}", e);
+        } else {
+            debug!("📢 Announced height: {}", self.local_height);
         }
     }
 
