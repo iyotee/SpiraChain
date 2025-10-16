@@ -4,7 +4,7 @@ use spirachain_core::{Address, Amount, Block, Result, Transaction};
 use spirachain_crypto::{KeyPair, PublicKey};
 use spirachain_network::{LibP2PNetworkWithSync, NetworkEvent};
 use std::sync::Arc;
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
 use tokio::time::{interval, Duration};
 use tracing::{debug, error, info, warn};
 
@@ -22,6 +22,7 @@ pub struct ValidatorNode {
     blocks_produced: u64,
     connected_peers: Arc<RwLock<usize>>,
     current_height: Arc<RwLock<u64>>,
+    block_production_lock: Arc<Mutex<()>>, // Prevent concurrent block production
 }
 
 impl ValidatorNode {
@@ -102,6 +103,7 @@ impl ValidatorNode {
             blocks_produced: 0,
             connected_peers: Arc::new(RwLock::new(0)),
             current_height: Arc::new(RwLock::new(initial_height)),
+            block_production_lock: Arc::new(Mutex::new(())),
         })
     }
 
@@ -326,10 +328,20 @@ impl ValidatorNode {
                     let validator_count = slot_consensus.validator_count();
 
                     if is_our_turn {
-                        info!("✅ Our turn to produce block (slot {}, validators: {})", current_slot, validator_count);
                         drop(slot_consensus);
-                        if let Err(e) = self.produce_block().await {
-                            error!("Failed to produce block: {}", e);
+                        
+                        // Try to acquire production lock (non-blocking)
+                        let lock = self.block_production_lock.clone();
+                        let guard = lock.try_lock();
+                        
+                        if let Ok(mut _production_guard) = guard {
+                            info!("✅ Our turn to produce block (slot {}, validators: {})", current_slot, validator_count);
+                            if let Err(e) = self.produce_block().await {
+                                error!("Failed to produce block: {}", e);
+                            }
+                            drop(_production_guard); // Explicitly drop to release lock
+                        } else {
+                            debug!("⊘ Block production already in progress, skipping");
                         }
                     } else {
                         let leader = slot_consensus.get_current_leader();
