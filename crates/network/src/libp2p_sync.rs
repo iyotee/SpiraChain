@@ -35,6 +35,7 @@ pub enum NetworkEvent {
     PeerHeight { peer: PeerId, height: u64 },
     NewBlock(Block),
     NewTransaction(Transaction),
+    BlockRequested(u64), // A peer requested a specific block height
 }
 
 impl LibP2PNetworkWithSync {
@@ -267,14 +268,38 @@ impl LibP2PNetworkWithSync {
                         }
                     }
                 } else if message.topic == self.sync_topic.hash() {
-                    // Received height announcement
+                    // Received sync message (height announcement or block request)
                     if let Ok(msg) = String::from_utf8(message.data) {
                         if let Some(height_str) = msg.strip_prefix("HEIGHT:") {
-                            if let Ok(height) = height_str.parse::<u64>() {
-                                debug!("📊 Peer announced height: {}", height);
-                                // Note: We don't have peer_id from message, so we can't emit PeerHeight event
-                                // This is a limitation of simple Gossipsub
+                            if let Ok(peer_height) = height_str.parse::<u64>() {
+                                info!("📊 Peer announced height: {}", peer_height);
+                                
+                                // If peer is ahead, we're behind and need to catch up
+                                if peer_height > self.local_height {
+                                    let blocks_behind = peer_height - self.local_height;
+                                    info!("🔄 We are {} blocks behind, requesting catch-up...", blocks_behind);
+                                    
+                                    // Request missing blocks
+                                    for h in (self.local_height + 1)..=peer_height {
+                                        let request_msg = format!("GET_BLOCK:{}", h);
+                                        if let Err(e) = self.swarm
+                                            .behaviour_mut()
+                                            .publish(self.sync_topic.clone(), request_msg.as_bytes().to_vec())
+                                        {
+                                            debug!("Failed to request block {}: {}", h, e);
+                                        }
+                                    }
+                                }
                                 None
+                            } else {
+                                None
+                            }
+                        } else if let Some(height_str) = msg.strip_prefix("GET_BLOCK:") {
+                            // Someone is requesting a block
+                            if let Ok(requested_height) = height_str.parse::<u64>() {
+                                debug!("📤 Peer requested block {}", requested_height);
+                                // Emit event so ValidatorNode can send the block
+                                Some(NetworkEvent::BlockRequested(requested_height))
                             } else {
                                 None
                             }
@@ -303,6 +328,20 @@ impl LibP2PNetworkWithSync {
             .map_err(|e| SpiraChainError::NetworkError(format!("Broadcast block: {}", e)))?;
 
         debug!("📡 Broadcasted block {}", block.header.block_height);
+        Ok(())
+    }
+
+    /// Send a specific block (in response to GET_BLOCK request)
+    pub async fn send_block(&mut self, block: &Block) -> Result<()> {
+        let data = bincode::serialize(block)
+            .map_err(|e| SpiraChainError::SerializationError(e.to_string()))?;
+
+        self.swarm
+            .behaviour_mut()
+            .publish(self.block_topic.clone(), data)
+            .map_err(|e| SpiraChainError::NetworkError(format!("Send block: {}", e)))?;
+
+        info!("📤 Sent block {} to peers", block.header.block_height);
         Ok(())
     }
 
