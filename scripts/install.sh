@@ -390,7 +390,6 @@ After=network.target
 Type=simple
 WorkingDirectory=$INSTALL_DIR/SpiraChain
 Environment="RUST_LOG=info,yamux=error"
-Environment="KNOWN_VALIDATORS=b09b221f7ab09f4fc986396fd59e769f1d60836e1b74f33619511bc6602010a2,62232bc11c790fb55691338dc4373c1b5eb17629e8dab456ca9382c235f9a995"
 ExecStart=$CMD
 Restart=always
 RestartSec=10

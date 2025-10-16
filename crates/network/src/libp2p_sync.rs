@@ -3,7 +3,9 @@
 
 use futures::StreamExt;
 use libp2p::{
-    gossipsub, identity::Keypair, noise,
+    gossipsub,
+    identity::Keypair,
+    noise,
     swarm::{Swarm, SwarmEvent},
     tcp, yamux, Multiaddr, PeerId,
 };
@@ -155,7 +157,7 @@ impl LibP2PNetworkWithSync {
                     warn!("⚠️  No bootstrap peers found - running in isolated mode");
                 } else {
                     info!("📋 Found {} bootstrap peers", bootstrap_peers.len());
-                    
+
                     let mut dialed_count = 0;
                     for addr_str in &bootstrap_peers {
                         if let Ok(addr) = addr_str.parse::<Multiaddr>() {
@@ -173,7 +175,7 @@ impl LibP2PNetworkWithSync {
                             }
                         }
                     }
-                    
+
                     if dialed_count == 0 {
                         info!("⚠️  No external peers to dial - running as first node");
                         info!("   Waiting for incoming connections...");
@@ -183,15 +185,18 @@ impl LibP2PNetworkWithSync {
                 }
             }
             Err(e) => {
-                warn!("⚠️  Failed to discover bootstrap peers: {}. Running in isolated mode.", e);
+                warn!(
+                    "⚠️  Failed to discover bootstrap peers: {}. Running in isolated mode.",
+                    e
+                );
             }
         }
 
         self.is_listening = true;
-        
+
         // Announce our height
         self.announce_height();
-        
+
         Ok(())
     }
 
@@ -199,7 +204,7 @@ impl LibP2PNetworkWithSync {
     pub fn set_local_height(&mut self, height: u64) {
         let height_changed = height != self.local_height;
         self.local_height = height;
-        
+
         // Announce new height only if changed AND at most once per 2 seconds
         // (faster re-announcement for sync)
         if height_changed {
@@ -215,7 +220,8 @@ impl LibP2PNetworkWithSync {
     fn announce_height(&mut self) {
         let msg = format!("HEIGHT:{}", self.local_height);
         let data = msg.as_bytes().to_vec();
-        if let Err(e) = self.swarm
+        if let Err(e) = self
+            .swarm
             .behaviour_mut()
             .publish(self.sync_topic.clone(), data)
         {
@@ -232,13 +238,19 @@ impl LibP2PNetworkWithSync {
                 info!("📡 Listening on: {}", address);
                 None
             }
-            SwarmEvent::ConnectionEstablished { peer_id, endpoint, .. } => {
-                info!("🤝 Connected to peer: {} at {}", peer_id, endpoint.get_remote_address());
+            SwarmEvent::ConnectionEstablished {
+                peer_id, endpoint, ..
+            } => {
+                info!(
+                    "🤝 Connected to peer: {} at {}",
+                    peer_id,
+                    endpoint.get_remote_address()
+                );
                 self.connected_peers.insert(peer_id);
-                
+
                 // Announce our height to new peer
                 self.announce_height();
-                
+
                 Some(NetworkEvent::PeerConnected(peer_id))
             }
             SwarmEvent::ConnectionClosed { peer_id, .. } => {
@@ -246,9 +258,7 @@ impl LibP2PNetworkWithSync {
                 self.connected_peers.remove(&peer_id);
                 Some(NetworkEvent::PeerDisconnected(peer_id))
             }
-            SwarmEvent::Behaviour(gossip_event) => {
-                self.handle_gossipsub_event(gossip_event)
-            }
+            SwarmEvent::Behaviour(gossip_event) => self.handle_gossipsub_event(gossip_event),
             _ => None,
         }
     }
@@ -260,7 +270,10 @@ impl LibP2PNetworkWithSync {
                     // Received a new block
                     match bincode::deserialize::<Block>(&message.data) {
                         Ok(block) => {
-                            info!("📦 Received new block {} via gossip", block.header.block_height);
+                            info!(
+                                "📦 Received new block {} via gossip",
+                                block.header.block_height
+                            );
                             Some(NetworkEvent::NewBlock(block))
                         }
                         Err(e) => {
@@ -286,24 +299,32 @@ impl LibP2PNetworkWithSync {
                         if let Some(height_str) = msg.strip_prefix("HEIGHT:") {
                             if let Ok(peer_height) = height_str.parse::<u64>() {
                                 info!("📊 Peer announced height: {}", peer_height);
-                                
+
                                 // If peer is ahead, we're behind and need to catch up
                                 if peer_height > self.local_height {
                                     let blocks_behind = peer_height - self.local_height;
-                                    info!("🔄 We are {} blocks behind (peer at {}, us at {})", blocks_behind, peer_height, self.local_height);
-                                    
+                                    info!(
+                                        "🔄 We are {} blocks behind (peer at {}, us at {})",
+                                        blocks_behind, peer_height, self.local_height
+                                    );
+
                                     // Request missing blocks in batches of 50
                                     let batch_size = 50;
                                     let start = self.local_height + 1;
                                     let end = std::cmp::min(start + batch_size - 1, peer_height);
-                                    
+
                                     let request_msg = format!("GET_BLOCKS:{}-{}", start, end);
-                                    info!("📥 Requesting blocks {} to {} (batch of {})", start, end, end - start + 1);
-                                    
-                                    if let Err(e) = self.swarm
-                                        .behaviour_mut()
-                                        .publish(self.sync_topic.clone(), request_msg.as_bytes().to_vec())
-                                    {
+                                    info!(
+                                        "📥 Requesting blocks {} to {} (batch of {})",
+                                        start,
+                                        end,
+                                        end - start + 1
+                                    );
+
+                                    if let Err(e) = self.swarm.behaviour_mut().publish(
+                                        self.sync_topic.clone(),
+                                        request_msg.as_bytes().to_vec(),
+                                    ) {
                                         warn!("Failed to request blocks: {}", e);
                                     }
                                 }

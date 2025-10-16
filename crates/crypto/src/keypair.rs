@@ -64,6 +64,15 @@ impl KeyPair {
 }
 
 impl PublicKey {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
+        if bytes.len() != 32 {
+            return Err("Public key must be 32 bytes".into());
+        }
+        let mut key_bytes = [0u8; 32];
+        key_bytes.copy_from_slice(bytes);
+        Ok(PublicKey(key_bytes))
+    }
+
     pub fn to_address(&self) -> Address {
         let hash = blake3::hash(&self.0);
         Address::new(*hash.as_bytes())

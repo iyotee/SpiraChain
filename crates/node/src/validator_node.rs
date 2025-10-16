@@ -1,7 +1,7 @@
 use crate::{BlockStorage, NodeConfig, WorldState};
 use spirachain_consensus::{ProofOfSpiral, SlotConsensus, Validator};
 use spirachain_core::{Address, Amount, Block, Result, Transaction};
-use spirachain_crypto::KeyPair;
+use spirachain_crypto::{KeyPair, PublicKey};
 use spirachain_network::{LibP2PNetworkWithSync, NetworkEvent};
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -69,7 +69,8 @@ impl ValidatorNode {
         }
 
         // Get initial blockchain height
-        let initial_height = storage.get_latest_block()
+        let initial_height = storage
+            .get_latest_block()
             .ok()
             .flatten()
             .map(|b| b.header.block_height)
@@ -79,10 +80,13 @@ impl ValidatorNode {
         let mut slot_consensus = SlotConsensus::new(&config.network);
         // Register ourselves as a validator
         slot_consensus.add_validator(address);
-        
+
         info!("🎰 Slot consensus initialized");
         info!("   Network: {}", config.network);
-        info!("   Slot duration: {}s", if config.network == "mainnet" { 60 } else { 30 });
+        info!(
+            "   Slot duration: {}s",
+            if config.network == "mainnet" { 60 } else { 30 }
+        );
 
         Ok(Self {
             config,
@@ -123,7 +127,9 @@ impl ValidatorNode {
         let current_height = *self.current_height.read().await;
         info!("📊 Current blockchain height: {}", current_height);
 
-        match LibP2PNetworkWithSync::new_with_network(port, &self.config.network, current_height).await {
+        match LibP2PNetworkWithSync::new_with_network(port, &self.config.network, current_height)
+            .await
+        {
             Ok(mut network) => {
                 info!(
                     "✅ P2P network with sync created for {}",
@@ -134,21 +140,21 @@ impl ValidatorNode {
                 let storage_clone = Arc::clone(&self.storage);
                 let state_clone = Arc::clone(&self.state);
                 let height_clone = Arc::clone(&self.current_height);
-                
+
                 network.set_block_store_callback(move |block: Block| {
                     let height = block.header.block_height;
                     info!("💾 Storing synced block {}", height);
-                    
+
                     // Store the block
                     storage_clone.store_block(&block)?;
-                    
+
                     // Update height
                     let rt = tokio::runtime::Handle::current();
                     rt.block_on(async {
                         let mut h = height_clone.write().await;
                         *h = height;
                     });
-                    
+
                     // Update state with block transactions
                     rt.block_on(async {
                         let mut state = state_clone.write().await;
@@ -157,7 +163,7 @@ impl ValidatorNode {
                                 warn!("Failed to apply transaction in synced block: {}", e);
                             }
                         }
-                        
+
                         // Persist all balances after applying block
                         for (address, balance) in state.get_all_balances() {
                             if let Err(e) = storage_clone.set_balance(&address, balance) {
@@ -165,7 +171,7 @@ impl ValidatorNode {
                             }
                         }
                     });
-                    
+
                     Ok(())
                 });
 
@@ -181,26 +187,7 @@ impl ValidatorNode {
                         self.network = Some(Arc::new(RwLock::new(network)));
                     }
                     info!("📡 P2P network ready with block sync - will poll in validator loop");
-                    
-                    // Register known validators from environment variable (for initial bootstrap)
-                    if let Ok(known_validators) = std::env::var("KNOWN_VALIDATORS") {
-                        let mut slot_consensus = self.slot_consensus.write().await;
-                        for addr_hex in known_validators.split(',') {
-                            let addr_hex = addr_hex.trim();
-                            if addr_hex.len() == 64 {
-                                if let Ok(addr_bytes) = hex::decode(addr_hex) {
-                                    if addr_bytes.len() == 32 {
-                                        let mut addr_array = [0u8; 32];
-                                        addr_array.copy_from_slice(&addr_bytes);
-                                        let address = Address::new(addr_array);
-                                        slot_consensus.add_validator(address);
-                                        info!("📝 Registered known validator: {}", address);
-                                    }
-                                }
-                            }
-                        }
-                        info!("✅ Total validators in slot consensus: {}", slot_consensus.validator_count());
-                    }
+                    info!("🔍 Validators will be auto-discovered from blocks they produce");
                 }
             }
             Err(e) => {
@@ -334,7 +321,7 @@ impl ValidatorNode {
                     let slot_consensus = self.slot_consensus.read().await;
                     let is_our_turn = slot_consensus.is_slot_leader(&self.validator.address);
                     let current_slot = slot_consensus.get_current_slot();
-                    
+
                     if is_our_turn {
                         info!("✅ Our turn to produce block (slot {})", current_slot);
                         drop(slot_consensus);
@@ -361,18 +348,18 @@ impl ValidatorNode {
                         let event = {
                             let mut net = network.write().await;
                             let evt = net.poll_events().await;
-                            
+
                             // Update local height in sync manager
                             let current_height = *self.current_height.read().await;
                             net.set_local_height(current_height);
-                            
+
                             // Update connected peers count
                             let peer_count = net.peer_count();
                             *self.connected_peers.write().await = peer_count;
-                            
+
                             evt
                         };
-                        
+
                         // Handle event outside of the lock
                         if let Some(event) = event {
                             self.handle_network_event(event).await;
@@ -501,7 +488,11 @@ impl ValidatorNode {
             if let Err(e) = net.broadcast_block(&block).await {
                 warn!("Failed to broadcast block: {}", e);
             } else {
-                debug!("📡 Block {} broadcasted to {} peers", block.header.block_height, net.peer_count());
+                debug!(
+                    "📡 Block {} broadcasted to {} peers",
+                    block.header.block_height,
+                    net.peer_count()
+                );
             }
         }
 
@@ -538,7 +529,7 @@ impl ValidatorNode {
         match event {
             NetworkEvent::PeerConnected(peer) => {
                 info!("🤝 Peer connected: {}", peer);
-                
+
                 // For now, we'll discover validators by monitoring blocks they produce
                 // Each block contains the validator's address in the signature
                 // When we receive a block, we'll add that validator to our slot consensus
@@ -560,24 +551,48 @@ impl ValidatorNode {
             NetworkEvent::NewBlock(block) => {
                 let height = block.header.block_height;
                 let current_height = *self.current_height.read().await;
-                
-                info!("📦 Received new block {} from network (current: {})", height, current_height);
-                
-                // TODO: Extract validator address from block.header.validator_pubkey and add to slot_consensus
-                // For now, we'll manually register validators we know about
-                
+
+                info!(
+                    "📦 Received new block {} from network (current: {})",
+                    height, current_height
+                );
+
+                // AUTO-DISCOVERY: Extract validator address from block and add to slot consensus
+                if !block.header.validator_pubkey.is_empty() {
+                    if let Ok(pubkey) = PublicKey::from_bytes(&block.header.validator_pubkey) {
+                        let validator_address = pubkey.to_address();
+
+                        // Add to slot consensus if not already registered
+                        let mut slot_consensus = self.slot_consensus.write().await;
+                        let before_count = slot_consensus.validator_count();
+                        slot_consensus.add_validator(validator_address);
+                        let after_count = slot_consensus.validator_count();
+
+                        if after_count > before_count {
+                            info!(
+                                "📝 Discovered new validator: {} (total: {})",
+                                validator_address, after_count
+                            );
+                        }
+                        drop(slot_consensus);
+                    }
+                }
+
                 // Skip if we already have this block
                 if height < current_height {
-                    debug!("⊘ Skipping block {} - we are ahead (current: {})", height, current_height);
+                    debug!(
+                        "⊘ Skipping block {} - we are ahead (current: {})",
+                        height, current_height
+                    );
                     return;
                 }
-                
+
                 // Basic validation
                 if let Err(e) = block.validate() {
                     warn!("❌ Invalid block {} from network: {}", height, e);
                     return;
                 }
-                
+
                 // FORK DETECTION: Check if this block connects to our chain
                 let is_fork = if height > 0 {
                     if let Ok(Some(our_block)) = self.storage.get_block_by_height(height - 1) {
@@ -590,49 +605,68 @@ impl ValidatorNode {
                 } else {
                     false
                 };
-                
+
                 if is_fork {
                     warn!("⚠️  FORK DETECTED at height {}!", height);
-                    warn!("   Our prev block hash: {:?}", self.storage.get_block_by_height(height - 1).ok().flatten().map(|b| b.hash()));
+                    warn!(
+                        "   Our prev block hash: {:?}",
+                        self.storage
+                            .get_block_by_height(height - 1)
+                            .ok()
+                            .flatten()
+                            .map(|b| b.hash())
+                    );
                     warn!("   Their prev hash: {:?}", block.header.previous_block_hash);
-                    
+
                     // Check if incoming chain is longer (we only have current_height, they have height)
                     if height > current_height {
-                        warn!("🔄 Incoming chain is longer ({} vs {}). SWITCHING TO LONGEST CHAIN!", height, current_height);
-                        
+                        warn!(
+                            "🔄 Incoming chain is longer ({} vs {}). SWITCHING TO LONGEST CHAIN!",
+                            height, current_height
+                        );
+
                         // Find common ancestor by going backwards
                         let mut common_height = height - 1;
                         while common_height > 0 {
-                            if let Ok(Some(_our_block)) = self.storage.get_block_by_height(common_height) {
+                            if let Ok(Some(_our_block)) =
+                                self.storage.get_block_by_height(common_height)
+                            {
                                 // We have this block, this is our common ancestor
                                 info!("✅ Found common ancestor at height {}", common_height);
                                 break;
                             }
                             common_height -= 1;
                         }
-                        
+
                         // Rollback: Delete our blocks from common_height+1 to current_height
                         if common_height < current_height {
-                            warn!("🔄 Rolling back blocks {} to {}", common_height + 1, current_height);
+                            warn!(
+                                "🔄 Rolling back blocks {} to {}",
+                                common_height + 1,
+                                current_height
+                            );
                             // Note: We don't have a delete_block method yet, so we'll rebuild WorldState from scratch
                         }
-                        
+
                         // Rebuild WorldState from genesis
-                        warn!("🔄 Rebuilding WorldState from genesis (replaying {} blocks)...", common_height);
+                        warn!(
+                            "🔄 Rebuilding WorldState from genesis (replaying {} blocks)...",
+                            common_height
+                        );
                         let mut state = self.state.write().await;
                         *state = WorldState::new(); // Reset to genesis
-                        
+
                         // Credit initial testnet stake to our validator (1000 QBT)
                         if self.config.network == "testnet" {
                             let initial_stake = Amount::new(1000 * 1_000_000_000_000_000_000);
                             state.credit_balance(&self.validator.address, initial_stake);
                             warn!("💰 Credited initial 1000 QBT stake to our validator");
                         }
-                        
+
                         // Track all addresses that receive transactions (other validators)
                         let mut all_addresses = std::collections::HashSet::new();
                         all_addresses.insert(self.validator.address);
-                        
+
                         // Replay all blocks from 0 to common_height
                         for h in 0..=common_height {
                             if let Ok(Some(old_block)) = self.storage.get_block_by_height(h) {
@@ -640,14 +674,14 @@ impl ValidatorNode {
                                 for tx in &old_block.transactions {
                                     all_addresses.insert(tx.from);
                                     all_addresses.insert(tx.to);
-                                    
+
                                     if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
                                         debug!("Replay tx in block {}: {}", h, e);
                                     }
                                 }
                             }
                         }
-                        
+
                         // Now we need to load the CORRECT balances from the NEW chain's storage
                         // For all addresses we've seen in transactions
                         for address in all_addresses {
@@ -658,41 +692,47 @@ impl ValidatorNode {
                                 }
                             }
                         }
-                        
+
                         // Persist all balances to storage
                         for (address, balance) in state.get_all_balances() {
                             if let Err(e) = self.storage.set_balance(&address, balance) {
                                 warn!("Failed to persist balance during rollback: {}", e);
                             }
                         }
-                        
+
                         drop(state);
-                        
+
                         // Update current height to common ancestor
                         *self.current_height.write().await = common_height;
-                        
-                        warn!("✅ Rollback complete. Now at height {} with correct WorldState", common_height);
-                        
+
+                        warn!(
+                            "✅ Rollback complete. Now at height {} with correct WorldState",
+                            common_height
+                        );
+
                         // Announce our new height to peers so they know we rolled back
                         if let Some(ref network) = self.network {
                             let mut net = network.write().await;
                             net.set_local_height(common_height);
                         }
-                        
+
                         // Now we can accept the new block
                     } else {
-                        warn!("⊘ Our chain is longer or equal. Rejecting fork block {}", height);
+                        warn!(
+                            "⊘ Our chain is longer or equal. Rejecting fork block {}",
+                            height
+                        );
                         return;
                     }
                 }
-                
+
                 // Accept the block (either no fork, or we rolled back)
                 // Store the block
                 if let Err(e) = self.storage.store_block(&block) {
                     error!("Failed to store block {}: {}", height, e);
                     return;
                 }
-                
+
                 // Update state with block transactions
                 let mut state = self.state.write().await;
                 for tx in &block.transactions {
@@ -700,7 +740,7 @@ impl ValidatorNode {
                         warn!("Failed to apply transaction in block {}: {}", height, e);
                     }
                 }
-                
+
                 // Persist all balances
                 for (address, balance) in state.get_all_balances() {
                     if let Err(e) = self.storage.set_balance(&address, balance) {
@@ -708,21 +748,21 @@ impl ValidatorNode {
                     }
                 }
                 drop(state);
-                
+
                 // Update current height
                 *self.current_height.write().await = height;
-                
+
                 info!("✅ Block {} accepted and stored", height);
             }
             NetworkEvent::NewTransaction(tx) => {
                 debug!("📨 Received new transaction from network");
-                
+
                 // Add to mempool if valid
                 if let Err(e) = tx.validate() {
                     warn!("Invalid transaction from network: {}", e);
                     return;
                 }
-                
+
                 let mut mempool = self.mempool.write().await;
                 mempool.push(tx);
             }
@@ -730,7 +770,7 @@ impl ValidatorNode {
                 // This is actually a range request from GET_BLOCKS:start-end
                 // We'll send multiple blocks
                 info!("📤 Peer requested blocks starting at {}", start_height);
-                
+
                 // Send up to 50 blocks
                 let mut blocks_sent = 0;
                 for h in start_height..=(start_height + 50) {
@@ -750,11 +790,11 @@ impl ValidatorNode {
                         // No more blocks available
                         break;
                     }
-                    
+
                     // Small delay to avoid flooding
                     tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
                 }
-                
+
                 if blocks_sent > 0 {
                     info!("✅ Sent {} blocks to peer", blocks_sent);
                 }

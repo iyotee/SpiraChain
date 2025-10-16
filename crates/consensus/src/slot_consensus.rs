@@ -56,7 +56,7 @@ impl SlotConsensus {
             .duration_since(UNIX_EPOCH)
             .expect("Time went backwards")
             .as_secs();
-        
+
         // Slot 0 started at Unix epoch
         now / self.slot_duration
     }
@@ -75,7 +75,7 @@ impl SlotConsensus {
     /// Check if the given validator is the leader for the current slot
     pub fn is_slot_leader(&self, validator: &Address) -> bool {
         let current_slot = self.get_current_slot();
-        
+
         match self.get_slot_leader(current_slot) {
             Some(leader) => leader == *validator,
             None => {
@@ -97,10 +97,10 @@ impl SlotConsensus {
             .duration_since(UNIX_EPOCH)
             .expect("Time went backwards")
             .as_secs();
-        
+
         let current_slot = self.get_current_slot();
         let next_slot_start = (current_slot + 1) * self.slot_duration;
-        
+
         next_slot_start.saturating_sub(now)
     }
 
@@ -123,7 +123,7 @@ mod tests {
     fn test_slot_calculation() {
         let consensus = SlotConsensus::new("testnet");
         let slot = consensus.get_current_slot();
-        
+
         // Should return a reasonable slot number
         assert!(slot > 0);
     }
@@ -131,15 +131,15 @@ mod tests {
     #[test]
     fn test_round_robin() {
         let mut consensus = SlotConsensus::new("testnet");
-        
+
         let addr1 = Address([1u8; 32]);
         let addr2 = Address([2u8; 32]);
         let addr3 = Address([3u8; 32]);
-        
+
         consensus.add_validator(addr1);
         consensus.add_validator(addr2);
         consensus.add_validator(addr3);
-        
+
         // Slot 0 should be validator 0
         assert_eq!(consensus.get_slot_leader(0), Some(addr1));
         // Slot 1 should be validator 1
@@ -154,20 +154,19 @@ mod tests {
     fn test_deterministic_ordering() {
         let mut consensus1 = SlotConsensus::new("testnet");
         let mut consensus2 = SlotConsensus::new("testnet");
-        
+
         let addr1 = Address([1u8; 32]);
         let addr2 = Address([2u8; 32]);
-        
+
         // Add in different order
         consensus1.add_validator(addr1);
         consensus1.add_validator(addr2);
-        
+
         consensus2.add_validator(addr2);
         consensus2.add_validator(addr1);
-        
+
         // Should produce the same leader for the same slot
         assert_eq!(consensus1.get_slot_leader(0), consensus2.get_slot_leader(0));
         assert_eq!(consensus1.get_slot_leader(1), consensus2.get_slot_leader(1));
     }
 }
-

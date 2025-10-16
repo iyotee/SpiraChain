@@ -113,19 +113,19 @@ pub async fn handle_wallet_send(
     amount: f64,
 ) -> Result<()> {
     println!("📤 Sending {} QBT to {}...", amount, to_address);
-    
+
     // Load wallet
     let content = fs::read_to_string(&wallet_path)?;
     let wallet: WalletFile = serde_json::from_str(&content)?;
-    
+
     // Convert amount to wei (QBT has 18 decimals)
     let amount_wei = (amount * 1e18) as u128;
     let fee_wei = 1_000_000_000_000_000u128; // 0.001 QBT fee
-    
+
     println!("   From: {}", wallet.address);
     println!("   Amount: {} QBT", amount);
     println!("   Fee: 0.001 QBT");
-    
+
     // Parse secret key
     let secret_bytes = hex::decode(&wallet.secret_key)?;
     if secret_bytes.len() != 32 {
@@ -133,57 +133,47 @@ pub async fn handle_wallet_send(
     }
     let secret_array: [u8; 32] = secret_bytes.try_into().unwrap();
     let keypair = KeyPair::from_secret(secret_array)?;
-    
+
     // Create transaction
     use spirachain_core::{Address, Amount, Transaction};
-    
+
     let from_bytes = hex::decode(wallet.address.trim_start_matches("0x"))?;
     let to_bytes = hex::decode(to_address.trim_start_matches("0x"))?;
-    
+
     if from_bytes.len() != 32 || to_bytes.len() != 32 {
         return Err(anyhow!("Invalid address length"));
     }
-    
+
     let from = Address::new(from_bytes.try_into().unwrap());
     let to = Address::new(to_bytes.try_into().unwrap());
-    
-    let mut tx = Transaction::new(
-        from,
-        to,
-        Amount::new(amount_wei),
-        Amount::new(fee_wei),
-    );
-    
+
+    let mut tx = Transaction::new(from, to, Amount::new(amount_wei), Amount::new(fee_wei));
+
     // Compute hash and sign transaction
     tx.compute_hash();
     let signature_bytes = keypair.sign(tx.tx_hash.as_bytes());
     tx.signature = signature_bytes;
-    
+
     println!("   Transaction hash: {}", tx.tx_hash);
-    
+
     // Submit to local RPC
     let rpc_url = "http://localhost:8545/submit_transaction";
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
         .build()?;
-    
+
     // Serialize transaction to JSON then to hex
     let tx_json = serde_json::to_vec(&tx)?;
     let tx_hex = hex::encode(&tx_json);
-    
+
     #[derive(Serialize)]
     struct SubmitTxRequest {
         tx_hex: String,
     }
-    
+
     let request = SubmitTxRequest { tx_hex };
-    
-    match client
-        .post(rpc_url)
-        .json(&request)
-        .send()
-        .await
-    {
+
+    match client.post(rpc_url).json(&request).send().await {
         Ok(response) => {
             if response.status().is_success() {
                 println!("\n✅ Transaction submitted successfully!");
@@ -200,6 +190,6 @@ pub async fn handle_wallet_send(
             return Err(anyhow!("Failed to connect to local node: {}", e));
         }
     }
-    
+
     Ok(())
 }
