@@ -10,7 +10,7 @@ use libp2p::{
     tcp, yamux, Multiaddr, PeerId,
 };
 use spirachain_core::{Block, Result, SpiraChainError, Transaction};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use tracing::{debug, info, warn};
 
 use crate::bootstrap::{discover_bootstrap_peers, BootstrapConfig};
@@ -28,6 +28,9 @@ pub struct LibP2PNetworkWithSync {
     network: String,
     local_height: u64,
     last_height_announcement: std::time::Instant,
+    bootstrap_addrs: Vec<Multiaddr>, // Store bootstrap addresses for reconnection
+    last_reconnect_attempt: std::time::Instant,
+    peer_heights: HashMap<PeerId, u64>, // Track peer heights
 }
 
 // Network events
@@ -104,6 +107,9 @@ impl LibP2PNetworkWithSync {
             network: network.to_string(),
             local_height,
             last_height_announcement: std::time::Instant::now(),
+            bootstrap_addrs: Vec::new(),
+            last_reconnect_attempt: std::time::Instant::now(),
+            peer_heights: HashMap::new(),
         })
     }
 
@@ -161,6 +167,9 @@ impl LibP2PNetworkWithSync {
                     let mut dialed_count = 0;
                     for addr_str in &bootstrap_peers {
                         if let Ok(addr) = addr_str.parse::<Multiaddr>() {
+                            // Store bootstrap addresses for reconnection
+                            self.bootstrap_addrs.push(addr.clone());
+                            
                             // Try to dial - if it fails with "Broken pipe", it's probably ourselves
                             // LibP2P will automatically prevent self-dial
                             match self.swarm.dial(addr.clone()) {
@@ -256,6 +265,11 @@ impl LibP2PNetworkWithSync {
             SwarmEvent::ConnectionClosed { peer_id, .. } => {
                 info!("👋 Disconnected from peer: {}", peer_id);
                 self.connected_peers.remove(&peer_id);
+                self.peer_heights.remove(&peer_id);
+                
+                // Schedule reconnection attempt
+                self.last_reconnect_attempt = std::time::Instant::now();
+                
                 Some(NetworkEvent::PeerDisconnected(peer_id))
             }
             SwarmEvent::Behaviour(gossip_event) => self.handle_gossipsub_event(gossip_event),
@@ -295,10 +309,14 @@ impl LibP2PNetworkWithSync {
                     }
                 } else if message.topic == self.sync_topic.hash() {
                     // Received sync message (height announcement or block request)
-                    if let Ok(msg) = String::from_utf8(message.data) {
+                    if let Ok(msg) = String::from_utf8(message.data.clone()) {
                         if let Some(height_str) = msg.strip_prefix("HEIGHT:") {
                             if let Ok(peer_height) = height_str.parse::<u64>() {
-                                info!("📊 Peer announced height: {}", peer_height);
+                                // Track peer height
+                                if let Some(propagation_source) = message.source {
+                                    self.peer_heights.insert(propagation_source, peer_height);
+                                    info!("📊 Peer {} at height: {}", propagation_source, peer_height);
+                                }
 
                                 // If peer is ahead, we're behind and need to catch up
                                 if peer_height > self.local_height {
@@ -418,5 +436,31 @@ impl LibP2PNetworkWithSync {
     /// Check if node is synced (always true for simple gossipsub)
     pub fn is_synced(&self) -> bool {
         true // Gossipsub doesn't have sync state
+    }
+
+    /// Attempt to reconnect to bootstrap peers if disconnected
+    pub fn try_reconnect(&mut self) {
+        // Only try reconnection every 30 seconds
+        if self.last_reconnect_attempt.elapsed().as_secs() < 30 {
+            return;
+        }
+
+        // If we have no connected peers, try to reconnect to bootstrap peers
+        if self.connected_peers.is_empty() && !self.bootstrap_addrs.is_empty() {
+            info!("🔄 No peers connected, attempting reconnection to {} bootstrap peers...", self.bootstrap_addrs.len());
+            
+            for addr in &self.bootstrap_addrs {
+                match self.swarm.dial(addr.clone()) {
+                    Ok(_) => {
+                        info!("📞 Reconnecting to: {}", addr);
+                    }
+                    Err(e) => {
+                        debug!("⊘ Reconnect failed for {}: {}", addr, e);
+                    }
+                }
+            }
+            
+            self.last_reconnect_attempt = std::time::Instant::now();
+        }
     }
 }

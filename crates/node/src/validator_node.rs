@@ -360,6 +360,9 @@ impl ValidatorNode {
                             let peer_count = net.peer_count();
                             *self.connected_peers.write().await = peer_count;
 
+                            // Try to reconnect if no peers connected
+                            net.try_reconnect();
+
                             evt
                         };
 
