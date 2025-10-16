@@ -67,7 +67,7 @@ impl KeyPair {
 impl PublicKey {
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() != 32 {
-            return Err(anyhow!("Public key must be 32 bytes"));
+            return Err(anyhow!("Public key must be 32 bytes").into());
         }
         let mut key_bytes = [0u8; 32];
         key_bytes.copy_from_slice(bytes);
