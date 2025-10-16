@@ -395,8 +395,9 @@ impl ValidatorNode {
         let previous_block = self.storage.get_latest_block()?;
         if let Some(ref prev) = previous_block {
             // If the last block was produced in this slot, skip
-            // (prev block timestamp / 30 gives slot number)
-            let prev_slot = prev.header.timestamp / (30 * 1000); // 30s slots in ms
+            // (prev block timestamp / slot_duration gives slot number)
+            let slot_duration = if self.config.network == "mainnet" { 60 } else { 30 };
+            let prev_slot = prev.header.timestamp / slot_duration; // timestamp is in seconds
             if prev_slot == current_slot {
                 debug!("⊘ Already produced block for slot {} - skipping", current_slot);
                 return Ok(());
