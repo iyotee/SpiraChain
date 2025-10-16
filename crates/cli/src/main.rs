@@ -98,6 +98,18 @@ enum WalletCommands {
         #[arg(short, long)]
         address: String,
     },
+
+    #[command(about = "Send QBT to another address")]
+    Send {
+        #[arg(long, help = "Path to sender wallet file")]
+        from: String,
+
+        #[arg(long, help = "Recipient address")]
+        to: String,
+
+        #[arg(long, help = "Amount in QBT")]
+        amount: f64,
+    },
 }
 
 #[derive(Subcommand)]
@@ -183,6 +195,9 @@ async fn main() -> anyhow::Result<()> {
             }
             WalletCommands::Balance { address } => {
                 wallet::handle_wallet_balance(address).await?;
+            }
+            WalletCommands::Send { from, to, amount } => {
+                wallet::handle_wallet_send(from, to, amount).await?;
             }
         },
 

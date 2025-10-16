@@ -106,3 +106,87 @@ pub async fn handle_wallet_balance(address: String) -> Result<()> {
 
     Ok(())
 }
+
+pub async fn handle_wallet_send(
+    wallet_path: String,
+    to_address: String,
+    amount: f64,
+) -> Result<()> {
+    println!("📤 Sending {} QBT to {}...", amount, to_address);
+    
+    // Load wallet
+    let content = fs::read_to_string(&wallet_path)?;
+    let wallet: WalletFile = serde_json::from_str(&content)?;
+    
+    // Convert amount to wei (QBT has 18 decimals)
+    let amount_wei = (amount * 1e18) as u128;
+    let fee_wei = 1_000_000_000_000_000u128; // 0.001 QBT fee
+    
+    println!("   From: {}", wallet.address);
+    println!("   Amount: {} QBT", amount);
+    println!("   Fee: 0.001 QBT");
+    
+    // Parse secret key
+    let secret_bytes = hex::decode(&wallet.secret_key)?;
+    let keypair = KeyPair::from_secret_key(&secret_bytes)?;
+    
+    // Create transaction
+    use spirachain_core::{Address, Amount, Transaction};
+    
+    let from_bytes = hex::decode(wallet.address.trim_start_matches("0x"))?;
+    let to_bytes = hex::decode(to_address.trim_start_matches("0x"))?;
+    
+    if from_bytes.len() != 32 || to_bytes.len() != 32 {
+        return Err(anyhow!("Invalid address length"));
+    }
+    
+    let from = Address::new(from_bytes.try_into().unwrap());
+    let to = Address::new(to_bytes.try_into().unwrap());
+    
+    let mut tx = Transaction::new(
+        from,
+        to,
+        Amount::new(amount_wei),
+        Amount::new(fee_wei),
+    );
+    
+    // Sign transaction
+    tx.sign(&keypair)?;
+    
+    println!("   Transaction hash: {}", tx.tx_hash);
+    
+    // Submit to local RPC
+    let rpc_url = "http://localhost:8545/submit_transaction";
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
+    
+    // Serialize transaction
+    let tx_json = serde_json::to_string(&tx)?;
+    
+    match client
+        .post(rpc_url)
+        .header("Content-Type", "application/json")
+        .body(tx_json)
+        .send()
+        .await
+    {
+        Ok(response) => {
+            if response.status().is_success() {
+                println!("\n✅ Transaction submitted successfully!");
+                println!("   It will be included in the next block (~60 seconds)");
+                println!("\n💡 Check balances:");
+                println!("   spira wallet balance {}", wallet.address);
+                println!("   spira wallet balance {}", to_address);
+            } else {
+                let error_text = response.text().await.unwrap_or_default();
+                return Err(anyhow!("RPC error: {}", error_text));
+            }
+        }
+        Err(e) => {
+            return Err(anyhow!("Failed to connect to local node: {}", e));
+        }
+    }
+    
+    Ok(())
+}
