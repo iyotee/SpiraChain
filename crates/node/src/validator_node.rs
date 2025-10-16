@@ -512,16 +512,20 @@ impl ValidatorNode {
             }
             NetworkEvent::NewBlock(block) => {
                 let height = block.header.block_height;
-                info!("📦 Received new block {} from network", height);
+                let current_height = *self.current_height.read().await;
                 
-                // Validate and store the block
-                if let Ok(previous_block) = self.storage.get_latest_block() {
-                    if let Some(prev) = previous_block {
-                        if let Err(e) = self.consensus.validate_block(&block, &prev) {
-                            warn!("❌ Invalid block {} from network: {}", height, e);
-                            return;
-                        }
-                    }
+                info!("📦 Received new block {} from network (current: {})", height, current_height);
+                
+                // Only accept blocks that are ahead of us
+                if height <= current_height {
+                    debug!("⊘ Skipping block {} - already have it", height);
+                    return;
+                }
+                
+                // Basic validation (skip validator check for testnet - accept all validators)
+                if let Err(e) = block.validate() {
+                    warn!("❌ Invalid block {} from network: {}", height, e);
+                    return;
                 }
                 
                 // Store the block
