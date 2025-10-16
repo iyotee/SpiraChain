@@ -516,18 +516,93 @@ impl ValidatorNode {
                 
                 info!("📦 Received new block {} from network (current: {})", height, current_height);
                 
-                // Only accept blocks that are ahead of us
-                if height <= current_height {
-                    debug!("⊘ Skipping block {} - already have it", height);
+                // Skip if we already have this block
+                if height < current_height {
+                    debug!("⊘ Skipping block {} - we are ahead (current: {})", height, current_height);
                     return;
                 }
                 
-                // Basic validation (skip validator check for testnet - accept all validators)
+                // Basic validation
                 if let Err(e) = block.validate() {
                     warn!("❌ Invalid block {} from network: {}", height, e);
                     return;
                 }
                 
+                // FORK DETECTION: Check if this block connects to our chain
+                let is_fork = if height > 0 {
+                    if let Ok(Some(our_block)) = self.storage.get_block_by_height(height - 1) {
+                        // Check if prev_hash matches
+                        block.header.previous_block_hash != our_block.hash()
+                    } else {
+                        // We don't have the previous block, assume not a fork yet
+                        false
+                    }
+                } else {
+                    false
+                };
+                
+                if is_fork {
+                    warn!("⚠️  FORK DETECTED at height {}!", height);
+                    warn!("   Our prev block hash: {:?}", self.storage.get_block_by_height(height - 1).ok().flatten().map(|b| b.hash()));
+                    warn!("   Their prev hash: {:?}", block.header.previous_block_hash);
+                    
+                    // Check if incoming chain is longer (we only have current_height, they have height)
+                    if height > current_height {
+                        warn!("🔄 Incoming chain is longer ({} vs {}). SWITCHING TO LONGEST CHAIN!", height, current_height);
+                        
+                        // Find common ancestor by going backwards
+                        let mut common_height = height - 1;
+                        while common_height > 0 {
+                            if let Ok(Some(_our_block)) = self.storage.get_block_by_height(common_height) {
+                                // We have this block, this is our common ancestor
+                                info!("✅ Found common ancestor at height {}", common_height);
+                                break;
+                            }
+                            common_height -= 1;
+                        }
+                        
+                        // Rollback: Delete our blocks from common_height+1 to current_height
+                        if common_height < current_height {
+                            warn!("🔄 Rolling back blocks {} to {}", common_height + 1, current_height);
+                            // Note: We don't have a delete_block method yet, so we'll rebuild WorldState from scratch
+                        }
+                        
+                        // Rebuild WorldState from genesis
+                        info!("🔄 Rebuilding WorldState from genesis...");
+                        let mut state = self.state.write().await;
+                        *state = WorldState::new(); // Reset to genesis
+                        
+                        // Credit initial stake if needed
+                        let validator_balance = self.storage.get_balance(&self.validator.address).unwrap_or_default();
+                        if !validator_balance.is_zero() {
+                            state.set_balance(self.validator.address, validator_balance);
+                        }
+                        
+                        // Replay all blocks from 0 to common_height
+                        for h in 0..=common_height {
+                            if let Ok(Some(old_block)) = self.storage.get_block_by_height(h) {
+                                for tx in &old_block.transactions {
+                                    if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
+                                        debug!("Replay tx in block {}: {}", h, e);
+                                    }
+                                }
+                            }
+                        }
+                        drop(state);
+                        
+                        // Update current height to common ancestor
+                        *self.current_height.write().await = common_height;
+                        
+                        info!("✅ Rollback complete. Now at height {}", common_height);
+                        
+                        // Now we can accept the new block
+                    } else {
+                        warn!("⊘ Our chain is longer or equal. Rejecting fork block {}", height);
+                        return;
+                    }
+                }
+                
+                // Accept the block (either no fork, or we rolled back)
                 // Store the block
                 if let Err(e) = self.storage.store_block(&block) {
                     error!("Failed to store block {}: {}", height, e);
