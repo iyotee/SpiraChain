@@ -292,37 +292,38 @@ impl LibP2PNetworkWithSync {
                                     let blocks_behind = peer_height - self.local_height;
                                     info!("🔄 We are {} blocks behind (peer at {}, us at {})", blocks_behind, peer_height, self.local_height);
                                     
-                                    // Request missing blocks in batches of 10 to avoid overwhelming Gossipsub
-                                    let batch_size = 10;
+                                    // Request missing blocks in batches of 50
+                                    let batch_size = 50;
                                     let start = self.local_height + 1;
                                     let end = std::cmp::min(start + batch_size - 1, peer_height);
                                     
-                                    info!("📥 Requesting blocks {} to {}", start, end);
-                                    for h in start..=end {
-                                        let request_msg = format!("GET_BLOCK:{}", h);
-                                        if let Err(e) = self.swarm
-                                            .behaviour_mut()
-                                            .publish(self.sync_topic.clone(), request_msg.as_bytes().to_vec())
-                                        {
-                                            debug!("Failed to request block {}: {}", h, e);
-                                        } else {
-                                            debug!("📤 Requested block {}", h);
-                                        }
+                                    let request_msg = format!("GET_BLOCKS:{}-{}", start, end);
+                                    info!("📥 Requesting blocks {} to {} (batch of {})", start, end, end - start + 1);
+                                    
+                                    if let Err(e) = self.swarm
+                                        .behaviour_mut()
+                                        .publish(self.sync_topic.clone(), request_msg.as_bytes().to_vec())
+                                    {
+                                        warn!("Failed to request blocks: {}", e);
                                     }
                                 }
                                 None
                             } else {
                                 None
                             }
-                        } else if let Some(height_str) = msg.strip_prefix("GET_BLOCK:") {
-                            // Someone is requesting a block
-                            if let Ok(requested_height) = height_str.parse::<u64>() {
-                                debug!("📤 Peer requested block {}", requested_height);
-                                // Emit event so ValidatorNode can send the block
-                                Some(NetworkEvent::BlockRequested(requested_height))
-                            } else {
-                                None
+                        } else if msg.starts_with("GET_BLOCKS:") {
+                            // Someone is requesting a range of blocks
+                            // Format: GET_BLOCKS:start-end
+                            if let Some(range_str) = msg.strip_prefix("GET_BLOCKS:") {
+                                if let Some((start_str, _end_str)) = range_str.split_once('-') {
+                                    if let Ok(start) = start_str.parse::<u64>() {
+                                        info!("📤 Peer requested blocks starting at {}", start);
+                                        // ValidatorNode will handle sending the range
+                                        return Some(NetworkEvent::BlockRequested(start));
+                                    }
+                                }
                             }
+                            None
                         } else {
                             None
                         }

@@ -567,20 +567,37 @@ impl ValidatorNode {
                 let mut mempool = self.mempool.write().await;
                 mempool.push(tx);
             }
-            NetworkEvent::BlockRequested(height) => {
-                info!("📤 Peer requested block {}", height);
+            NetworkEvent::BlockRequested(start_height) => {
+                // This is actually a range request from GET_BLOCKS:start-end
+                // We'll send multiple blocks
+                info!("📤 Peer requested blocks starting at {}", start_height);
                 
-                // Get the block from storage
-                if let Ok(Some(block)) = self.storage.get_block_by_height(height) {
-                    // Send it via network
-                    if let Some(ref network) = self.network {
-                        let mut net = network.write().await;
-                        if let Err(e) = net.send_block(&block).await {
-                            warn!("Failed to send block {}: {}", height, e);
+                // Send up to 50 blocks
+                let mut blocks_sent = 0;
+                for h in start_height..=(start_height + 50) {
+                    if let Ok(Some(block)) = self.storage.get_block_by_height(h) {
+                        // Send it via network
+                        if let Some(ref network) = self.network {
+                            let mut net = network.write().await;
+                            if let Err(e) = net.send_block(&block).await {
+                                warn!("Failed to send block {}: {}", h, e);
+                                break;
+                            } else {
+                                blocks_sent += 1;
+                                debug!("📤 Sent block {}", h);
+                            }
                         }
+                    } else {
+                        // No more blocks available
+                        break;
                     }
-                } else {
-                    debug!("⊘ Block {} not found in storage", height);
+                    
+                    // Small delay to avoid flooding
+                    tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+                }
+                
+                if blocks_sent > 0 {
+                    info!("✅ Sent {} blocks to peer", blocks_sent);
                 }
             }
         }
