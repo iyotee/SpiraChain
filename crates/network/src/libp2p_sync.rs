@@ -200,10 +200,11 @@ impl LibP2PNetworkWithSync {
         let height_changed = height != self.local_height;
         self.local_height = height;
         
-        // Announce new height only if changed AND at most once per 10 seconds
+        // Announce new height only if changed AND at most once per 2 seconds
+        // (faster re-announcement for sync)
         if height_changed {
             let elapsed = self.last_height_announcement.elapsed();
-            if elapsed.as_secs() >= 10 {
+            if elapsed.as_secs() >= 2 {
                 self.announce_height();
                 self.last_height_announcement = std::time::Instant::now();
             }
