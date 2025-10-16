@@ -3,8 +3,9 @@ use spirachain_consensus::{ProofOfSpiral, SlotConsensus, Validator};
 use spirachain_core::{Address, Amount, Block, Result, Transaction};
 use spirachain_crypto::{KeyPair, PublicKey};
 use spirachain_network::{LibP2PNetworkWithSync, NetworkEvent};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
-use tokio::sync::{Mutex, RwLock};
+use tokio::sync::RwLock;
 use tokio::time::{interval, Duration};
 use tracing::{debug, error, info, warn};
 
@@ -22,7 +23,8 @@ pub struct ValidatorNode {
     blocks_produced: u64,
     connected_peers: Arc<RwLock<usize>>,
     current_height: Arc<RwLock<u64>>,
-    block_production_lock: Arc<Mutex<()>>, // Prevent concurrent block production
+    last_produced_slot: Arc<AtomicU64>, // Track last slot we produced a block in
+    is_producing: Arc<AtomicBool>, // Flag to prevent concurrent production
 }
 
 impl ValidatorNode {
@@ -103,7 +105,8 @@ impl ValidatorNode {
             blocks_produced: 0,
             connected_peers: Arc::new(RwLock::new(0)),
             current_height: Arc::new(RwLock::new(initial_height)),
-            block_production_lock: Arc::new(Mutex::new(())),
+            last_produced_slot: Arc::new(AtomicU64::new(0)),
+            is_producing: Arc::new(AtomicBool::new(false)),
         })
     }
 
@@ -330,16 +333,23 @@ impl ValidatorNode {
                     if is_our_turn {
                         drop(slot_consensus);
                         
-                        // Try to acquire production lock (non-blocking)
-                        let lock = self.block_production_lock.clone();
-                        let guard = lock.try_lock();
-                        
-                        if let Ok(mut _production_guard) = guard {
+                        // Check if we already produced a block for this slot (atomic check)
+                        let last_slot = self.last_produced_slot.load(Ordering::Relaxed);
+                        if last_slot == current_slot {
+                            debug!("⊘ Already produced block for slot {} - skipping", current_slot);
+                        } else if self.is_producing.compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed).is_ok() {
+                            // Successfully set is_producing to true
                             info!("✅ Our turn to produce block (slot {}, validators: {})", current_slot, validator_count);
+                            
                             if let Err(e) = self.produce_block().await {
                                 error!("Failed to produce block: {}", e);
                             }
-                            drop(_production_guard); // Explicitly drop to release lock
+                            
+                            // Mark this slot as produced
+                            self.last_produced_slot.store(current_slot, Ordering::Relaxed);
+                            
+                            // Release production lock
+                            self.is_producing.store(false, Ordering::SeqCst);
                         } else {
                             debug!("⊘ Block production already in progress, skipping");
                         }
@@ -398,27 +408,12 @@ impl ValidatorNode {
     async fn produce_block(&mut self) -> Result<()> {
         info!("🏗️  Producing new block...");
 
-        // SLOT LOCK: Prevent producing multiple blocks in the same slot
-        let slot_consensus = self.slot_consensus.read().await;
-        let current_slot = slot_consensus.get_current_slot();
-        drop(slot_consensus);
-
-        // Check if we already produced a block for this slot
-        let previous_block = self.storage.get_latest_block()?;
-        if let Some(ref prev) = previous_block {
-            // If the last block was produced in this slot, skip
-            // (prev block timestamp / slot_duration gives slot number)
-            let slot_duration = if self.config.network == "mainnet" { 60 } else { 30 };
-            let prev_slot = prev.header.timestamp / slot_duration; // timestamp is in seconds
-            if prev_slot == current_slot {
-                debug!("⊘ Already produced block for slot {} - skipping", current_slot);
-                return Ok(());
-            }
-        }
-
         let mempool_guard = self.mempool.read().await;
         let pending_txs = mempool_guard.iter().take(1000).cloned().collect::<Vec<_>>();
         drop(mempool_guard);
+
+        // Get latest block from storage (not state height!)
+        let previous_block = self.storage.get_latest_block()?;
 
         let current_height = if let Some(ref prev) = previous_block {
             prev.header.block_height
