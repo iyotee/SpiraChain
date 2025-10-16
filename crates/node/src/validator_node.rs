@@ -336,7 +336,7 @@ impl ValidatorNode {
                         // Check if we already produced a block for this slot (atomic check)
                         let last_slot = self.last_produced_slot.load(Ordering::Relaxed);
                         if last_slot == current_slot {
-                            debug!("⊘ Already produced block for slot {} - skipping", current_slot);
+                            info!("⊘ Already produced block for slot {} - skipping", current_slot);
                         } else if self.is_producing.compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed).is_ok() {
                             // Successfully set is_producing to true
                             info!("✅ Our turn to produce block (slot {}, validators: {})", current_slot, validator_count);
@@ -351,11 +351,11 @@ impl ValidatorNode {
                             // Release production lock
                             self.is_producing.store(false, Ordering::SeqCst);
                         } else {
-                            debug!("⊘ Block production already in progress, skipping");
+                            info!("⊘ Block production already in progress, skipping");
                         }
                     } else {
                         let leader = slot_consensus.get_current_leader();
-                        debug!("⏳ Waiting for our slot (current leader: {:?}, slot {}, validators: {})", leader, current_slot, validator_count);
+                        info!("⏳ Waiting for our slot (current leader: {:?}, slot {}, validators: {})", leader, current_slot, validator_count);
                     }
                 }
 
