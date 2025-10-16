@@ -289,16 +289,23 @@ impl LibP2PNetworkWithSync {
                                 // If peer is ahead, we're behind and need to catch up
                                 if peer_height > self.local_height {
                                     let blocks_behind = peer_height - self.local_height;
-                                    info!("🔄 We are {} blocks behind, requesting catch-up...", blocks_behind);
+                                    info!("🔄 We are {} blocks behind (peer at {}, us at {})", blocks_behind, peer_height, self.local_height);
                                     
-                                    // Request missing blocks
-                                    for h in (self.local_height + 1)..=peer_height {
+                                    // Request missing blocks in batches of 10 to avoid overwhelming Gossipsub
+                                    let batch_size = 10;
+                                    let start = self.local_height + 1;
+                                    let end = std::cmp::min(start + batch_size - 1, peer_height);
+                                    
+                                    info!("📥 Requesting blocks {} to {}", start, end);
+                                    for h in start..=end {
                                         let request_msg = format!("GET_BLOCK:{}", h);
                                         if let Err(e) = self.swarm
                                             .behaviour_mut()
                                             .publish(self.sync_topic.clone(), request_msg.as_bytes().to_vec())
                                         {
                                             debug!("Failed to request block {}: {}", h, e);
+                                        } else {
+                                            debug!("📤 Requested block {}", h);
                                         }
                                     }
                                 }
