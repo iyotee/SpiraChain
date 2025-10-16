@@ -457,19 +457,76 @@ def validate_transaction_geometry(tx):
 
 ---
 
-## 5. Consensus Mechanism: Proof of Spiral
+## 5. Consensus Mechanism: Hybrid Slot-based Proof of Spiral
 
 ### 5.1 Overview
 
-**Proof of Spiral (PoSp)** replaces energy waste with **geometric-semantic value creation**.
+SpiraChain uses a **Hybrid Consensus Model** that combines:
+1. **Slot-based Proof of Stake (PoS)** - Prevents forks by assigning validator turns (Cardano-style)
+2. **Proof of Spiral (PoSp)** - Validates block quality through geometric-semantic coherence
+3. **Longest Chain Rule** - Resolves rare forks when they occur (Bitcoin-style fallback)
 
-**Core Principle:**  
-Validators compete to generate the most coherent, beautiful, and informationally dense spiral that incorporates pending transactions.
+**Core Principles:**  
+- **Deterministic block production**: Validators take turns in round-robin fashion
+- **Geometric validation**: Each block must contain a valid spiral structure
+- **No energy waste**: No mining competition, just turn-based validation
+- **Fork-resistant**: Only one validator can produce per slot
 
-### 5.2 Block Generation Protocol
+### 5.1.1 Why This Hybrid Model?
+
+Traditional consensus mechanisms have trade-offs:
+- **Bitcoin (PoW)**: Wastes energy, frequent forks, slow finality
+- **Ethereum (PoS)**: Complex validator economics, high stake requirements
+- **Cardano (Ouroboros)**: Deterministic but requires complex VRF
+- **Solana (PoH+PoS)**: Very complex, single point of failure risk
+
+SpiraChain's hybrid approach:
+- ✅ **Simple**: Round-robin slot assignment (no VRF needed)
+- ✅ **Fair**: All validators get equal block production opportunities
+- ✅ **Efficient**: No forks = faster finality
+- ✅ **Unique**: Proof of Spiral adds mathematical beauty validation
+
+### 5.2 Slot-based Block Production
+
+**Slot Assignment Algorithm:**
 
 ```python
-def generate_block_candidate(validator, pending_txs):
+def get_slot_leader(slot_number, validators):
+    # Round-robin: each validator gets equal turns
+    # Validators are sorted by address for determinism
+    validators_sorted = sorted(validators, key=lambda v: v.address)
+    
+    leader_index = slot_number % len(validators_sorted)
+    return validators_sorted[leader_index]
+
+def can_produce_block(validator, current_time):
+    current_slot = current_time // SLOT_DURATION
+    leader = get_slot_leader(current_slot, active_validators)
+    
+    return leader == validator.address
+```
+
+**Slot Parameters:**
+- **Testnet**: 30 seconds per slot
+- **Mainnet**: 60 seconds per slot
+
+**Example Timeline (3 validators):**
+```
+Slot 0 (0s-30s):   Validator A produces → Block 0
+Slot 1 (30s-60s):  Validator B produces → Block 1
+Slot 2 (60s-90s):  Validator C produces → Block 2
+Slot 3 (90s-120s): Validator A produces → Block 3
+...
+```
+
+### 5.3 Block Generation Protocol
+
+```python
+def generate_block_candidate(validator, pending_txs, current_slot):
+    # 0. Check if it's our turn
+    if not can_produce_block(validator, current_time):
+        return None  # Wait for our slot
+    
     # 1. Select transactions
     selected_txs = semantic_clustering(pending_txs)
     
@@ -488,15 +545,16 @@ def generate_block_candidate(validator, pending_txs):
         'semantic': avg_coherence(selected_txs)
     }
     
-    # 4. Solve geometric puzzle
+    # 4. Solve geometric puzzle (lightweight, not PoW)
     nonce = find_nonce_for_spiral_hash(
         spiral_data=spiral.serialize(),
         difficulty=current_difficulty,
         target_pattern=fractal_target
     )
     
-    # 5. Create block
+    # 5. Create block with slot proof
     return Block(
+        slot=current_slot,
         transactions=selected_txs,
         spiral=spiral,
         metrics=metrics,
@@ -505,67 +563,91 @@ def generate_block_candidate(validator, pending_txs):
     )
 ```
 
-### 5.3 Validation Rules
+### 5.4 Validation Rules
 
 A block is valid if:
 
 ```python
-def validate_block(block, network_state):
+def validate_block(block, network_state, current_slot):
     checks = [
+        # 0. Slot consensus validity
+        block.slot == current_slot,  # Block produced in correct slot
+        get_slot_leader(block.slot, validators) == block.validator,  # Correct validator
+        
         # 1. Cryptographic validity
         verify_xmss_signature(block.validator, block.signature),
         verify_all_tx_signatures(block.transactions),
         
-        # 2. Geometric validity
+        # 2. Geometric validity (Proof of Spiral)
         block.spiral.complexity >= MIN_COMPLEXITY,
         block.spiral.type in ALLOWED_SPIRAL_TYPES,
         spiral_continues_chain(block.spiral, prev_block.spiral),
+        block.spiral.max_jump <= MAX_SPIRAL_JUMP,  # π-based: 4.0
         
         # 3. Semantic validity
         avg_semantic_coherence(block.transactions) >= 0.7,
         no_semantic_contradictions(block.transactions),
         
-        # 4. Proof-of-work
-        hash(block.spiral.serialize() + block.nonce) < difficulty,
+        # 4. Chain continuity
+        block.previous_block_hash == prev_block.hash(),
+        block.height == prev_block.height + 1,
         
-        # 5. Economic validity
-        sum(tx.fees) >= MIN_BLOCK_REWARD,
-        validator.stake >= MIN_VALIDATOR_STAKE
+        # 5. Economic validity (Fair Launch - no minimum stake required)
+        sum(tx.fees) >= 0,  # Fees are optional
+        all_balances_are_valid(block.transactions, network_state)
     ]
     
     return all(checks)
 ```
 
-### 5.4 Spiral Selection Algorithm
+**Key Differences from Traditional PoS:**
+- ❌ **No minimum stake requirement** (fair launch model)
+- ✅ **Slot-based turn assignment** (not stake-weighted lottery)
+- ✅ **Geometric validation** (Proof of Spiral unique to SpiraChain)
+- ✅ **Deterministic leader selection** (no randomness needed)
 
-When multiple valid spirals compete:
+### 5.5 Fork Resolution (Rare Cases)
+
+Due to slot-based consensus, forks are **extremely rare** but can still occur due to:
+- Network partitions
+- Clock drift between validators
+- Simultaneous block production in edge cases
+
+**Fork Resolution Algorithm (Bitcoin-inspired):**
 
 ```python
-def select_winning_spiral(candidates):
-    scores = []
-    
-    for candidate in candidates:
-        score = (
-            0.3 * candidate.geometric_complexity +
-            0.2 * candidate.self_similarity +
-            0.2 * candidate.information_density +
-            0.3 * candidate.semantic_coherence
-        )
+def resolve_fork(our_chain, incoming_block):
+    # 1. Detect fork
+    if incoming_block.previous_hash != our_latest_block.hash():
+        print("⚠️ FORK DETECTED")
         
-        # Bonus for novel spiral types
-        if candidate.type not in recent_types:
-            score *= 1.1
+        # 2. Find common ancestor
+        common_ancestor = find_common_block(our_chain, incoming_block)
+        
+        # 3. Compare chain lengths
+        if incoming_block.height > our_latest_block.height:
+            print("🔄 Incoming chain is longer - SWITCHING")
             
-        # Penalty for validator centralization
-        if validator_block_count[candidate.validator] > THRESHOLD:
-            score *= 0.9
+            # Rollback to common ancestor
+            rollback_to(common_ancestor)
             
-        scores.append(score)
-    
-    return candidates[argmax(scores)]
+            # Rebuild WorldState
+            rebuild_state_from_genesis(common_ancestor.height)
+            
+            # Accept new chain
+            accept_block(incoming_block)
+        else:
+            print("⊘ Our chain is longer - REJECTING fork")
+            reject_block(incoming_block)
 ```
 
-### 5.5 Difficulty Adjustment
+**Finality:**
+- **Soft finality**: 1 block (~30-60 seconds)
+- **Hard finality**: 6 blocks (~3-6 minutes)
+
+Unlike PoW blockchains, forks are not part of normal operation - they're exceptional events.
+
+### 5.6 Difficulty Adjustment
 
 ```python
 def adjust_difficulty(blocks):
