@@ -321,16 +321,17 @@ impl ValidatorNode {
                     let slot_consensus = self.slot_consensus.read().await;
                     let is_our_turn = slot_consensus.is_slot_leader(&self.validator.address);
                     let current_slot = slot_consensus.get_current_slot();
+                    let validator_count = slot_consensus.validator_count();
 
                     if is_our_turn {
-                        info!("✅ Our turn to produce block (slot {})", current_slot);
+                        info!("✅ Our turn to produce block (slot {}, validators: {})", current_slot, validator_count);
                         drop(slot_consensus);
                         if let Err(e) = self.produce_block().await {
                             error!("Failed to produce block: {}", e);
                         }
                     } else {
                         let leader = slot_consensus.get_current_leader();
-                        debug!("⏳ Waiting for our slot (current leader: {:?}, slot {})", leader, current_slot);
+                        debug!("⏳ Waiting for our slot (current leader: {:?}, slot {}, validators: {})", leader, current_slot, validator_count);
                     }
                 }
 
@@ -558,24 +559,35 @@ impl ValidatorNode {
                 );
 
                 // AUTO-DISCOVERY: Extract validator address from block and add to slot consensus
+                debug!("🔍 Block validator_pubkey length: {}", block.header.validator_pubkey.len());
                 if !block.header.validator_pubkey.is_empty() {
-                    if let Ok(pubkey) = PublicKey::from_bytes(&block.header.validator_pubkey) {
-                        let validator_address = pubkey.to_address();
+                    match PublicKey::from_bytes(&block.header.validator_pubkey) {
+                        Ok(pubkey) => {
+                            let validator_address = pubkey.to_address();
+                            debug!("🔍 Extracted validator address: {}", validator_address);
 
-                        // Add to slot consensus if not already registered
-                        let mut slot_consensus = self.slot_consensus.write().await;
-                        let before_count = slot_consensus.validator_count();
-                        slot_consensus.add_validator(validator_address);
-                        let after_count = slot_consensus.validator_count();
+                            // Add to slot consensus if not already registered
+                            let mut slot_consensus = self.slot_consensus.write().await;
+                            let before_count = slot_consensus.validator_count();
+                            slot_consensus.add_validator(validator_address);
+                            let after_count = slot_consensus.validator_count();
 
-                        if after_count > before_count {
-                            info!(
-                                "📝 Discovered new validator: {} (total: {})",
-                                validator_address, after_count
-                            );
+                            if after_count > before_count {
+                                warn!(
+                                    "📝 Discovered new validator: {} (total: {})",
+                                    validator_address, after_count
+                                );
+                            } else {
+                                debug!("Validator already known: {}", validator_address);
+                            }
+                            drop(slot_consensus);
                         }
-                        drop(slot_consensus);
+                        Err(e) => {
+                            warn!("Failed to extract validator address from block: {}", e);
+                        }
                     }
+                } else {
+                    warn!("⚠️  Block {} has empty validator_pubkey!", height);
                 }
 
                 // Skip if we already have this block
