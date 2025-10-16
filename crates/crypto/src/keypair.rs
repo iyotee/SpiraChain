@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use ed25519_dalek::{Signer, Verifier};
 use rand::rngs::OsRng;
 use serde::{Deserialize, Serialize};
@@ -66,7 +67,7 @@ impl KeyPair {
 impl PublicKey {
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() != 32 {
-            return Err("Public key must be 32 bytes".into());
+            return Err(anyhow!("Public key must be 32 bytes"));
         }
         let mut key_bytes = [0u8; 32];
         key_bytes.copy_from_slice(bytes);
