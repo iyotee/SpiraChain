@@ -156,12 +156,16 @@ SpiraChain uses **SpiraPi**—a revolutionary addressing system based on mathema
 - Blake3 cryptographic hashing
 - Quantum-safe from day one
 
-### 🌀 Proof of Spiral (PoSp) Consensus
-Validators don't just mine—they create **geometrically beautiful spirals**:
-- Archimedean, Logarithmic, Fibonacci, Fermat, Ramanujan spirals
-- Complexity scoring (geometric + semantic)
-- Energy-efficient (no wasteful PoW)
-- Rewards based on beauty and coherence
+### 🌀 Hybrid Slot-based Consensus
+SpiraChain uses a unique consensus combining **Cardano-style slots** + **Proof of Spiral**:
+- **Slot-based PoS**: Validators take turns (round-robin) - no forks!
+- **Proof of Spiral**: Blocks must contain valid geometric spirals (π-based)
+- **Fair launch**: No minimum stake - earn QBT through block rewards
+- **Energy-efficient**: No wasteful mining, just mathematical validation
+- **Block time**: 30s (testnet), 60s (mainnet)
+- **Finality**: ~3-6 minutes (6 blocks)
+
+**Why no forks?** Only ONE validator can produce per slot → deterministic → fast finality!
 
 ### 🧠 AI Semantic Layer
 - Sentence transformers for embeddings
@@ -179,9 +183,10 @@ Validators don't just mine—they create **geometrically beautiful spirals**:
 - **Fair launch:** No staking required - anyone can become a validator
 
 ### 🚀 Performance
-- **Block time:** 30 seconds (20x faster than Bitcoin)
+- **Block time:** 30s testnet, 60s mainnet (deterministic - no forks!)
 - **TPS:** ~33 (1000 tx per block)
-- **Finality:** 12 blocks (~6 minutes)
+- **Finality:** 6 blocks (~3-6 minutes) - faster than Bitcoin!
+- **Consensus:** Slot-based (Cardano-style) + Proof of Spiral validation
 - **Scalability:** Sharding-ready architecture
 - **Energy:** 99.9% less than Bitcoin (no wasteful PoW)
 
@@ -359,15 +364,16 @@ python3 -c "from sentence_transformers import SentenceTransformer; SentenceTrans
 
 ### Becoming a Validator
 
-Validators produce blocks and earn rewards. Here's how to become one:
+Validators take turns producing blocks (slot-based consensus) and earn rewards. Here's how:
 
 #### 1. **Requirements**
 - **No staking required:** Fair launch - start with 0 QBT, earn through validation
-- **Hardware:** 4+ CPU cores, 8 GB RAM, 256 GB SSD (Raspberry Pi 4/5 perfect!)
+- **Hardware:** 2+ CPU cores, 4 GB RAM, 50 GB SSD (**Raspberry Pi 4/5 perfect!**)
 - **GPU:** NOT required (optional for AI acceleration in future)
 - **Network:** Stable connection, open port 30333, 10+ Mbps
-- **Uptime:** 99%+ recommended
+- **Uptime:** 95%+ recommended (or you miss your slots)
 - **Power:** 5-15W (can run on solar/battery!)
+- **Time sync:** NTP enabled (for accurate slot timing)
 
 #### 2. **Start Validating**
 ```bash

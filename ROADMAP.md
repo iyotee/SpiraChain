@@ -16,13 +16,17 @@
 ## ✅ COMPLETED (Q4 2025)
 
 ### **Core Technology** ✅
-- [x] Proof-of-Spiral consensus implementation
-- [x] Post-quantum cryptography (XMSS, McEliece)
+- [x] **Hybrid Slot-based Consensus** (Cardano-style + Proof of Spiral)
+- [x] **Slot-based leader election** (round-robin, no forks)
+- [x] **Fork resolution** (longest chain wins)
+- [x] **Proof-of-Spiral** geometric validation
+- [x] Post-quantum cryptography (XMSS, Ed25519)
 - [x] AI semantic layer (SpiraPi integration)
-- [x] LibP2P networking with DNS bootstrap
-- [x] RPC API for transaction submission
-- [x] CLI wallet and node management
-- [x] Difficulty adjustment (Bitcoin-style)
+- [x] **LibP2P networking** with Gossipsub + DNS seeds
+- [x] **Block synchronization** (batch sync, 50 blocks per request)
+- [x] RPC API for balance queries and transaction submission
+- [x] CLI wallet (create, balance, send)
+- [x] Difficulty adjustment (π-based spiral jumps)
 - [x] Fee burning mechanism (30%)
 - [x] Slashing & reputation system
 - [x] Attack mitigation (double-spend detection)

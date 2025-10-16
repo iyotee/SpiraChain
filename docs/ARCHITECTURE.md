@@ -77,19 +77,55 @@ Qbitum/
 
 ### 4. Consensus (`crates/consensus`)
 
-**Responsibility**: Proof of Spiral consensus mechanism
+**Responsibility**: Hybrid Slot-based Proof of Spiral consensus
 
 **Key Files:**
-- `proof_of_spiral.rs`: Block generation and validation
+- `slot_consensus.rs`: **NEW** - Cardano-style slot-based leader election
+- `proof_of_spiral.rs`: Geometric block validation (Proof of Spiral)
 - `validator.rs`: Validator management and slashing
 - `difficulty.rs`: Dynamic difficulty adjustment
 - `rewards.rs`: Block reward calculation
 
-**Consensus Rules:**
-1. **Geometric Validity**: Spiral complexity > threshold
-2. **Semantic Coherence**: Average coherence > 0.7
-3. **Spiral Continuity**: Distance to previous < MAX_JUMP
-4. **Proof-of-Work**: Hash(spiral + nonce) < difficulty
+**Consensus Model (Hybrid):**
+
+#### Phase 1: Slot Assignment (Prevents Forks)
+```rust
+// Round-robin turn-based block production
+current_slot = unix_time / slot_duration  // 30s testnet, 60s mainnet
+leader = validators[slot % validators.len()]
+
+if leader == our_address {
+    produce_block()  // Our turn!
+} else {
+    wait_for_next_slot()  // Not our turn
+}
+```
+
+#### Phase 2: Proof of Spiral (Validates Quality)
+```rust
+// Geometric validation of block
+validate_block(block):
+    1. Spiral complexity >= MIN_COMPLEXITY
+    2. Spiral type in ALLOWED_TYPES
+    3. Spiral jump <= MAX_SPIRAL_JUMP (4.0 for π)
+    4. Semantic coherence >= 0.7
+    5. Chain continuity (prev_hash matches)
+```
+
+#### Phase 3: Fork Resolution (Rare Cases)
+```rust
+// Longest chain wins (Bitcoin-style)
+if incoming_block.prev_hash != our_block.hash {
+    if incoming_chain.length > our_chain.length {
+        rollback_and_switch_to_longer_chain()
+    }
+}
+```
+
+**Why Hybrid?**
+- **Slot-based PoS** (Cardano): Prevents forks, deterministic, fair
+- **Proof of Spiral** (SpiraChain): Adds mathematical beauty requirement
+- **Longest chain** (Bitcoin): Fallback for rare edge cases
 
 ### 5. CLI (`crates/cli`)
 
