@@ -192,9 +192,9 @@ impl ValidatorNode {
                                     if addr_bytes.len() == 32 {
                                         let mut addr_array = [0u8; 32];
                                         addr_array.copy_from_slice(&addr_bytes);
-                                        let address = Address(addr_array);
+                                        let address = Address::new(addr_array);
                                         slot_consensus.add_validator(address);
-                                        info!("📝 Registered known validator: {:?}", address);
+                                        info!("📝 Registered known validator: {}", address);
                                     }
                                 }
                             }

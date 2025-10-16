@@ -12,6 +12,7 @@ pub const SLOT_DURATION_MAINNET: u64 = 60;
 #[derive(Debug, Clone)]
 pub struct SlotConsensus {
     /// Network type (testnet or mainnet)
+    #[allow(dead_code)]
     network: String,
     /// List of active validators (sorted by address for determinism)
     validators: Vec<Address>,
