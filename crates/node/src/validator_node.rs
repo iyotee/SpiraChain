@@ -304,12 +304,14 @@ impl ValidatorNode {
     }
 
     async fn run_validator_loop(&mut self) -> Result<()> {
-        let mut block_timer = interval(Duration::from_secs(60));
+        // Block timer matches slot duration (30s testnet, 60s mainnet)
+        let block_interval = if self.config.network == "mainnet" { 60 } else { 30 };
+        let mut block_timer = interval(Duration::from_secs(block_interval));
         let mut stats_timer = interval(Duration::from_secs(30));
         let mut mempool_check = interval(Duration::from_secs(5));
         let mut network_tick = interval(Duration::from_millis(100));
 
-        info!("⚡ Validator loop started (producing blocks every 60s)");
+        info!("⚡ Validator loop started (slot duration: {}s)", block_interval);
         if self.network.is_some() {
             info!("   P2P network enabled");
         }
