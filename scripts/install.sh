@@ -384,6 +384,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=$INSTALL_DIR/SpiraChain
+Environment="RUST_LOG=info,yamux=error"
 ExecStart=$CMD
 Restart=always
 RestartSec=10
