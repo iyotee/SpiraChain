@@ -1,7 +1,7 @@
 // Slot-based Consensus (Cardano-style)
 // Each validator gets a turn to produce blocks in a round-robin fashion
 
-use spirachain_core::{Address, Result};
+use spirachain_core::Address;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Slot duration in seconds (testnet: 30s, mainnet: 60s)
@@ -40,7 +40,7 @@ impl SlotConsensus {
         if !self.validators.contains(&address) {
             self.validators.push(address);
             // Sort for determinism (everyone must have the same order)
-            self.validators.sort();
+            self.validators.sort_by_key(|a| *a.as_bytes());
         }
     }
 
