@@ -426,6 +426,16 @@ impl LibP2PNetworkWithSync {
     pub fn peer_count(&self) -> usize {
         self.connected_peers.len()
     }
+    
+    /// Get connected peer count (alias for compatibility)
+    pub fn connected_peers_count(&self) -> usize {
+        self.connected_peers.len()
+    }
+    
+    /// Get peer heights map (for sync checking)
+    pub fn get_peer_heights(&self) -> &HashMap<PeerId, u64> {
+        &self.peer_heights
+    }
 
     /// Get sync statistics (simplified)
     pub fn get_sync_stats(&self) -> String {

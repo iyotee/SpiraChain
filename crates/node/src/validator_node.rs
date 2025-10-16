@@ -324,6 +324,45 @@ impl ValidatorNode {
         loop {
             tokio::select! {
                 _ = block_timer.tick() => {
+                    // CRITICAL: Only produce blocks if we are fully synced with peers
+                    // This prevents fork creation when a new node joins with height=0
+                    let should_wait_for_sync = if let Some(ref network) = self.network {
+                        let net = network.read().await;
+                        let connected_peers = net.connected_peers_count();
+                        
+                        if connected_peers > 0 {
+                            // Check if we have peer height information
+                            let peer_heights = net.get_peer_heights();
+                            
+                            if !peer_heights.is_empty() {
+                                let max_peer_height = *peer_heights.values().max().unwrap_or(&0);
+                                let our_height = self.storage.get_latest_block().ok().flatten()
+                                    .map(|b| b.header.block_height).unwrap_or(0);
+                                
+                                // Wait for sync if we're more than 1 block behind
+                                if max_peer_height > our_height + 1 {
+                                    info!("🔄 Waiting for sync: we are at {}, max peer at {} (behind by {})", 
+                                        our_height, max_peer_height, max_peer_height - our_height);
+                                    true
+                                } else {
+                                    false
+                                }
+                            } else {
+                                // No peer heights yet, wait for network to stabilize
+                                false
+                            }
+                        } else {
+                            false
+                        }
+                    } else {
+                        false
+                    };
+                    
+                    if should_wait_for_sync {
+                        // Skip this block production cycle - we need to sync first
+                        continue;
+                    }
+                    
                     // Check if it's our turn to produce a block (slot-based consensus)
                     let slot_consensus = self.slot_consensus.read().await;
                     let is_our_turn = slot_consensus.is_slot_leader(&self.validator.address);
