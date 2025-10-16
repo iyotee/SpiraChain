@@ -568,32 +568,66 @@ impl ValidatorNode {
                         }
                         
                         // Rebuild WorldState from genesis
-                        info!("🔄 Rebuilding WorldState from genesis...");
+                        warn!("🔄 Rebuilding WorldState from genesis (replaying {} blocks)...", common_height);
                         let mut state = self.state.write().await;
                         *state = WorldState::new(); // Reset to genesis
                         
-                        // Credit initial stake if needed
-                        let validator_balance = self.storage.get_balance(&self.validator.address).unwrap_or_default();
-                        if !validator_balance.is_zero() {
-                            state.set_balance(self.validator.address, validator_balance);
+                        // Credit initial testnet stake to our validator (1000 QBT)
+                        if self.config.network == "testnet" {
+                            let initial_stake = Amount::new(1000 * 1_000_000_000_000_000_000);
+                            state.credit_balance(&self.validator.address, initial_stake);
+                            warn!("💰 Credited initial 1000 QBT stake to our validator");
                         }
+                        
+                        // Track all addresses that receive transactions (other validators)
+                        let mut all_addresses = std::collections::HashSet::new();
+                        all_addresses.insert(self.validator.address);
                         
                         // Replay all blocks from 0 to common_height
                         for h in 0..=common_height {
                             if let Ok(Some(old_block)) = self.storage.get_block_by_height(h) {
+                                // Apply all transactions
                                 for tx in &old_block.transactions {
+                                    all_addresses.insert(tx.from);
+                                    all_addresses.insert(tx.to);
+                                    
                                     if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
                                         debug!("Replay tx in block {}: {}", h, e);
                                     }
                                 }
                             }
                         }
+                        
+                        // Now we need to load the CORRECT balances from the NEW chain's storage
+                        // For all addresses we've seen in transactions
+                        for address in all_addresses {
+                            if let Ok(stored_balance) = self.storage.get_balance(&address) {
+                                if !stored_balance.is_zero() {
+                                    state.set_balance(address, stored_balance);
+                                    debug!("💰 Loaded balance for address {:?}", address);
+                                }
+                            }
+                        }
+                        
+                        // Persist all balances to storage
+                        for (address, balance) in state.get_all_balances() {
+                            if let Err(e) = self.storage.set_balance(&address, balance) {
+                                warn!("Failed to persist balance during rollback: {}", e);
+                            }
+                        }
+                        
                         drop(state);
                         
                         // Update current height to common ancestor
                         *self.current_height.write().await = common_height;
                         
-                        info!("✅ Rollback complete. Now at height {}", common_height);
+                        warn!("✅ Rollback complete. Now at height {} with correct WorldState", common_height);
+                        
+                        // Announce our new height to peers so they know we rolled back
+                        if let Some(ref network) = self.network {
+                            let mut net = network.write().await;
+                            net.set_local_height(common_height);
+                        }
                         
                         // Now we can accept the new block
                     } else {
