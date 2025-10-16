@@ -132,7 +132,7 @@ pub async fn handle_wallet_send(
         return Err(anyhow!("Invalid secret key length"));
     }
     let secret_array: [u8; 32] = secret_bytes.try_into().unwrap();
-    let keypair = KeyPair::from_secret(secret_array)?;
+    let _keypair = KeyPair::from_secret(secret_array)?;
     
     // Create transaction
     use spirachain_core::{Address, Amount, Transaction};
