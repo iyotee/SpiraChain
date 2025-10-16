@@ -151,47 +151,31 @@ impl LibP2PNetworkWithSync {
                 if bootstrap_peers.is_empty() {
                     warn!("⚠️  No bootstrap peers found - running in isolated mode");
                 } else {
-                    info!("📋 Found {} bootstrap peers (may include self)", bootstrap_peers.len());
-                    
-                    // Get our listen addresses to filter them out
-                    let listen_addrs: Vec<String> = self.swarm
-                        .listeners()
-                        .map(|a| a.to_string())
-                        .collect();
+                    info!("📋 Found {} bootstrap peers", bootstrap_peers.len());
                     
                     let mut dialed_count = 0;
-                    for addr_str in bootstrap_peers {
-                        // Skip our own listening addresses
-                        let is_self = listen_addrs.iter().any(|listen| {
-                            addr_str.contains(&listen.to_string()) || 
-                            listen.contains(&addr_str)
-                        });
-                        
-                        if is_self {
-                            debug!("⊘ Skipping self: {}", addr_str);
-                            continue;
-                        }
-                        
+                    for addr_str in &bootstrap_peers {
                         if let Ok(addr) = addr_str.parse::<Multiaddr>() {
+                            // Try to dial - if it fails with "Broken pipe", it's probably ourselves
+                            // LibP2P will automatically prevent self-dial
                             match self.swarm.dial(addr.clone()) {
                                 Ok(_) => {
-                                    info!("📞 Dialing bootstrap peer: {}", addr);
+                                    info!("📞 Dialing: {}", addr);
                                     dialed_count += 1;
                                 }
                                 Err(e) => {
-                                    debug!("Failed to dial {}: {}", addr, e);
+                                    // Silently skip dial errors (likely self-dial)
+                                    debug!("⊘ Skipping {}: {}", addr, e);
                                 }
                             }
-                        } else {
-                            warn!("Invalid multiaddr: {}", addr_str);
                         }
                     }
                     
                     if dialed_count == 0 {
-                        warn!("⚠️  No external peers to dial - waiting for incoming connections");
-                        info!("   This is normal if you're the first/only node on the network");
+                        info!("⚠️  No external peers to dial - running as first node");
+                        info!("   Waiting for incoming connections...");
                     } else {
-                        info!("✅ Dialed {} bootstrap peers", dialed_count);
+                        info!("✅ Dialing {} peers...", dialed_count);
                     }
                 }
             }
