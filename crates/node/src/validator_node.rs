@@ -1,5 +1,5 @@
 use crate::{BlockStorage, NodeConfig, WorldState};
-use spirachain_consensus::{ProofOfSpiral, Validator};
+use spirachain_consensus::{ProofOfSpiral, SlotConsensus, Validator};
 use spirachain_core::{Address, Amount, Block, Result, Transaction};
 use spirachain_crypto::KeyPair;
 use spirachain_network::{LibP2PNetworkWithSync, NetworkEvent};
@@ -16,6 +16,7 @@ pub struct ValidatorNode {
     state: Arc<RwLock<WorldState>>,
     storage: Arc<BlockStorage>,
     consensus: ProofOfSpiral,
+    slot_consensus: Arc<RwLock<SlotConsensus>>,
     network: Option<Arc<RwLock<LibP2PNetworkWithSync>>>,
     is_running: Arc<RwLock<bool>>,
     blocks_produced: u64,
@@ -74,6 +75,15 @@ impl ValidatorNode {
             .map(|b| b.header.block_height)
             .unwrap_or(0);
 
+        // Initialize slot consensus
+        let mut slot_consensus = SlotConsensus::new(&config.network);
+        // Register ourselves as a validator
+        slot_consensus.add_validator(address);
+        
+        info!("🎰 Slot consensus initialized");
+        info!("   Network: {}", config.network);
+        info!("   Slot duration: {}s", if config.network == "mainnet" { 60 } else { 30 });
+
         Ok(Self {
             config,
             keypair,
@@ -82,6 +92,7 @@ impl ValidatorNode {
             state: Arc::new(RwLock::new(WorldState::default())),
             storage: Arc::new(storage),
             consensus,
+            slot_consensus: Arc::new(RwLock::new(slot_consensus)),
             network: None, // Initialized in start()
             is_running: Arc::new(RwLock::new(false)),
             blocks_produced: 0,
@@ -170,6 +181,26 @@ impl ValidatorNode {
                         self.network = Some(Arc::new(RwLock::new(network)));
                     }
                     info!("📡 P2P network ready with block sync - will poll in validator loop");
+                    
+                    // Register known validators from environment variable (for initial bootstrap)
+                    if let Ok(known_validators) = std::env::var("KNOWN_VALIDATORS") {
+                        let mut slot_consensus = self.slot_consensus.write().await;
+                        for addr_hex in known_validators.split(',') {
+                            let addr_hex = addr_hex.trim();
+                            if addr_hex.len() == 64 {
+                                if let Ok(addr_bytes) = hex::decode(addr_hex) {
+                                    if addr_bytes.len() == 32 {
+                                        let mut addr_array = [0u8; 32];
+                                        addr_array.copy_from_slice(&addr_bytes);
+                                        let address = Address(addr_array);
+                                        slot_consensus.add_validator(address);
+                                        info!("📝 Registered known validator: {:?}", address);
+                                    }
+                                }
+                            }
+                        }
+                        info!("✅ Total validators in slot consensus: {}", slot_consensus.validator_count());
+                    }
                 }
             }
             Err(e) => {
@@ -299,8 +330,20 @@ impl ValidatorNode {
         loop {
             tokio::select! {
                 _ = block_timer.tick() => {
-                    if let Err(e) = self.produce_block().await {
-                        error!("Failed to produce block: {}", e);
+                    // Check if it's our turn to produce a block (slot-based consensus)
+                    let slot_consensus = self.slot_consensus.read().await;
+                    let is_our_turn = slot_consensus.is_slot_leader(&self.validator.address);
+                    let current_slot = slot_consensus.get_current_slot();
+                    
+                    if is_our_turn {
+                        info!("✅ Our turn to produce block (slot {})", current_slot);
+                        drop(slot_consensus);
+                        if let Err(e) = self.produce_block().await {
+                            error!("Failed to produce block: {}", e);
+                        }
+                    } else {
+                        let leader = slot_consensus.get_current_leader();
+                        debug!("⏳ Waiting for our slot (current leader: {:?}, slot {})", leader, current_slot);
                     }
                 }
 
@@ -495,6 +538,10 @@ impl ValidatorNode {
         match event {
             NetworkEvent::PeerConnected(peer) => {
                 info!("🤝 Peer connected: {}", peer);
+                
+                // For now, we'll discover validators by monitoring blocks they produce
+                // Each block contains the validator's address in the signature
+                // When we receive a block, we'll add that validator to our slot consensus
             }
             NetworkEvent::PeerDisconnected(peer) => {
                 info!("👋 Peer disconnected: {}", peer);
@@ -515,6 +562,9 @@ impl ValidatorNode {
                 let current_height = *self.current_height.read().await;
                 
                 info!("📦 Received new block {} from network (current: {})", height, current_height);
+                
+                // TODO: Extract validator address from block.header.validator_pubkey and add to slot_consensus
+                // For now, we'll manually register validators we know about
                 
                 // Skip if we already have this block
                 if height < current_height {
