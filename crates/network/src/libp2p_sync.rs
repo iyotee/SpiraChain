@@ -1,7 +1,6 @@
 // LibP2P Network with Full Block Synchronization
 // SIMPLE implementation: Gossipsub for broadcast + manual block requests
 
-use futures::StreamExt;
 use libp2p::{
     gossipsub,
     identity::Keypair,
@@ -237,9 +236,13 @@ impl LibP2PNetworkWithSync {
         }
     }
 
-    /// Poll for network events
+    /// Poll for network events (non-blocking)
     pub async fn poll_events(&mut self) -> Option<NetworkEvent> {
-        match self.swarm.select_next_some().await {
+        // Use poll_next instead of select_next_some to avoid blocking
+        use futures::stream::StreamExt;
+        
+        match futures::poll!(self.swarm.next()) {
+            std::task::Poll::Ready(Some(event)) => match event {
             SwarmEvent::NewListenAddr { address, .. } => {
                 info!("📡 Listening on: {}", address);
                 None
@@ -271,6 +274,9 @@ impl LibP2PNetworkWithSync {
             }
             SwarmEvent::Behaviour(gossip_event) => self.handle_gossipsub_event(gossip_event),
             _ => None,
+            }
+            std::task::Poll::Ready(None) => None,
+            std::task::Poll::Pending => None, // No event ready, return None immediately
         }
     }
 
