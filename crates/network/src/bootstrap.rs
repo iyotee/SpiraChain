@@ -24,11 +24,8 @@ pub const DNS_SEEDS_MAINNET: &[&str] = &[
 /// These are hardcoded multiaddrs of known stable nodes
 /// Updated with each release to ensure connectivity
 pub const FALLBACK_NODES_TESTNET: &[&str] = &[
-    // These will be populated once DNS seeds are configured
-    // Format: "/ip4/IP_ADDRESS/tcp/30333/p2p/PEER_ID"
-    // Or simpler: "/ip4/IP_ADDRESS/tcp/30333"
-    // 
-    // Will be updated in next release after your Raspberry Pi and VPS are stable
+    "51.154.64.38:30333",    // Raspberry Pi 5 (Primary seed)
+    "195.238.122.135:30333", // VPS (Secondary seed)
 ];
 
 pub const FALLBACK_NODES_MAINNET: &[&str] = &[

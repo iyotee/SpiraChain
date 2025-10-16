@@ -386,12 +386,26 @@ impl ValidatorNode {
     async fn produce_block(&mut self) -> Result<()> {
         info!("🏗️  Producing new block...");
 
+        // SLOT LOCK: Prevent producing multiple blocks in the same slot
+        let slot_consensus = self.slot_consensus.read().await;
+        let current_slot = slot_consensus.get_current_slot();
+        drop(slot_consensus);
+
+        // Check if we already produced a block for this slot
+        let previous_block = self.storage.get_latest_block()?;
+        if let Some(ref prev) = previous_block {
+            // If the last block was produced in this slot, skip
+            // (prev block timestamp / 30 gives slot number)
+            let prev_slot = prev.header.timestamp / (30 * 1000); // 30s slots in ms
+            if prev_slot == current_slot {
+                debug!("⊘ Already produced block for slot {} - skipping", current_slot);
+                return Ok(());
+            }
+        }
+
         let mempool_guard = self.mempool.read().await;
         let pending_txs = mempool_guard.iter().take(1000).cloned().collect::<Vec<_>>();
         drop(mempool_guard);
-
-        // Get latest block from storage (not state height!)
-        let previous_block = self.storage.get_latest_block()?;
 
         let current_height = if let Some(ref prev) = previous_block {
             prev.header.block_height
@@ -596,11 +610,28 @@ impl ValidatorNode {
                 }
 
                 // Skip if we already have this block
-                if height < current_height {
+                if height <= current_height {
                     debug!(
-                        "⊘ Skipping block {} - we are ahead (current: {})",
+                        "⊘ Skipping block {} - we already have it (current: {})",
                         height, current_height
                     );
+                    return;
+                }
+
+                // Reject blocks that are too far ahead (we need sequential blocks for sync)
+                if height > current_height + 1 {
+                    warn!(
+                        "⚠️  Rejecting out-of-order block {} - we are at {} (missing blocks in between)",
+                        height, current_height
+                    );
+                    warn!("   Requesting missing blocks from peers...");
+                    
+                    // Request missing blocks
+                    if let Some(ref network) = self.network {
+                        let mut net = network.write().await;
+                        // The height announcement will trigger block requests automatically
+                        net.set_local_height(current_height);
+                    }
                     return;
                 }
 
