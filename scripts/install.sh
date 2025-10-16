@@ -270,10 +270,15 @@ echo -e "${CYAN}🔍 Checking application dependencies...${NC}"
 if ! command -v rustc &> /dev/null; then
     echo "⚙️  Installing Rust..."
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    source $HOME/.cargo/env
+    # Add cargo to PATH for this session
+    export PATH="$HOME/.cargo/bin:$PATH"
+    source $HOME/.cargo/env 2>/dev/null || true
 else
     echo "✅ Rust already installed"
 fi
+
+# Ensure cargo is in PATH (even if already installed)
+export PATH="$HOME/.cargo/bin:$PATH"
 
 # Python (for AI features)
 if ! command -v python3 &> /dev/null; then
