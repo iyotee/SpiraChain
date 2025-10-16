@@ -165,13 +165,20 @@ pub async fn handle_wallet_send(
         .timeout(std::time::Duration::from_secs(10))
         .build()?;
     
-    // Serialize transaction
-    let tx_json = serde_json::to_string(&tx)?;
+    // Serialize transaction to JSON then to hex
+    let tx_json = serde_json::to_vec(&tx)?;
+    let tx_hex = hex::encode(&tx_json);
+    
+    #[derive(Serialize)]
+    struct SubmitTxRequest {
+        tx_hex: String,
+    }
+    
+    let request = SubmitTxRequest { tx_hex };
     
     match client
         .post(rpc_url)
-        .header("Content-Type", "application/json")
-        .body(tx_json)
+        .json(&request)
         .send()
         .await
     {
