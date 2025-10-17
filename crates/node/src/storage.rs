@@ -12,8 +12,22 @@ pub struct NodeStorage {
 
 impl NodeStorage {
     pub fn new(path: impl AsRef<Path>) -> Result<Self> {
-        let db = sled::open(path.as_ref()).map_err(|e| {
-            SpiraChainError::StorageError(format!("Failed to open database: {}", e))
+        let path_ref = path.as_ref();
+        
+        // Ensure parent directory exists before opening sled database
+        if let Some(parent) = path_ref.parent() {
+            std::fs::create_dir_all(parent).map_err(|e| {
+                SpiraChainError::StorageError(format!("Failed to create data directory: {}", e))
+            })?;
+        }
+        
+        // Also ensure the data directory itself exists
+        std::fs::create_dir_all(path_ref).map_err(|e| {
+            SpiraChainError::StorageError(format!("Failed to create data directory: {}", e))
+        })?;
+        
+        let db = sled::open(path_ref).map_err(|e| {
+            SpiraChainError::StorageError(format!("Failed to open database at {:?}: {}", path_ref, e))
         })?;
 
         let blocks = db.open_tree(b"blocks").map_err(|e| {
