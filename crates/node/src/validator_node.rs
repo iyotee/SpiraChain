@@ -358,8 +358,15 @@ impl ValidatorNode {
                 .set_height(block.header.block_height);
         } else {
             // No genesis block yet
-            // CRITICAL: Only create genesis if we have NO peers (first node in network)
-            // Otherwise, wait to receive it from the network
+            info!("   No genesis block found in storage");
+            
+            // CRITICAL: Wait a few seconds for P2P to connect before deciding
+            // This allows us to discover if there are existing nodes with genesis
+            if self.network.is_some() {
+                info!("⏳ Waiting 5 seconds for peer discovery before creating genesis...");
+                tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+            }
+            
             let peer_count = if let Some(ref network) = self.network {
                 network.read().await.peer_count()
             } else {
@@ -406,7 +413,8 @@ impl ValidatorNode {
                     }
                 }
             } else {
-                info!("⏳ No genesis yet - waiting to receive it from {} peer(s)...", peer_count);
+                info!("⏳ Found {} peer(s) - waiting to receive genesis from network...", peer_count);
+                info!("   Genesis will be downloaded during sync");
             }
         }
 
