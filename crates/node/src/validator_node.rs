@@ -543,10 +543,24 @@ impl ValidatorNode {
                 &prev_block,
             )?
         } else {
-            // Only create genesis if no blocks exist
-            info!("   Creating genesis block");
-            let config = spirachain_core::GenesisConfig::default();
+            // No genesis block yet
+            // CRITICAL: Only the FIRST node in the network should create genesis
+            // Other nodes should WAIT to receive it from peers
+            
+            let peer_count = if let Some(ref network) = self.network {
+                network.read().await.peer_count()
+            } else {
+                0
+            };
 
+            if peer_count > 0 {
+                // We have peers but no genesis - wait for them to send it
+                return Err(anyhow::anyhow!("Waiting for genesis block from network").into());
+            }
+
+            // We are the FIRST node - create the genesis block
+            info!("   Creating genesis block (first node in network)");
+            let config = spirachain_core::GenesisConfig::default();
             config.create_genesis_block()
         };
 
