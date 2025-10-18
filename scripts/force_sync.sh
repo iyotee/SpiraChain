@@ -39,14 +39,14 @@ echo "✅ Code updated to latest commit: $(git rev-parse --short HEAD)"
 echo ""
 
 # Step 3: Rebuild
-echo "🔨 Step 3/5: Rebuilding SpiraChain..."
+echo "🔨 Step 3/5: Rebuilding SpiraChain (full workspace)..."
 
 if [ -f "/proc/device-tree/model" ] && grep -q "Raspberry Pi" /proc/device-tree/model 2>/dev/null; then
     echo "   Detected Raspberry Pi - using 2 jobs for compilation..."
-    CARGO_BUILD_JOBS=2 cargo build --release
+    CARGO_BUILD_JOBS=2 cargo build --release --workspace
 else
     echo "   Building with all available cores..."
-    cargo build --release
+    cargo build --release --workspace
 fi
 
 echo "✅ Build complete"

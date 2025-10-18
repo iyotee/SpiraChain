@@ -337,10 +337,13 @@ echo ""
 echo -e "${CYAN}🔨 Building SpiraChain (may take a few minutes)...${NC}"
 source $HOME/.cargo/env
 
+# ALWAYS build the full workspace to ensure all libraries are up to date
+# Even if only the CLI binary is needed, libraries might have changed
 if [ "$NODE_TYPE" == "dev" ]; then
     cargo build --workspace
 else
-    cargo build --release --bin spira
+    # Force rebuild all dependencies (not just the binary)
+    cargo build --release --workspace
 fi
 
 # Create wallet
