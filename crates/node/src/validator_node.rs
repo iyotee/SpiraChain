@@ -499,8 +499,8 @@ impl ValidatorNode {
                     if is_our_turn {
                         drop(slot_consensus);
                         
-                        // CRITICAL: Wait for at least 1 peer before producing early blocks
-                        // This prevents fork at genesis when multiple validators start simultaneously
+                        // CRITICAL: Wait for at least 1 peer before producing blocks
+                        // This prevents the network from running in isolation
                         let current_height = self.storage.get_chain_height().unwrap_or(0);
                         let peer_count = if let Some(ref network) = self.network {
                             network.read().await.peer_count()
@@ -508,7 +508,8 @@ impl ValidatorNode {
                             0
                         };
 
-                        if peer_count == 0 && current_height < 3 {
+                        // ALWAYS require at least 1 peer (except for local/dev networks)
+                        if peer_count == 0 && self.config.network != "local" {
                             info!("⏳ Waiting for peers before producing block at height {} (peers: {})", current_height, peer_count);
                             continue;
                         }
