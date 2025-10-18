@@ -25,7 +25,7 @@ pub const DNS_SEEDS_MAINNET: &[&str] = &[
 /// Updated with each release to ensure connectivity
 pub const FALLBACK_NODES_TESTNET: &[&str] = &[
     "51.154.64.38:30333",    // Raspberry Pi 5 (Primary seed)
-    "195.238.122.135:30333", // VPS (Secondary seed)
+    "45.91.169.100:30333",   // VPS (Secondary seed - CORRECTED)
 ];
 
 pub const FALLBACK_NODES_MAINNET: &[&str] = &[
