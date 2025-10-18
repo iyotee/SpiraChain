@@ -4,6 +4,14 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 
+/// OFFICIAL TESTNET GENESIS HASH
+/// This is the canonical genesis block hash that all testnet nodes must use
+/// If a node creates a different genesis, it will be rejected by the network
+pub const TESTNET_GENESIS_HASH: &str = "0x6d0e132a9b8bcb0b1c010b8c7e47b24c8cf995e30f142d21a8e4682d4aa9c363";
+
+/// OFFICIAL MAINNET GENESIS HASH (to be set before mainnet launch)
+pub const MAINNET_GENESIS_HASH: &str = "0x0000000000000000000000000000000000000000000000000000000000000000";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenesisConfig {
     pub version: u64,
@@ -223,6 +231,21 @@ impl GenesisConfig {
 
     pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(json)
+    }
+    
+    /// Get the expected genesis hash for a network
+    pub fn expected_genesis_hash(network: &str) -> &'static str {
+        match network {
+            "mainnet" => MAINNET_GENESIS_HASH,
+            _ => TESTNET_GENESIS_HASH,
+        }
+    }
+    
+    /// Verify if a genesis block is the official one for the network
+    pub fn verify_genesis_hash(genesis: &Block, network: &str) -> bool {
+        let expected = Self::expected_genesis_hash(network);
+        let actual = format!("0x{}", hex::encode(genesis.hash().as_bytes()));
+        actual == expected
     }
 }
 

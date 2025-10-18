@@ -406,6 +406,17 @@ impl ValidatorNode {
                 info!("✅ Genesis block created and stored!");
                 info!("   Hash: {}", genesis.hash());
                 
+                // CRITICAL: Verify genesis hash matches the official network genesis
+                if !spirachain_core::GenesisConfig::verify_genesis_hash(&genesis, &self.config.network) {
+                    error!("❌ CRITICAL: Generated genesis hash does NOT match official {} genesis!", self.config.network.to_uppercase());
+                    error!("   Expected: {}", spirachain_core::GenesisConfig::expected_genesis_hash(&self.config.network));
+                    error!("   Got:      {}", genesis.hash());
+                    error!("   This should NEVER happen! Check genesis.rs for bugs!");
+                    return Err(anyhow::anyhow!("Genesis hash mismatch - aborting to prevent network fork").into());
+                }
+                
+                info!("✅ Genesis hash verified against official {} genesis", self.config.network.to_uppercase());
+                
                 // Broadcast genesis to any peers that connect later
                 if let Some(ref network) = self.network {
                     if let Err(e) = network.write().await.broadcast_block(&genesis).await {
@@ -990,6 +1001,18 @@ impl ValidatorNode {
                 let mut state = self.state.write().await;
                 
                 if height == 0 {
+                    // Genesis block: Verify it's the OFFICIAL genesis for this network
+                    if !spirachain_core::GenesisConfig::verify_genesis_hash(&block, &self.config.network) {
+                        error!("❌ CRITICAL: Received genesis block with WRONG hash!");
+                        error!("   Expected: {}", spirachain_core::GenesisConfig::expected_genesis_hash(&self.config.network));
+                        error!("   Got:      {}", block.hash());
+                        error!("   This peer is on a different network! Rejecting...");
+                        drop(state);
+                        return;
+                    }
+                    
+                    info!("✅ Genesis hash verified - this is the official {} genesis", self.config.network.to_uppercase());
+                    
                     // Genesis block: Transactions are initial allocations, not transfers
                     info!("📥 Processing genesis block allocations...");
                     for tx in &block.transactions {
