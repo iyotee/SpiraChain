@@ -429,13 +429,27 @@ impl ValidatorNode {
                     if is_our_turn {
                         drop(slot_consensus);
                         
+                        // CRITICAL: Wait for at least 1 peer before producing early blocks
+                        // This prevents fork at genesis when multiple validators start simultaneously
+                        let current_height = self.storage.get_chain_height().unwrap_or(0);
+                        let peer_count = if let Some(ref network) = self.network {
+                            network.read().await.peer_count()
+                        } else {
+                            0
+                        };
+
+                        if peer_count == 0 && current_height < 3 {
+                            info!("⏳ Waiting for peers before producing block at height {} (peers: {})", current_height, peer_count);
+                            continue;
+                        }
+                        
                         // Check if we already produced a block for this slot (atomic check)
                         let last_slot = self.last_produced_slot.load(Ordering::Relaxed);
                         if last_slot == current_slot {
                             info!("⊘ Already produced block for slot {} - skipping", current_slot);
                         } else if self.is_producing.compare_exchange(false, true, Ordering::SeqCst, Ordering::Relaxed).is_ok() {
                             // Successfully set is_producing to true
-                            info!("✅ Our turn to produce block (slot {}, validators: {})", current_slot, validator_count);
+                            info!("✅ Our turn to produce block (slot {}, validators: {}, peers: {})", current_slot, validator_count, peer_count);
                             
                             if let Err(e) = self.produce_block().await {
                                 error!("Failed to produce block: {}", e);
