@@ -145,11 +145,10 @@ impl GenesisConfig {
     }
 
     pub fn create_genesis_block(&self) -> Block {
-        let mut genesis_block = Block::new(Hash::zero(), 0);
-
-        genesis_block.header.timestamp = self.timestamp;
-        genesis_block.header.version = self.version;
-
+        // CRITICAL: Create header manually to avoid SystemTime::now() in Block::new()
+        // This ensures all nodes create IDENTICAL genesis blocks
+        use crate::BlockHeader;
+        
         let genesis_spiral = SpiralMetadata {
             spiral_type: SpiralType::Ramanujan,
             complexity: 100.0,
@@ -158,15 +157,35 @@ impl GenesisConfig {
             semantic_coherence: 1.0,
             geometry_data: vec![],
         };
-
-        genesis_block.header.spiral = genesis_spiral;
-
-        genesis_block.header.pi_coordinates = PiCoordinate::new(
+        
+        let pi_coords = PiCoordinate::new(
             std::f64::consts::PI,
             std::f64::consts::E,
             1.618033988749895, // Golden ratio
             0.0,
         );
+        
+        let header = BlockHeader {
+            version: self.version,
+            previous_block_hash: Hash::zero(),
+            merkle_root: Hash::zero(),
+            spiral_root: Hash::zero(),
+            state_root: Hash::zero(),
+            timestamp: self.timestamp, // FIXED timestamp, not SystemTime::now()
+            pi_coordinates: pi_coords,
+            spiral: genesis_spiral,
+            validator_pubkey: Vec::new(),
+            signature: vec![0u8; 64],
+            nonce: 0,
+            difficulty_target: u32::MAX / 1000,
+            tx_count: 0,
+            block_height: 0,
+        };
+        
+        let mut genesis_block = Block {
+            header,
+            transactions: Vec::new(),
+        };
 
         let mut transactions = Vec::new();
 

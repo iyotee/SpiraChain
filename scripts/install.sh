@@ -373,13 +373,21 @@ fi
 echo ""
 echo -e "${CYAN}⚙️  Setting up background service...${NC}"
 
+# CRITICAL: Delete any existing blockchain data to ensure fresh genesis
+# This prevents old cached genesis blocks from being reused
+DATA_DIR="$INSTALL_DIR/${NETWORK}_data"
+if [ -d "$DATA_DIR" ]; then
+    echo "🗑️  Removing old blockchain data to ensure fresh genesis..."
+    rm -rf "$DATA_DIR"
+fi
+
 # Build command based on node type
 if [ "$NODE_TYPE" == "validator" ]; then
-    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node --validator --wallet $WALLET_FILE --data-dir $INSTALL_DIR/${NETWORK}_data --port 30333 --network $NETWORK"
+    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node --validator --wallet $WALLET_FILE --data-dir $DATA_DIR --port 30333 --network $NETWORK"
 elif [ "$NODE_TYPE" == "light" ]; then
-    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node --data-dir $INSTALL_DIR/${NETWORK}_data --port 30333 --network $NETWORK"
+    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node --data-dir $DATA_DIR --port 30333 --network $NETWORK"
 else
-    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node --data-dir $INSTALL_DIR/${NETWORK}_data --port 30333 --network $NETWORK"
+    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node --data-dir $DATA_DIR --port 30333 --network $NETWORK"
 fi
 
 # Create service file
