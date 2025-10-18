@@ -35,6 +35,12 @@ curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/insta
 ```
 **Fair launch:** Start with 0 QBT, earn through block rewards only. No staking required!
 
+**Complete Uninstall (Reset Everything):**
+```bash
+curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/uninstall.sh | bash
+```
+Removes all blockchain data, wallets, services, and binaries. Perfect for starting fresh!
+
 **Other Options:**
 ```bash
 # Light node

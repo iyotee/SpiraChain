@@ -7,6 +7,9 @@
 # MAINNET VALIDATOR (production):
 #   curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh | bash -s -- mainnet
 #
+# COMPLETE UNINSTALL (remove everything):
+#   curl -sSL https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/uninstall.sh | bash
+#
 # CUSTOM (interactive menu):
 #   wget https://raw.githubusercontent.com/iyotee/SpiraChain/main/scripts/install.sh && bash install.sh
 
