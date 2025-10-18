@@ -214,6 +214,30 @@ impl NodeStorage {
         Ok(())
     }
 
+    pub fn get_all_addresses(&self) -> Result<Vec<Address>> {
+        let mut addresses = Vec::new();
+        let prefix = b"balance:";
+        
+        for item in self.state.scan_prefix(prefix) {
+            if let Ok((key, _value)) = item {
+                // Extract address from key "balance:0x..."
+                if let Ok(key_str) = std::str::from_utf8(&key) {
+                    if let Some(addr_str) = key_str.strip_prefix("balance:0x") {
+                        if let Ok(addr_bytes) = hex::decode(addr_str) {
+                            if addr_bytes.len() == 32 {
+                                let mut addr_array = [0u8; 32];
+                                addr_array.copy_from_slice(&addr_bytes);
+                                addresses.push(Address::new(addr_array));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        Ok(addresses)
+    }
+
     pub fn flush(&self) -> Result<()> {
         self.db.flush().map_err(|e| {
             SpiraChainError::StorageError(format!("Failed to flush database: {}", e))
@@ -263,6 +287,10 @@ impl BlockStorage {
 
     pub fn set_balance(&self, address: &Address, balance: Amount) -> Result<()> {
         self.storage.set_balance(address, balance)
+    }
+
+    pub fn get_all_addresses(&self) -> Result<Vec<Address>> {
+        self.storage.get_all_addresses()
     }
 }
 

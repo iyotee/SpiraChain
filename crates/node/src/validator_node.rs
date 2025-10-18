@@ -91,12 +91,82 @@ impl ValidatorNode {
             if config.network == "mainnet" { 60 } else { 30 }
         );
 
+        // Initialize WorldState and load all balances from storage
+        let mut world_state = WorldState::default();
+        
+        // Load all persisted balances from blockchain history
+        info!("🔄 Reconstructing WorldState from blockchain...");
+        
+        // Credit initial testnet stake to our validator (1000 QBT) if testnet
+        if config.network == "testnet" {
+            let initial_stake = Amount::new(1000 * 10u128.pow(18));
+            world_state.credit_balance(&address, initial_stake);
+            info!("💰 Credited initial 1000 QBT testnet stake to our validator");
+        }
+        
+        // Replay ALL blocks from storage to rebuild WorldState
+        let mut replayed_blocks = 0;
+        for height in 1..=initial_height {
+            if let Ok(Some(block)) = storage.get_block_by_height(height) {
+                // Apply all transactions in this block
+                for tx in &block.transactions {
+                    // Ensure sender account exists - load from storage if available
+                    if world_state.get_balance(&tx.from).is_zero() {
+                        if let Ok(stored_balance) = storage.get_balance(&tx.from) {
+                            if !stored_balance.is_zero() {
+                                world_state.set_balance(tx.from, stored_balance);
+                            }
+                        }
+                    }
+                    
+                    // Ensure receiver account exists - load from storage if available
+                    if world_state.get_balance(&tx.to).is_zero() {
+                        if let Ok(stored_balance) = storage.get_balance(&tx.to) {
+                            if !stored_balance.is_zero() {
+                                world_state.set_balance(tx.to, stored_balance);
+                            }
+                        }
+                    }
+                    
+                    // Apply transaction
+                    if let Err(e) = world_state.transfer(&tx.from, &tx.to, tx.amount) {
+                        warn!("Failed to replay transaction in block {}: {}", height, e);
+                    }
+                }
+                
+                replayed_blocks += 1;
+            }
+        }
+        
+        // Load ALL persisted balances from storage (covers block rewards)
+        // This ensures we have the complete state even if we missed some blocks
+        if let Ok(all_addresses) = storage.get_all_addresses() {
+            for addr in all_addresses {
+                if let Ok(stored_balance) = storage.get_balance(&addr) {
+                    if !stored_balance.is_zero() {
+                        // Only update if storage has a higher balance (handles block rewards)
+                        let current = world_state.get_balance(&addr);
+                        if stored_balance.value() > current.value() {
+                            world_state.set_balance(addr, stored_balance);
+                        }
+                    }
+                }
+            }
+        }
+        
+        if replayed_blocks > 0 {
+            info!("✅ Replayed {} blocks to rebuild WorldState", replayed_blocks);
+            info!("   Total accounts: {}", world_state.account_count());
+        }
+        
+        world_state.set_height(initial_height);
+
         Ok(Self {
             config,
             keypair,
             validator,
             mempool: Arc::new(RwLock::new(Vec::new())),
-            state: Arc::new(RwLock::new(WorldState::default())),
+            state: Arc::new(RwLock::new(world_state)),
             storage: Arc::new(storage),
             consensus,
             slot_consensus: Arc::new(RwLock::new(slot_consensus)),
