@@ -907,13 +907,35 @@ impl ValidatorNode {
                         // Replay all blocks from 0 to common_height
                         for h in 0..=common_height {
                             if let Ok(Some(old_block)) = self.storage.get_block_by_height(h) {
-                                // Apply all transactions
-                                for tx in &old_block.transactions {
-                                    all_addresses.insert(tx.from);
-                                    all_addresses.insert(tx.to);
+                                // Skip genesis block (height 0) - already processed its allocations
+                                if h == 0 {
+                                    // Genesis allocations
+                                    for tx in &old_block.transactions {
+                                        all_addresses.insert(tx.to);
+                                        state.credit_balance(&tx.to, tx.amount);
+                                    }
+                                } else {
+                                    // Regular blocks: Apply transactions
+                                    for tx in &old_block.transactions {
+                                        all_addresses.insert(tx.from);
+                                        all_addresses.insert(tx.to);
 
-                                    if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
-                                        debug!("Replay tx in block {}: {}", h, e);
+                                        if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
+                                            debug!("Replay tx in block {}: {}", h, e);
+                                        } else {
+                                            state.increment_nonce(&tx.from);
+                                        }
+                                    }
+                                    
+                                    // CRITICAL: Also credit block reward to the validator who produced it
+                                    if !old_block.header.validator_pubkey.is_empty() {
+                                        if let Ok(pubkey) = spirachain_crypto::PublicKey::from_bytes(&old_block.header.validator_pubkey) {
+                                            let validator_address = pubkey.to_address();
+                                            all_addresses.insert(validator_address);
+                                            let block_reward = Amount::new(spirachain_core::INITIAL_BLOCK_REWARD);
+                                            state.credit_balance(&validator_address, block_reward);
+                                            debug!("💰 Replayed block {} reward to validator {}", h, validator_address);
+                                        }
                                     }
                                 }
                             }

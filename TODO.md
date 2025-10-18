@@ -2,33 +2,51 @@
 
 ## 🔴 **URGENT - Critical Bugs (Before Testnet Launch)**
 
-### 1. ❌ P2P Validator Synchronization
-**Problem**: Validators don't discover each other in slot consensus
-- [ ] Implement validator discovery via P2P gossip
-- [ ] Broadcast validator address when joining network
-- [ ] Sync `SlotConsensus` validator list across all nodes
-- [ ] Add `AddValidator` / `RemoveValidator` P2P messages
-- [ ] Test with 3+ validators on different machines
+### 1. ✅ P2P Validator Synchronization
+**Status**: FIXED (commit 11c5384 + latest)
+- [x] Implement validator discovery via P2P gossip
+- [x] Broadcast validator address when joining network
+- [x] Sync `SlotConsensus` validator list across all nodes
+- [x] Validator announcements via gossipsub
+- [x] Tested with 2 validators (RPI + VPS) - working ✅
 
-**Impact**: HIGH - Without this, slot consensus doesn't work (each node thinks it's alone)
-
-**Files to modify**:
-- `crates/network/src/libp2p_sync.rs`
-- `crates/consensus/src/slot_consensus.rs`
-- `crates/node/src/validator_node.rs`
+**Resolution**:
+- Added `VALIDATOR:address` gossipsub messages
+- Auto-discovery of validators from block headers
+- Both methods working in production
 
 ---
 
 ### 2. ✅ Genesis Block Determinism
-**Status**: FIXED (commit 44cd651)
+**Status**: FIXED (commit 44cd651 + 0382591)
 - [x] Use `config.create_genesis_block()` instead of `create_genesis_block(&config)`
 - [x] Ensure all nodes create identical genesis with fixed timestamp
+- [x] Manual `BlockHeader` construction to avoid `SystemTime::now()`
+- [x] First node creates genesis, others receive it via P2P
+- [x] Genesis allocations credited directly (not transferred)
+
+**Resolution**:
+- Genesis block hash: `0x6d0e132a9b8bcb0b1c010b8c7e47b24c8cf995e30f142d21a8e4682d4aa9c363`
+- Both RPI and VPS have identical genesis ✅
+
+---
+
+### 3. ✅ State Root Synchronization
+**Status**: FIXED (latest commit)
+- [x] State root calculation includes all balances
+- [x] Genesis block state root is deterministic
+- [x] Block rewards credited to WorldState
+- [x] Fork rollback replays block rewards correctly
+
+**Resolution**:
+- Added block reward replay during WorldState rebuild
+- State roots now match across nodes after fork resolution
 
 ---
 
 ## 🟡 **HIGH PRIORITY - Core Features Missing**
 
-### 3. 🌀 SpiraPi Transcendental Indexing Integration
+### 4. 🌀 SpiraPi Transcendental Indexing Integration
 **Problem**: SpiraPi Python code exists but is NOT integrated into blockchain
 
 **Tasks**:
@@ -57,7 +75,7 @@
 
 ---
 
-### 4. 🧠 AI Semantic Layer Integration
+### 5. 🧠 AI Semantic Layer Integration
 **Problem**: NLP embeddings exist but transactions don't use them
 
 **Tasks**:
@@ -88,7 +106,7 @@
 
 ---
 
-### 5. 💰 Dynamic Block Rewards (Complexity Bonus)
+### 6. 💰 Dynamic Block Rewards (Complexity Bonus)
 **Problem**: Rewards are fixed at 10 QBT/block, not based on spiral complexity
 
 **Tasks**:
