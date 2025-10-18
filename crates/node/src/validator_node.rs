@@ -530,7 +530,7 @@ impl ValidatorNode {
             info!("   Creating genesis block");
             let config = spirachain_core::GenesisConfig::default();
 
-            spirachain_core::create_genesis_block(&config)
+            config.create_genesis_block()
         };
 
         // Apply transactions to WorldState BEFORE storing the block
