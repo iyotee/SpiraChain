@@ -41,6 +41,7 @@ pub enum NetworkEvent {
     NewBlock(Block),
     NewTransaction(Transaction),
     BlockRequested(u64), // A peer requested a specific block height
+    ValidatorAnnouncement(spirachain_core::Address), // A peer announced itself as a validator
 }
 
 impl LibP2PNetworkWithSync {
@@ -236,6 +237,21 @@ impl LibP2PNetworkWithSync {
         }
     }
 
+    /// Announce that we are a validator (call this once at startup)
+    pub fn announce_validator(&mut self, validator_address: &spirachain_core::Address) {
+        let msg = format!("VALIDATOR:{}", validator_address);
+        let data = msg.as_bytes().to_vec();
+        if let Err(e) = self
+            .swarm
+            .behaviour_mut()
+            .publish(self.sync_topic.clone(), data)
+        {
+            warn!("Failed to announce validator address: {}", e);
+        } else {
+            info!("📣 Announced validator address: {}", validator_address);
+        }
+    }
+
     /// Poll for network events (non-blocking)
     pub async fn poll_events(&mut self) -> Option<NetworkEvent> {
         // Use poll_next instead of select_next_some to avoid blocking
@@ -311,9 +327,18 @@ impl LibP2PNetworkWithSync {
                         }
                     }
                 } else if message.topic == self.sync_topic.hash() {
-                    // Received sync message (height announcement or block request)
+                    // Received sync message (height announcement, validator announcement, or block request)
                     if let Ok(msg) = String::from_utf8(message.data.clone()) {
-                        if let Some(height_str) = msg.strip_prefix("HEIGHT:") {
+                        if let Some(validator_addr_str) = msg.strip_prefix("VALIDATOR:") {
+                            // Parse validator address announcement
+                            if let Ok(validator_addr) = validator_addr_str.parse::<spirachain_core::Address>() {
+                                info!("📝 Discovered new validator: {}", validator_addr);
+                                return Some(NetworkEvent::ValidatorAnnouncement(validator_addr));
+                            } else {
+                                warn!("Failed to parse validator address: {}", validator_addr_str);
+                                return None;
+                            }
+                        } else if let Some(height_str) = msg.strip_prefix("HEIGHT:") {
                             if let Ok(peer_height) = height_str.parse::<u64>() {
                                 // Track peer height
                                 if let Some(propagation_source) = message.source {

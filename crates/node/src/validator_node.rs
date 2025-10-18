@@ -241,12 +241,15 @@ impl ValidatorNode {
                         e
                     );
                 } else {
+                    // Announce ourselves as a validator to the network
+                    network.announce_validator(&self.validator.address);
+                    
                     #[allow(clippy::arc_with_non_send_sync)]
                     {
                         self.network = Some(Arc::new(RwLock::new(network)));
                     }
                     info!("📡 P2P network ready with block sync - will poll in validator loop");
-                    info!("🔍 Validators will be auto-discovered from blocks they produce");
+                    info!("🔍 Validators will be auto-discovered via P2P gossip");
                 }
             }
             Err(e) => {
@@ -658,13 +661,20 @@ impl ValidatorNode {
         match event {
             NetworkEvent::PeerConnected(peer) => {
                 info!("🤝 Peer connected: {}", peer);
-
-                // For now, we'll discover validators by monitoring blocks they produce
-                // Each block contains the validator's address in the signature
-                // When we receive a block, we'll add that validator to our slot consensus
             }
             NetworkEvent::PeerDisconnected(peer) => {
                 info!("👋 Peer disconnected: {}", peer);
+            }
+            NetworkEvent::ValidatorAnnouncement(validator_addr) => {
+                // A peer announced itself as a validator
+                info!("📝 Discovered new validator: {}", validator_addr);
+                
+                // Add to slot consensus if not already present
+                let mut slot_consensus = self.slot_consensus.write().await;
+                slot_consensus.add_validator(validator_addr);
+                
+                let total_validators = slot_consensus.validator_count();
+                info!("   Total validators in network: {}", total_validators);
             }
             NetworkEvent::PeerHeight { peer, height } => {
                 debug!("📊 Peer {} has height: {}", peer, height);

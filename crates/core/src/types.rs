@@ -176,6 +176,23 @@ impl fmt::Display for Address {
     }
 }
 
+impl std::str::FromStr for Address {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // Strip "0x" prefix if present
+        let hex_str = s.strip_prefix("0x").unwrap_or(s);
+        
+        // Decode hex string
+        let bytes = hex::decode(hex_str)
+            .map_err(|e| format!("Invalid hex string: {}", e))?;
+        
+        // Convert to Address
+        Self::from_slice(&bytes)
+            .map_err(|e| e.to_string())
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, Default)]
 pub struct Amount(u128);
 
