@@ -413,8 +413,9 @@ impl ValidatorNode {
                     }
                 }
             } else {
-                info!("⏳ Found {} peer(s) - waiting to receive genesis from network...", peer_count);
-                info!("   Genesis will be downloaded during sync");
+                info!("⏳ Found {} peer(s) - will receive genesis from network during validator loop", peer_count);
+                // Genesis will be received automatically through the sync protocol in run_validator_loop
+                // No need to wait here - the validator loop will handle it
             }
         }
 
@@ -795,7 +796,9 @@ impl ValidatorNode {
                 }
 
                 // Skip if we already have this block
-                if height <= current_height {
+                // EXCEPT: Allow genesis (height 0) if we don't have any blocks yet
+                let has_genesis = self.storage.get_latest_block().ok().flatten().is_some();
+                if height <= current_height && !(height == 0 && !has_genesis) {
                     debug!(
                         "⊘ Skipping block {} - we already have it (current: {})",
                         height, current_height
@@ -804,7 +807,8 @@ impl ValidatorNode {
                 }
 
                 // Reject blocks that are too far ahead (we need sequential blocks for sync)
-                if height > current_height + 1 {
+                // EXCEPT: Allow genesis (height 0) if we don't have any blocks yet
+                if height > current_height + 1 && !(height == 0 && !has_genesis) {
                     warn!(
                         "⚠️  Rejecting out-of-order block {} - we are at {} (missing blocks in between)",
                         height, current_height
@@ -963,12 +967,24 @@ impl ValidatorNode {
                 // Apply transactions to WorldState and verify state_root
                 let mut state = self.state.write().await;
                 
-                for tx in &block.transactions {
-                    if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
-                        warn!("Failed to apply transaction in block {}: {}", height, e);
-                        // Continue processing other transactions
-                    } else {
-                        state.increment_nonce(&tx.from);
+                if height == 0 {
+                    // Genesis block: Transactions are initial allocations, not transfers
+                    info!("📥 Processing genesis block allocations...");
+                    for tx in &block.transactions {
+                        // Genesis allocations credit to the 'to' address directly (from zero address)
+                        state.credit_balance(&tx.to, tx.amount);
+                        debug!("   Allocated {} to {}", tx.amount.value() as f64 / 1e18, tx.to);
+                    }
+                    info!("✅ Genesis allocations applied: {} accounts", block.transactions.len());
+                } else {
+                    // Normal block: Apply transactions as transfers
+                    for tx in &block.transactions {
+                        if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
+                            warn!("Failed to apply transaction in block {}: {}", height, e);
+                            // Continue processing other transactions
+                        } else {
+                            state.increment_nonce(&tx.from);
+                        }
                     }
                 }
 
