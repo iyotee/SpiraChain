@@ -555,41 +555,61 @@ impl ValidatorNode {
         {
             let mut state = self.state.write().await;
 
-            // Process transactions
-            for tx in &block.transactions {
-                if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
-                    warn!("Failed to transfer in block: {}", e);
-                } else {
-                    state.increment_nonce(&tx.from);
+            // CRITICAL: Genesis block (height 0) already has complete state_root and transactions
+            // DO NOT modify it or recalculate state_root, just apply the transactions to local state
+            let is_genesis = block.header.block_height == 0;
+
+            if is_genesis {
+                // Genesis block: Apply pre-configured allocations to WorldState
+                for tx in &block.transactions {
+                    if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
+                        debug!("Genesis allocation from {} failed (expected): {}", tx.from, e);
+                    } else {
+                        state.increment_nonce(&tx.from);
+                    }
                 }
+                // Genesis state_root is already correct, don't recalculate
+                info!("📦 Genesis block applied to WorldState");
+            } else {
+                // Regular block: Process transactions
+                for tx in &block.transactions {
+                    if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
+                        warn!("Failed to transfer in block: {}", e);
+                    } else {
+                        state.increment_nonce(&tx.from);
+                    }
+                }
+
+                // Credit block reward to validator (NOT for genesis)
+                let block_reward = Amount::new(spirachain_core::INITIAL_BLOCK_REWARD);
+                state.credit_balance(&self.validator.address, block_reward);
+
+                let new_balance = state.get_balance(&self.validator.address);
+                info!(
+                    "💰 Crediting {} QBT to validator. New balance: {} QBT",
+                    block_reward.value() as f64 / 1e18,
+                    new_balance.value() as f64 / 1e18
+                );
+
+                // Calculate state root from complete WorldState
+                let state_root = state.calculate_merkle_root();
+                block.header.state_root = state_root;
             }
-
-            // Credit block reward to validator
-            let block_reward = Amount::new(spirachain_core::INITIAL_BLOCK_REWARD);
-            state.credit_balance(&self.validator.address, block_reward);
-
-            let new_balance = state.get_balance(&self.validator.address);
-            info!(
-                "💰 Crediting {} QBT to validator. New balance: {} QBT",
-                block_reward.value() as f64 / 1e18,
-                new_balance.value() as f64 / 1e18
-            );
-
-            // Calculate state root from complete WorldState
-            let state_root = state.calculate_merkle_root();
-            block.header.state_root = state_root;
             
             // Update block height in state
             state.set_height(block.header.block_height);
 
-            // Persist validator balance to storage
-            if let Err(e) = self
-                .storage
-                .set_balance(&self.validator.address, new_balance)
-            {
-                warn!("Failed to persist validator balance: {}", e);
-            } else {
-                info!("✅ Balance persisted to storage");
+            // Persist balances to storage (only for non-genesis blocks)
+            if !is_genesis {
+                let current_balance = state.get_balance(&self.validator.address);
+                if let Err(e) = self
+                    .storage
+                    .set_balance(&self.validator.address, current_balance)
+                {
+                    warn!("Failed to persist validator balance: {}", e);
+                } else {
+                    info!("✅ Balance persisted to storage");
+                }
             }
 
             // Sync all balances from WorldState to BlockStorage
