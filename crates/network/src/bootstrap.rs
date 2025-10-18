@@ -22,10 +22,10 @@ pub const DNS_SEEDS_MAINNET: &[&str] = &[
 
 /// Fallback bootstrap nodes (used if DNS seeds fail)
 /// These are hardcoded multiaddrs of known stable nodes
-/// Updated with each release to ensure connectivity
+/// Primary seed (RPI) is the genesis creator and DNS seeder
 pub const FALLBACK_NODES_TESTNET: &[&str] = &[
-    "51.154.64.38:30333",    // Raspberry Pi 5 (Primary seed)
-    "45.91.169.100:30333",   // VPS (Secondary seed - CORRECTED)
+    "51.154.64.38:30333",    // Raspberry Pi 5 (PRIMARY SEED - Genesis creator + DNS seeder)
+    // Other nodes will be discovered via DNS seeds or P2P gossip
 ];
 
 pub const FALLBACK_NODES_MAINNET: &[&str] = &[
