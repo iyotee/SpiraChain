@@ -360,11 +360,11 @@ impl ValidatorNode {
             // No genesis block yet
             info!("   No genesis block found in storage");
             
-            // CRITICAL: Wait a few seconds for P2P to connect before deciding
+            // CRITICAL: Wait for P2P to connect before deciding
             // This allows us to discover if there are existing nodes with genesis
             if self.network.is_some() {
-                info!("⏳ Waiting 5 seconds for peer discovery before creating genesis...");
-                tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+                info!("⏳ Waiting 10 seconds for peer discovery before creating genesis...");
+                tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
             }
             
             let peer_count = if let Some(ref network) = self.network {
