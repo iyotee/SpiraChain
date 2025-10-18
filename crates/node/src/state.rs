@@ -161,6 +161,41 @@ impl WorldState {
                 sum.checked_add(stake).unwrap_or(sum)
             })
     }
+
+    /// Calculate Merkle root of the complete WorldState
+    /// This creates a deterministic hash of all account balances
+    pub fn calculate_merkle_root(&self) -> spirachain_core::Hash {
+        use spirachain_core::Hash;
+        
+        // If no accounts, return zero hash
+        if self.accounts.is_empty() {
+            return Hash::zero();
+        }
+        
+        // Create sorted list of (address, balance) pairs for deterministic hashing
+        let mut account_data: Vec<_> = self.accounts
+            .iter()
+            .map(|(addr, acc)| {
+                // Create a deterministic string representation
+                format!("{}:{}:{}", 
+                    addr.to_string(), 
+                    acc.balance.value(),
+                    acc.nonce
+                )
+            })
+            .collect();
+        
+        // Sort to ensure deterministic order
+        account_data.sort();
+        
+        // Hash all account data together
+        let mut hasher = blake3::Hasher::new();
+        for data in account_data {
+            hasher.update(data.as_bytes());
+        }
+        
+        hasher.finalize().into()
+    }
 }
 
 impl Default for WorldState {

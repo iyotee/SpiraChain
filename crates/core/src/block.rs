@@ -7,6 +7,7 @@ pub struct BlockHeader {
     pub previous_block_hash: Hash,
     pub merkle_root: Hash,
     pub spiral_root: Hash,
+    pub state_root: Hash, // Merkle root of complete WorldState (all account balances)
     pub timestamp: u64,
     pub pi_coordinates: PiCoordinate,
     pub spiral: SpiralMetadata,
@@ -25,6 +26,7 @@ impl BlockHeader {
             previous_block_hash,
             merkle_root: Hash::zero(),
             spiral_root: Hash::zero(),
+            state_root: Hash::zero(), // Will be calculated after applying transactions
             timestamp: std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
@@ -46,6 +48,7 @@ impl BlockHeader {
         hasher.update(self.previous_block_hash.as_bytes());
         hasher.update(self.merkle_root.as_bytes());
         hasher.update(self.spiral_root.as_bytes());
+        hasher.update(self.state_root.as_bytes()); // Include state root in block hash
         hasher.update(&self.timestamp.to_be_bytes());
         hasher.update(&self.pi_coordinates.x.to_be_bytes());
         hasher.update(&self.pi_coordinates.y.to_be_bytes());

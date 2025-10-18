@@ -517,7 +517,7 @@ impl ValidatorNode {
         info!("   Height: {} → {}", current_height, current_height + 1);
         info!("   Transactions: {}", pending_txs.len());
 
-        let block = if let Some(prev_block) = previous_block {
+        let mut block = if let Some(prev_block) = previous_block {
             // Generate normal block
             self.consensus.generate_block_candidate(
                 &self.validator,
@@ -533,15 +533,8 @@ impl ValidatorNode {
             spirachain_core::create_genesis_block(&config)
         };
 
-        // Only validate non-genesis blocks
-        if current_height > 0 {
-            if let Some(prev) = self.storage.get_latest_block()? {
-                self.consensus.validate_block(&block, &prev)?;
-            }
-        }
-
-        self.storage.store_block(&block)?;
-
+        // Apply transactions to WorldState BEFORE storing the block
+        // This allows us to calculate the state_root
         {
             let mut state = self.state.write().await;
 
@@ -565,6 +558,13 @@ impl ValidatorNode {
                 new_balance.value() as f64 / 1e18
             );
 
+            // Calculate state root from complete WorldState
+            let state_root = state.calculate_merkle_root();
+            block.header.state_root = state_root;
+            
+            // Update block height in state
+            state.set_height(block.header.block_height);
+
             // Persist validator balance to storage
             if let Err(e) = self
                 .storage
@@ -581,9 +581,17 @@ impl ValidatorNode {
                     warn!("Failed to sync balance for {}: {}", address, e);
                 }
             }
-
-            state.set_height(block.header.block_height);
         }
+
+        // Only validate non-genesis blocks
+        if current_height > 0 {
+            if let Some(prev) = self.storage.get_latest_block()? {
+                self.consensus.validate_block(&block, &prev)?;
+            }
+        }
+
+        // Store block with state_root
+        self.storage.store_block(&block)?;
 
         let mut mempool_guard = self.mempool.write().await;
         mempool_guard.retain(|tx| !pending_txs.iter().any(|ptx| ptx.tx_hash == tx.tx_hash));
@@ -876,17 +884,32 @@ impl ValidatorNode {
                 }
 
                 // Accept the block (either no fork, or we rolled back)
-                // Store the block
-                if let Err(e) = self.storage.store_block(&block) {
-                    error!("Failed to store block {}: {}", height, e);
-                    return;
-                }
-
-                // Update state with block transactions
+                // Apply transactions to WorldState and verify state_root
                 let mut state = self.state.write().await;
+                
                 for tx in &block.transactions {
                     if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
                         warn!("Failed to apply transaction in block {}: {}", height, e);
+                        // Continue processing other transactions
+                    } else {
+                        state.increment_nonce(&tx.from);
+                    }
+                }
+
+                // Calculate expected state_root after applying transactions
+                let calculated_state_root = state.calculate_merkle_root();
+                
+                // Verify state_root matches (only for non-genesis blocks)
+                if height > 0 && !block.header.state_root.is_zero() {
+                    if calculated_state_root != block.header.state_root {
+                        warn!("❌ State root mismatch in block {}!", height);
+                        warn!("   Expected: {}", block.header.state_root);
+                        warn!("   Calculated: {}", calculated_state_root);
+                        warn!("   This block has an invalid state! Rejecting...");
+                        drop(state);
+                        return;
+                    } else {
+                        debug!("✅ State root verified for block {}", height);
                     }
                 }
 
@@ -896,7 +919,15 @@ impl ValidatorNode {
                         warn!("Failed to persist balance for {}: {}", address, e);
                     }
                 }
+                
+                state.set_height(height);
                 drop(state);
+
+                // Store the block after validation
+                if let Err(e) = self.storage.store_block(&block) {
+                    error!("Failed to store block {}: {}", height, e);
+                    return;
+                }
 
                 // Update current height
                 *self.current_height.write().await = height;
