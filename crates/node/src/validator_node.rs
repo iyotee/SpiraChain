@@ -104,53 +104,37 @@ impl ValidatorNode {
             info!("💰 Credited initial 1000 QBT testnet stake to our validator");
         }
         
-        // Replay ALL blocks from storage to rebuild WorldState
+        // FIRST: Load ALL persisted balances from storage
+        // This ensures we have all accounts before replaying transactions
+        let mut loaded_accounts = 0;
+        if let Ok(all_addresses) = storage.get_all_addresses() {
+            for addr in &all_addresses {
+                if let Ok(stored_balance) = storage.get_balance(addr) {
+                    if !stored_balance.is_zero() {
+                        world_state.set_balance(*addr, stored_balance);
+                        loaded_accounts += 1;
+                    }
+                }
+            }
+            if loaded_accounts > 0 {
+                info!("📥 Loaded {} account balances from storage", loaded_accounts);
+            }
+        }
+        
+        // THEN: Replay ALL blocks from storage to rebuild WorldState
+        // This will update balances based on transaction history
         let mut replayed_blocks = 0;
         for height in 1..=initial_height {
             if let Ok(Some(block)) = storage.get_block_by_height(height) {
                 // Apply all transactions in this block
                 for tx in &block.transactions {
-                    // Ensure sender account exists - load from storage if available
-                    if world_state.get_balance(&tx.from).is_zero() {
-                        if let Ok(stored_balance) = storage.get_balance(&tx.from) {
-                            if !stored_balance.is_zero() {
-                                world_state.set_balance(tx.from, stored_balance);
-                            }
-                        }
-                    }
-                    
-                    // Ensure receiver account exists - load from storage if available
-                    if world_state.get_balance(&tx.to).is_zero() {
-                        if let Ok(stored_balance) = storage.get_balance(&tx.to) {
-                            if !stored_balance.is_zero() {
-                                world_state.set_balance(tx.to, stored_balance);
-                            }
-                        }
-                    }
-                    
-                    // Apply transaction
+                    // Apply transaction (accounts already loaded from storage above)
                     if let Err(e) = world_state.transfer(&tx.from, &tx.to, tx.amount) {
                         warn!("Failed to replay transaction in block {}: {}", height, e);
                     }
                 }
                 
                 replayed_blocks += 1;
-            }
-        }
-        
-        // Load ALL persisted balances from storage (covers block rewards)
-        // This ensures we have the complete state even if we missed some blocks
-        if let Ok(all_addresses) = storage.get_all_addresses() {
-            for addr in all_addresses {
-                if let Ok(stored_balance) = storage.get_balance(&addr) {
-                    if !stored_balance.is_zero() {
-                        // Only update if storage has a higher balance (handles block rewards)
-                        let current = world_state.get_balance(&addr);
-                        if stored_balance.value() > current.value() {
-                            world_state.set_balance(addr, stored_balance);
-                        }
-                    }
-                }
             }
         }
         
