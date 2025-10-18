@@ -341,9 +341,40 @@ source $HOME/.cargo/env
 # Even if only the CLI binary is needed, libraries might have changed
 if [ "$NODE_TYPE" == "dev" ]; then
     cargo build --workspace
+    BINARY_PATH="./target/debug/spira"
 else
     # Force rebuild all dependencies (not just the binary)
     cargo build --release --workspace
+    BINARY_PATH="./target/release/spira"
+fi
+
+# Install binary to PATH so it's always up to date
+echo ""
+echo -e "${CYAN}📦 Installing spira binary to PATH...${NC}"
+if [ -w "/usr/local/bin" ]; then
+    # System-wide install (if we have write permissions)
+    sudo cp "$BINARY_PATH" /usr/local/bin/spira 2>/dev/null || cp "$BINARY_PATH" /usr/local/bin/spira
+    echo "✅ Installed to /usr/local/bin/spira"
+else
+    # User-local install
+    mkdir -p "$HOME/.local/bin"
+    cp "$BINARY_PATH" "$HOME/.local/bin/spira"
+    
+    # Add to PATH if not already there
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.profile" 2>/dev/null || true
+        export PATH="$HOME/.local/bin:$PATH"
+    fi
+    echo "✅ Installed to $HOME/.local/bin/spira"
+fi
+
+# Verify installation
+if command -v spira &> /dev/null; then
+    SPIRA_VERSION=$(spira --version 2>/dev/null || echo "unknown")
+    echo "✅ spira command available: $SPIRA_VERSION"
+else
+    echo "⚠️  Warning: spira not in PATH, using full path in service"
 fi
 
 # Create wallet
