@@ -3,6 +3,16 @@ set -e
 
 # SpiraChain Complete Uninstall Script
 # This script completely removes all SpiraChain data, services, and binaries
+#
+# Usage:
+#   Interactive:   bash uninstall.sh
+#   Non-interactive (for curl | bash): curl -sSL ... | bash -s -- --force
+
+# Check for --force flag (non-interactive mode)
+FORCE=false
+if [ "$1" == "--force" ] || [ "$1" == "-f" ] || [ "$1" == "-y" ]; then
+    FORCE=true
+fi
 
 echo "🧹 SpiraChain Complete Uninstall"
 echo "================================"
@@ -14,11 +24,17 @@ echo "   • All configuration files"
 echo "   • systemd services"
 echo "   • SpiraChain binaries"
 echo ""
-read -p "Are you sure you want to continue? (type 'yes' to confirm): " confirm
 
-if [ "$confirm" != "yes" ]; then
-    echo "❌ Uninstall cancelled"
-    exit 0
+if [ "$FORCE" != "true" ]; then
+    read -p "Are you sure you want to continue? (type 'yes' to confirm): " confirm
+    if [ "$confirm" != "yes" ]; then
+        echo "❌ Uninstall cancelled"
+        exit 0
+    fi
+else
+    echo "⚡ Running in non-interactive mode (--force flag detected)"
+    echo "   Proceeding with uninstall..."
+    echo ""
 fi
 
 echo ""
