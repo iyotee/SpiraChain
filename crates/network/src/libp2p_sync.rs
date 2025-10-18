@@ -460,17 +460,37 @@ impl LibP2PNetworkWithSync {
 
         // If we have no connected peers, try to reconnect to bootstrap peers
         if self.connected_peers.is_empty() && !self.bootstrap_addrs.is_empty() {
-            info!("🔄 No peers connected, attempting reconnection to {} bootstrap peers...", self.bootstrap_addrs.len());
+            // Get our listening addresses to filter out self-dial attempts
+            let our_addrs: Vec<Multiaddr> = self.swarm.listeners().cloned().collect();
             
+            let mut attempted = 0;
             for addr in &self.bootstrap_addrs {
+                // Skip if this is one of our own listening addresses
+                let is_self = our_addrs.iter().any(|our_addr| {
+                    // Compare IP and port
+                    addr.to_string().contains(&our_addr.to_string())
+                });
+                
+                if is_self {
+                    debug!("⊘ Skipping self-dial: {}", addr);
+                    continue;
+                }
+                
                 match self.swarm.dial(addr.clone()) {
                     Ok(_) => {
-                        info!("📞 Reconnecting to: {}", addr);
+                        debug!("📞 Reconnecting to: {}", addr);
+                        attempted += 1;
                     }
                     Err(e) => {
                         debug!("⊘ Reconnect failed for {}: {}", addr, e);
                     }
                 }
+            }
+            
+            if attempted > 0 {
+                info!("🔄 Attempting reconnection to {} bootstrap peers...", attempted);
+            } else {
+                debug!("⊘ No external peers to reconnect to (all are self or unavailable)");
             }
             
             self.last_reconnect_attempt = std::time::Instant::now();
