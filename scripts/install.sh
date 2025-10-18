@@ -412,13 +412,26 @@ if [ -d "$DATA_DIR" ]; then
     rm -rf "$DATA_DIR"
 fi
 
+# Determine which binary to use in the service
+# Prefer installed binary in PATH, fallback to target/release
+if [ -f "/usr/local/bin/spira" ]; then
+    SPIRA_BIN="/usr/local/bin/spira"
+    echo "✅ Using system binary: /usr/local/bin/spira"
+elif [ -f "$HOME/.local/bin/spira" ]; then
+    SPIRA_BIN="$HOME/.local/bin/spira"
+    echo "✅ Using user binary: $HOME/.local/bin/spira"
+else
+    SPIRA_BIN="$INSTALL_DIR/SpiraChain/target/release/spira"
+    echo "⚠️  Using build directory binary (not recommended for production)"
+fi
+
 # Build command based on node type
 if [ "$NODE_TYPE" == "validator" ]; then
-    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node --validator --wallet $WALLET_FILE --data-dir $DATA_DIR --port 30333 --network $NETWORK"
+    CMD="$SPIRA_BIN node --validator --wallet $WALLET_FILE --data-dir $DATA_DIR --port 30333 --network $NETWORK"
 elif [ "$NODE_TYPE" == "light" ]; then
-    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node --data-dir $DATA_DIR --port 30333 --network $NETWORK"
+    CMD="$SPIRA_BIN node --data-dir $DATA_DIR --port 30333 --network $NETWORK"
 else
-    CMD="$INSTALL_DIR/SpiraChain/target/release/spira node --data-dir $DATA_DIR --port 30333 --network $NETWORK"
+    CMD="$SPIRA_BIN node --data-dir $DATA_DIR --port 30333 --network $NETWORK"
 fi
 
 # Create service file
