@@ -6,11 +6,13 @@ set -e
 #
 # Usage:
 #   Interactive:   bash uninstall.sh
-#   Non-interactive (for curl | bash): curl -sSL ... | bash -s -- --force
+#   Non-interactive (for curl | bash): FORCE=1 curl -sSL ... | bash
+#   Non-interactive (downloaded):     bash uninstall.sh --force
 
 # Check for --force flag (non-interactive mode)
-FORCE=false
-if [ "$1" == "--force" ] || [ "$1" == "-f" ] || [ "$1" == "-y" ]; then
+# Can be set via environment variable (for curl | bash) or command line argument
+FORCE="${FORCE:-false}"
+if [ "$1" == "--force" ] || [ "$1" == "-f" ] || [ "$1" == "-y" ] || [ "$FORCE" == "true" ] || [ "$FORCE" == "1" ]; then
     FORCE=true
 fi
 
