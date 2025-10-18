@@ -357,7 +357,57 @@ impl ValidatorNode {
                 .await
                 .set_height(block.header.block_height);
         } else {
-            info!("   No blocks yet - will create genesis");
+            // No genesis block yet
+            // CRITICAL: Only create genesis if we have NO peers (first node in network)
+            // Otherwise, wait to receive it from the network
+            let peer_count = if let Some(ref network) = self.network {
+                network.read().await.peer_count()
+            } else {
+                0
+            };
+
+            if peer_count == 0 {
+                // We are the FIRST node - create genesis NOW
+                info!("🌱 Creating genesis block (first node in network)...");
+                let config = spirachain_core::GenesisConfig::default();
+                let genesis = config.create_genesis_block();
+                
+                // Apply genesis transactions to WorldState
+                let mut state = self.state.write().await;
+                for tx in &genesis.transactions {
+                    if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
+                        debug!("Genesis allocation from {} failed (expected): {}", tx.from, e);
+                    } else {
+                        state.increment_nonce(&tx.from);
+                    }
+                }
+                drop(state);
+                
+                // Store genesis block
+                self.storage.store_block(&genesis)?;
+                *chain_height.write().await = 0;
+                self.state.write().await.set_height(0);
+                
+                // Sync all genesis balances to storage
+                let state = self.state.read().await;
+                for (address, balance) in state.get_all_balances() {
+                    if let Err(e) = self.storage.set_balance(&address, balance) {
+                        warn!("Failed to sync genesis balance for {}: {}", address, e);
+                    }
+                }
+                
+                info!("✅ Genesis block created and stored!");
+                info!("   Hash: {}", genesis.hash());
+                
+                // Broadcast genesis to any peers that connect later
+                if let Some(ref network) = self.network {
+                    if let Err(e) = network.write().await.broadcast_block(&genesis).await {
+                        debug!("Could not broadcast genesis (no peers yet): {}", e);
+                    }
+                }
+            } else {
+                info!("⏳ No genesis yet - waiting to receive it from {} peer(s)...", peer_count);
+            }
         }
 
         self.run_validator_loop().await?;
@@ -534,96 +584,56 @@ impl ValidatorNode {
         info!("   Height: {} → {}", current_height, current_height + 1);
         info!("   Transactions: {}", pending_txs.len());
 
-        let mut block = if let Some(prev_block) = previous_block {
-            // Generate normal block
-            self.consensus.generate_block_candidate(
-                &self.validator,
-                &self.keypair,
-                pending_txs.clone(),
-                &prev_block,
-            )?
-        } else {
-            // No genesis block yet
-            // CRITICAL: Only the FIRST node in the network should create genesis
-            // Other nodes should WAIT to receive it from peers
-            
-            let peer_count = if let Some(ref network) = self.network {
-                network.read().await.peer_count()
-            } else {
-                0
-            };
+        // Genesis is created at startup, so previous_block should always exist
+        let prev_block = previous_block
+            .ok_or_else(|| anyhow::anyhow!("No genesis block found - node not ready"))?;
 
-            if peer_count > 0 {
-                // We have peers but no genesis - wait for them to send it
-                return Err(anyhow::anyhow!("Waiting for genesis block from network").into());
-            }
+        let mut block = self.consensus.generate_block_candidate(
+            &self.validator,
+            &self.keypair,
+            pending_txs.clone(),
+            &prev_block,
+        )?;
 
-            // We are the FIRST node - create the genesis block
-            info!("   Creating genesis block (first node in network)");
-            let config = spirachain_core::GenesisConfig::default();
-            config.create_genesis_block()
-        };
-
-        // Apply transactions to WorldState BEFORE storing the block
-        // This allows us to calculate the state_root
+        // Apply transactions to WorldState and calculate state_root
         {
             let mut state = self.state.write().await;
 
-            // CRITICAL: Genesis block (height 0) already has complete state_root and transactions
-            // DO NOT modify it or recalculate state_root, just apply the transactions to local state
-            let is_genesis = block.header.block_height == 0;
-
-            if is_genesis {
-                // Genesis block: Apply pre-configured allocations to WorldState
-                for tx in &block.transactions {
-                    if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
-                        debug!("Genesis allocation from {} failed (expected): {}", tx.from, e);
-                    } else {
-                        state.increment_nonce(&tx.from);
-                    }
+            // Process transactions
+            for tx in &block.transactions {
+                if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
+                    warn!("Failed to transfer in block: {}", e);
+                } else {
+                    state.increment_nonce(&tx.from);
                 }
-                // Genesis state_root is already correct, don't recalculate
-                info!("📦 Genesis block applied to WorldState");
-            } else {
-                // Regular block: Process transactions
-                for tx in &block.transactions {
-                    if let Err(e) = state.transfer(&tx.from, &tx.to, tx.amount) {
-                        warn!("Failed to transfer in block: {}", e);
-                    } else {
-                        state.increment_nonce(&tx.from);
-                    }
-                }
-
-                // Credit block reward to validator (NOT for genesis)
-                let block_reward = Amount::new(spirachain_core::INITIAL_BLOCK_REWARD);
-                state.credit_balance(&self.validator.address, block_reward);
-
-                let new_balance = state.get_balance(&self.validator.address);
-                info!(
-                    "💰 Crediting {} QBT to validator. New balance: {} QBT",
-                    block_reward.value() as f64 / 1e18,
-                    new_balance.value() as f64 / 1e18
-                );
-
-                // Calculate state root from complete WorldState
-                let state_root = state.calculate_merkle_root();
-                block.header.state_root = state_root;
             }
+
+            // Credit block reward to validator
+            let block_reward = Amount::new(spirachain_core::INITIAL_BLOCK_REWARD);
+            state.credit_balance(&self.validator.address, block_reward);
+
+            let new_balance = state.get_balance(&self.validator.address);
+            info!(
+                "💰 Crediting {} QBT to validator. New balance: {} QBT",
+                block_reward.value() as f64 / 1e18,
+                new_balance.value() as f64 / 1e18
+            );
+
+            // Calculate state root from complete WorldState
+            let state_root = state.calculate_merkle_root();
+            block.header.state_root = state_root;
             
             // Update block height in state
             state.set_height(block.header.block_height);
 
-            // Persist balances to storage (only for non-genesis blocks)
-            if !is_genesis {
-                let current_balance = state.get_balance(&self.validator.address);
-                if let Err(e) = self
-                    .storage
-                    .set_balance(&self.validator.address, current_balance)
-                {
-                    warn!("Failed to persist validator balance: {}", e);
-                } else {
-                    info!("✅ Balance persisted to storage");
-                }
+            // Persist validator balance to storage
+            if let Err(e) = self
+                .storage
+                .set_balance(&self.validator.address, new_balance)
+            {
+                warn!("Failed to persist validator balance: {}", e);
+            } else {
+                info!("✅ Balance persisted to storage");
             }
 
             // Sync all balances from WorldState to BlockStorage
